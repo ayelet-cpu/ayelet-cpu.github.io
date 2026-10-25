@@ -1246,19 +1246,22 @@ window.PK=PK;
 
 /* ---------- google.script.run → Supabase (כדי שקוד הפנקס הקיים יעבוד בלי שינוי) ---------- */
 function empRest(id){ var e=(window.__PK_EMP||{})[id]; return e?(RC[e.rest]||'asa'):(PK.me&&PK.me.scope!=='all'?PK.me.scope:'asa'); }
+/* שמירות יוצאות אחת-אחת לפי הסדר — אחרת «טופל» ואחריו «בטל» מהר עלולים להגיע הפוך, והסימון «חוזר» (26.10.2026) */
+var _saveQ=Promise.resolve();
+function queued(fn){ var p=_saveQ.then(fn,fn); _saveQ=p.catch(function(){}); return p; }
 var CALLS={
   getAllMarks:function(){ return json('/rest/v1/pinkas_marks?select=emp_id,data&limit=10000').then(function(rows){var o={};(rows||[]).forEach(function(r){o[r.emp_id]=r.data;});return JSON.stringify(o);}); },
   getNotes:function(){ return json('/rest/v1/pinkas_notes?select=id,data&limit=10000').then(function(rows){var o={};(rows||[]).forEach(function(r){o[r.id]=r.data;});return JSON.stringify(o);}); },
-  saveMarks:function(txt){ var p=JSON.parse(txt||'{}'), up=[], del=[];
+  saveMarks:function(txt){ return queued(function(){ var p=JSON.parse(txt||'{}'), up=[], del=[];
     Object.keys(p).forEach(function(id){ if(p[id]==null)del.push(+id); else up.push({emp_id:+id,rest:empRest(+id),data:p[id]}); });
     var jobs=[]; if(up.length)jobs.push(json('/rest/v1/pinkas_marks?on_conflict=emp_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(up)}));
     if(del.length)jobs.push(json('/rest/v1/pinkas_marks?emp_id=in.('+del.join(',')+')',{method:'DELETE',headers:{'Prefer':'return=minimal'}}));
-    return Promise.all(jobs).then(function(){return true;}); },
-  saveNotes:function(txt){ var p=JSON.parse(txt||'{}'), up=[], del=[];
+    return Promise.all(jobs).then(function(){return true;}); }); },
+  saveNotes:function(txt){ return queued(function(){ var p=JSON.parse(txt||'{}'), up=[], del=[];
     Object.keys(p).forEach(function(id){ if(p[id]==null)del.push(id); else up.push({id:id,rest:RC[p[id].rest]||'asa',data:p[id]}); });
     var jobs=[]; if(up.length)jobs.push(json('/rest/v1/pinkas_notes?on_conflict=id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(up)}));
     del.forEach(function(id){ jobs.push(json('/rest/v1/pinkas_notes?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{'Prefer':'return=minimal'}})); });
-    return Promise.all(jobs).then(function(){return true;}); },
+    return Promise.all(jobs).then(function(){return true;}); }); },
   whoAmI:function(){ return Promise.resolve(PK.me?PK.me.name:''); },
   uploadNoteFile:function(){ return Promise.reject(new Error('בענן מצרפים קבצים מתוך ההערה')); }
 };
@@ -1669,7 +1672,7 @@ function pensTrack(A){
     h+='<tr data-id="'+e.id+'" tabindex="0">'+
       '<td class="pn"><b>'+esc(e.name)+'</b>'+(e.newhire?' <span class="pill p-acc">חדש/ה</span>':'')+'<em>'+esc(e.dept)+(e.start?' · החל '+esc(fmtD(e.start)):'')+'</em></td>'+
       '<td>'+esc(e.pension_disp)+'</td>'+
-      '<td class="wrap">'+(e.pform?esc(pformLine(e.pform))+'<em style="display:block;font-style:normal;font-size:11.5px;color:var(--muted)">'+esc(mt.form_date||mt.date||'')+'</em>':'<span style="color:var(--crit)">אין טופס</span>')+'</td>'+
+      '<td class="wrap">'+(e.pform?esc(pformLine(e.pform))+'<em style="display:block;font-style:normal;font-size:11.5px;color:var(--muted)">'+esc(mt.form_date||mt.date||'')+'</em>':'<span style="color:var(--muted)">—</span>')+'</td>'+
       '<td>'+(e.pens_open?'—':esc(e.pmonth_he||'חסר תאריך התחלה'))+due+'</td>'+
       '<td>'+(e.pens_open?'<span class="pill p-ok">✓ '+esc(e.opened_date?fmtD(e.opened_date):(e.opened_month||'מופרש'))+'</span>':'—')+'</td>'+
       '<td class="wrap">'+(e.talked?'✓ '+esc(fmtD(e.talked_at))+(e.talked_note?'<em style="display:block;font-style:normal;font-size:11.5px;color:var(--muted)">'+esc(e.talked_note)+'</em>':''):'—')+'</td>'+
@@ -1992,13 +1995,7 @@ function docsBox(e){
 }
 function pformBox(e){
   var pf=e.pform;
-  if(!pf){
-    /* בלי טופס: מציגים רק כשזה משנה החלטה — הפנסיה עוד לא נפתחה והעובד/ת פעיל/ה (לא זר/ה). כשכבר מופרש — לא מציגים כלום */
-    if(e.pens_open||e.foreign||!e.active)return '';
-    if(e.pension==='פעילה'||e.pension==='אין'||e.pension==='אין פנסיה פעילה')
-      return '<div class="pform"><h3>טופס «פרטי פנסיה של עובד»</h3><div class="pf">לא התקבל טופס, אבל הפנסיה הקודמת כבר ידועה ('+esc(e.pension_disp)+').</div></div>';
-    return '<div class="pform"><h3>טופס «פרטי פנסיה של עובד»</h3><div class="pf">לא התקבל טופס — כדאי לבקש מהעובד/ת למלא, כדי לדעת אם יש פנסיה פעילה (שכר רביעי) או לא (שכר שביעי). חודש הפתיחה כרגע: <b>'+esc(e.pmonth_he||'—')+'</b>.</div></div>';
-  }
+  if(!pf)return ''; /* 26.10.2026: בלי טופס — לא מציגים כלום בכרטיס (הרשימה: סינון «בלי טופס פרטי פנסיה» בלשונית פנסיה) */
   var mt=pf.meta||{};
   var s='<div class="pform"><h3>טופס «פרטי פנסיה של עובד» <button class="fbtn" type="button" id="pfOpen" data-fid="'+esc(pf.id)+'">פתיחת הטופס</button></h3><div class="pf">'+
     '<span><i>תאריך</i>'+esc(mt.form_date||mt.date||String(pf.created_at||'').slice(0,10))+'</span>'+
