@@ -944,7 +944,7 @@ section.act .allgood,.act table{font-size:14.5px}
     <nav class="tabs" role="tablist">
       <button role="tab" data-tab="todo" aria-selected="true">לטיפול<span class="c" id="c-todo"></span></button>
       <button role="tab" data-tab="pens" aria-selected="false">פנסיה<span class="c" id="c-pens"></span></button>
-      <button role="tab" data-tab="docs" aria-selected="false">מסמכים ו־101<span class="c" id="c-docs"></span></button>
+      <button role="tab" data-tab="docs" aria-selected="false">טופס 101 ומסמכים<span class="c" id="c-docs"></span></button>
       <button role="tab" data-tab="notes" aria-selected="false">הערות שכר<span class="c" id="c-notes"></span></button>
       <button role="tab" data-tab="all" aria-selected="false">כל העובדים<span class="c" id="c-all"></span></button>
       <button role="tab" data-tab="off" aria-selected="false">לא פעילים<span class="c" id="c-off"></span></button>
@@ -953,7 +953,7 @@ section.act .allgood,.act table{font-size:14.5px}
 </header>
 
 <div class="wrap">
-  <div class="hero" id="hero"></div>
+  <div class="topstrip"><div class="hero" id="hero"></div>
 
   <div class="savebar" id="savebar">
     <span class="msg" id="saveMsg">אין סימונים עדיין</span>
@@ -966,7 +966,7 @@ section.act .allgood,.act table{font-size:14.5px}
       <button class="btn ghost" id="btnClear" type="button" hidden>איפוס</button>
       <input type="file" id="fileIn" accept=".json,application/json" hidden>
     </span>
-  </div>
+  </div></div>
 
   <div id="todoView"></div>
 
@@ -1119,6 +1119,44 @@ section.act .allgood,.act table{font-size:14.5px}
 .ptrack .dk.ok{color:var(--ok)}.ptrack .dk.no{color:var(--muted)}
 .ptrack .pn em{display:block;font-style:normal;font-size:11.5px;color:var(--muted)}
 .ptrack .empty{padding:16px;color:var(--muted)}
+/* ---- לטיפול: רשימה אחת (26.10.2026) ---- */
+.topstrip{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;margin:14px 0 12px}
+.topstrip .hero{margin:0;flex:1 1 auto;gap:8px}
+.topstrip .hero .big{font-size:24px}
+.topstrip .hero .lbl{font-size:13.5px}
+.topstrip .savebar{margin:0;flex:0 1 auto;padding:6px 10px}
+.topstrip .savebar .btn{padding:6px 12px}
+.tl{display:flex;flex-direction:column;gap:14px}
+.tlsec{background:var(--surface);border:1px solid var(--line);border-inline-start:5px solid var(--line);border-radius:14px;overflow:hidden}
+.tlsec.sev-crit{border-inline-start-color:var(--crit)}.tlsec.sev-warn{border-inline-start-color:var(--warn)}
+.tlsec.sev-info{border-inline-start-color:var(--accent)}.tlsec.sev-done{border-inline-start-color:var(--ok)}
+.tlsec>header{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--surface-2);border-bottom:1px solid var(--line-2)}
+.tlsec>header h2{margin:0;font-size:16.5px}
+.tlcnt{min-width:30px;height:30px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;background:var(--idle-bg);color:var(--ink)}
+.sev-crit .tlcnt{background:var(--crit-bg);color:var(--crit)}.sev-warn .tlcnt{background:var(--warn-bg);color:var(--warn)}
+.tlq{margin-inline-start:auto;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:800;cursor:pointer}
+.tlhelp{margin:0;padding:8px 14px;font-size:13.5px;color:var(--ink-2);background:var(--surface-2);border-bottom:1px solid var(--line-2)}
+.tlrow{display:grid;grid-template-columns:minmax(170px,1.1fr) minmax(180px,1.6fr) auto;gap:6px 16px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line-2);cursor:pointer}
+.tlrow:last-child{border-bottom:0}
+.tlrow:hover{background:var(--accent-soft)}
+.tlrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.tln b{font-size:15.5px}.tln .pill{margin-inline-start:6px}
+.tln em{display:block;font-style:normal;font-size:13px;color:var(--muted)}
+.tlf{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:14px}
+.tlf b{font-weight:700;margin-inline-end:4px}
+.dchip{display:inline-block;font-size:12.5px;font-weight:700;padding:2px 9px;border-radius:999px}
+.dchip.ok{background:var(--ok-bg);color:var(--ok)}.dchip.no{background:var(--crit-bg);color:var(--crit)}
+.dnote{font-size:12.5px;color:var(--muted)}
+.tla{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.tlb{font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.tlb:hover{border-color:var(--accent);color:var(--accent-ink)}
+.tlb.done:hover,.tlb.act:hover{background:var(--ok);border-color:var(--ok);color:#fff}
+.tlb.left:hover{background:var(--crit);border-color:var(--crit);color:#fff}
+.pktoast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:9500;background:var(--ink);color:var(--surface);
+  border-radius:12px;padding:11px 16px;font-size:14.5px;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px)}
+.pktoast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.pktoast button{font:inherit;font-weight:800;margin-inline-start:10px;background:transparent;border:0;color:var(--accent-soft);text-decoration:underline;cursor:pointer}
+@media (max-width:760px){.tlrow{grid-template-columns:1fr}.tla{justify-content:flex-start}}
 @media (max-width:640px){.gcard{padding:24px 16px 18px}.gwho button{min-width:80px;padding:9px 14px}}
 </style>
 
@@ -1523,39 +1561,48 @@ var ACTS=[
 ];
 
 
+/* 26.10.2026: רשימה אחת לפי דחיפות (במקום קופסאות עם גלילה), כפתור «טופל» עם «בטל», בקשת מסמכים מהשורה */
+function needDocs(e){ /* מסמכי הפנסיה הרלוונטיים לעובד */
+  return PENS_DOCS.filter(function(t){return !(t==='אישור קרן פנסיה פעילה'&&(e.pension==='אין'||e.pension==='אין פנסיה פעילה'));}); }
+function askText(e){ return 'היי '+e.name.split(' ')[0]+', כדי להשלים את התיק שלך חסרים לנו:\n'+
+  e.missing.map(function(t){var r=reasonFor(e,t);return '• '+t+(r?' — '+r:'');}).join('\n')+'\nאפשר לשלוח בוואטסאפ או במייל. תודה!'; }
 function renderTodo(){
-  var A=V(), box=document.getElementById('todoView'), h='<div class="todogrid">';
+  var A=V(), box=document.getElementById('todoView'), h='<div class="tl">', any=false;
   ACTS.forEach(function(a){
     var rows=A.filter(function(e){return e.todo===a.k;});
-    if(!rows.length)return;
+    if(!rows.length)return; any=true;
     rows.sort(function(x,y){return String(x.start||'9999').localeCompare(String(y.start||'9999'));});
     var pensSec=(a.k==='פנסיה באיחור'||a.k==='לפתוח פנסיה'||a.k==='פנסיה בחודש הבא');
-    h+='<section class="tcard sev-'+a.sev+'"><header><span class="cnt">'+rows.length+'</span><h2>'+esc(a.t)+'</h2></header>'+
-       '<p class="cdesc">'+esc(a.d)+'</p><div class="clist">';
+    h+='<section class="tlsec sev-'+a.sev+'"><header><span class="tlcnt">'+rows.length+'</span><h2>'+esc(a.t)+'</h2>'+
+       '<button class="tlq" type="button" data-help aria-label="הסבר" title="הסבר">?</button></header>'+
+       '<p class="tlhelp" hidden>'+esc(a.d)+'</p><div class="tlrows">';
     rows.forEach(function(e){
-      function dok(t){return e.dtypes.indexOf(t)>=0?'<i class="ok">✓</i>':'<i class="no">✗</i>';}
-      var fact = pensSec
-        ? '<b>'+esc(e.pmonth_he||'—')+'</b><em>קוביות '+dok('טופס קוביות')+((e.pension==='אין'||e.pension==='אין פנסיה פעילה')?' · אין פנסיה קודמת — אישור קרן לא נדרש':' · אישור קרן '+dok('אישור קרן פנסיה פעילה'))+'</em>'
-        : '<b>'+esc(e.why||'')+'</b>'+(e.worked_sept?'<em>'+e.sept_days+' ימים בספטמבר</em>':(e.global?'<em>גלובלי</em>':'<em>לא החתים בספטמבר</em>'));
-      h+='<div class="crow" data-id="'+e.id+'" tabindex="0">'+
-        '<span class="cname">'+esc(e.name)+
-          (e.foreign?' <span class="pill p-acc">זר</span>':'')+
-          (e.global?' <span class="pill p-acc">גלובלי</span>':'')+
-          '<em>'+esc(e.dept)+(e.start?' · '+esc(e.start):'')+(e.months!=null?' · '+e.months+' ח׳':'')+'</em></span>'+
-        '<span class="cfact">'+fact+'</span>'+
-        (a.k==='לברר אם עזב'
-          ? '<button class="doneb stb st-left" data-setstatus="'+e.id+'" data-val="עזב" type="button" title="לסמן שעזב">עזב</button>'+
-            '<button class="doneb stb st-act" data-setstatus="'+e.id+'" data-val="פעיל" type="button" title="לסמן שממשיך לעבוד">פעיל</button>'
-          : '<button class="doneb" data-done="'+e.id+'" data-kind="'+esc(a.k)+'" type="button" title="סמן כמטופל">✓</button>')+
-      '</div>';
+      var fact;
+      if(pensSec) fact='<b>'+esc(e.pmonth_he||'—')+'</b>'+needDocs(e).map(function(t){var ok=e.dtypes.indexOf(t)>=0;
+          return '<span class="dchip '+(ok?'ok':'no')+'">'+(ok?'✓ ':'✗ ')+esc(t==='טופס קוביות'?'קוביות':'אישור קרן')+'</span>';}).join('')+
+        ((e.pension==='אין'||e.pension==='אין פנסיה פעילה')?'<span class="dnote">אין פנסיה קודמת — אישור קרן לא נדרש</span>':'');
+      else fact='<b>'+esc(e.why||'')+'</b>'+(a.k==='חסרים מסמכים'?e.missing.filter(function(t){return t!=='טופס 101';}).map(function(t){return '<span class="dchip no">✗ '+esc(t)+'</span>';}).join(''):'');
+      var act=a.k==='לברר אם עזב'
+        ? '<button class="tlb left" data-setstatus="'+e.id+'" data-val="עזב" type="button">עזב/ה</button>'+
+          '<button class="tlb act" data-setstatus="'+e.id+'" data-val="פעיל" type="button">ממשיך/ה לעבוד</button>'
+        : (e.missing.length?'<button class="tlb" data-ask="'+e.id+'" type="button" title="מעתיק הודעה מוכנה לוואטסאפ">📋 בקשת מסמכים</button>':'')+
+          '<button class="tlb done" data-done="'+e.id+'" data-kind="'+esc(a.k)+'" type="button">✓ טופל</button>';
+      h+='<div class="tlrow" data-id="'+e.id+'" tabindex="0">'+
+        '<div class="tln"><b>'+esc(e.name)+'</b>'+(e.foreign?'<span class="pill p-acc">זר</span>':'')+(e.global?'<span class="pill p-acc">גלובלי</span>':'')+(e.newhire?'<span class="pill p-acc">חדש/ה</span>':'')+
+          '<em>'+esc(e.dept)+(e.start?' · התחיל/ה '+esc(fmtD(e.start)):'')+(e.months!=null?' · ותק '+e.months+' ח׳':'')+
+          (pensSec?'':(e.worked_sept?' · '+e.sept_days+' ימים בספטמבר':(e.global?'':' · לא החתים/ה בספטמבר')))+'</em></div>'+
+        '<div class="tlf">'+fact+'</div><div class="tla">'+act+'</div></div>';
     });
     h+='</div></section>';
   });
-  var empty=ACTS.every(function(a){return !A.some(function(e){return e.todo===a.k;});});
-  if(empty)h+='<section class="tcard sev-done"><header><h2>אין מה לטפל ✓</h2></header><p class="cdesc">כל הנושאים סגורים במסעדה הזו.</p></section>';
-  h+='</div>';
-  box.innerHTML=h;
+  if(!any)h+='<section class="tlsec sev-done"><header><h2>אין מה לטפל ✓</h2></header><p class="tlhelp">כל הנושאים סגורים במסעדה הזו.</p></section>';
+  box.innerHTML=h+'</div>';
 }
+var _toastT=0;
+function toast(html,undo){ var t=document.getElementById('pkToast'); if(!t){t=document.createElement('div');t.id='pkToast';t.className='pktoast';t.setAttribute('role','status');document.body.appendChild(t);}
+  t.innerHTML=html+(undo?' <button type="button">בטל</button>':''); t.classList.add('on');
+  if(undo)t.querySelector('button').onclick=function(){undo();t.classList.remove('on');};
+  clearTimeout(_toastT); _toastT=setTimeout(function(){t.classList.remove('on');},7000); }
 
 
 /* ---------- PENSION TIMELINE ---------- */
@@ -1580,7 +1627,7 @@ function pensPrep(e){
 function pensRow(e,extra){
   return '<div class="prow" data-id="'+e.id+'" tabindex="0">'+
     '<span class="pn"><b>'+esc(e.name)+'</b>'+(e.foreign?' <span class="pill p-acc">זר</span>':'')+
-      '<em>'+esc(e.dept)+(e.start?' · החל '+esc(e.start):'')+(e.months!=null?' · ותק '+e.months+' ח׳':'')+'</em></span>'+
+      '<em>'+esc(e.dept)+(e.start?' · החל '+esc(fmtD(e.start)):'')+(e.months!=null?' · ותק '+e.months+' ח׳':'')+'</em></span>'+
     '<span class="pb">'+pensBasis(e)+'</span>'+
     '<span class="pp">'+(extra||pensPrep(e))+'</span></div>';
 }
@@ -1704,7 +1751,7 @@ function docSince(e){
 function docRow(e,note,late){
   return '<div class="prow" data-id="'+e.id+'" tabindex="0">'+
     '<span class="pn"><b>'+esc(e.name)+'</b>'+(e.foreign?' <span class="pill p-acc">זר</span>':'')+
-      '<em>'+esc(e.dept)+(e.start?' · החל '+esc(e.start):' · אין תאריך תחילת עבודה')+'</em></span>'+
+      '<em>'+esc(e.dept)+(e.start?' · החל '+esc(fmtD(e.start)):' · אין תאריך תחילת עבודה')+'</em></span>'+
     '<span class="pb"><span class="pill '+(late?'p-crit':'p-idle')+'">'+esc(docSince(e)||'—')+'</span>'+
       (e.worked_sept?'<span class="pill p-idle">'+e.sept_days+' ימים בספטמבר</span>':'')+'</span>'+
     '<span class="pp"><span class="prep'+(late?' late':'')+'">'+esc(note||'')+'</span></span></div>';
@@ -1996,7 +2043,7 @@ function open(id){
   if(e.addr)F('כתובת',esc(e.addr));
   if(e.phone)F('טלפון',esc(e.phone));
   if(e.email)F('מייל',esc(e.email));
-  F('תחילת עבודה',e.start?esc(e.start)+(e.months!=null?' · ותק '+e.months+' ח׳':''):'<b>חסר</b>');
+  F('תחילת עבודה',e.start?esc(fmtD(e.start))+(e.months!=null?' · ותק '+e.months+' ח׳':''):'<b>חסר</b>');
   F('תלוש 8/2026',e.slip?'יש':'<b>אין</b>');
   F('ספטמבר',e.worked_sept?(e.sept_days+' ימים · '+(e.sept_hours||0)+' ש׳'):(e.global?'לא מחתים':'<b>לא החתים</b>'));
   if(e.sept_roles&&e.sept_roles.length)F('תפקידים',e.sept_roles.map(function(r){return esc(r.role)+' ('+r.days+')';}).join(' · '));
@@ -2173,15 +2220,28 @@ document.addEventListener('keydown',function(ev){if(ev.key==='Escape')close();})
 
 /* ---------- events ---------- */
 document.getElementById('todoView').addEventListener('click',function(ev){
+  var hb=ev.target.closest('button[data-help]');
+  if(hb){var p=hb.closest('section').querySelector('.tlhelp'); if(p)p.hidden=!p.hidden; ev.stopPropagation(); return;}
+  var ab=ev.target.closest('button[data-ask]');
+  if(ab){var ea=eff(E.filter(function(x){return x.id===+ab.dataset.ask;})[0]), txt=askText(ea);
+    function okc(){toast('📋 ההודעה ל'+esc(ea.name)+' הועתקה — אפשר להדביק בוואטסאפ');}
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(okc,function(){prompt('העתיקי:',txt);}); else prompt('העתיקי:',txt);
+    ev.stopPropagation(); return;}
   var sb=ev.target.closest('button[data-setstatus]');
-  if(sb){var sid=+sb.dataset.setstatus,sv=sb.dataset.val,ms=mk(sid);
+  if(sb){var sid=+sb.dataset.setstatus,sv=sb.dataset.val,prev0=MARKS[sid]?JSON.stringify(MARKS[sid]):null,ms=mk(sid);
     ms.status=sv; if(sv==='עזב'){ms.done=ms.done||{};ms.done.left=true;}
-    touch(sid);save();render();ev.stopPropagation();return;}
+    touch(sid);save();render();ev.stopPropagation();
+    var en=(E.filter(function(x){return x.id===sid;})[0]||{}).name||'';
+    toast('סומן: '+esc(en)+' — '+(sv==='עזב'?'עזב/ה':'ממשיך/ה לעבוד'),function(){ if(prev0)MARKS[sid]=JSON.parse(prev0); else delete MARKS[sid]; PEND[sid]=1; DIRTY=true; save(); render(); });
+    return;}
   var db=ev.target.closest('button[data-done]');
-  if(db){var id=+db.dataset.done,kind=db.dataset.kind,m=mk(id);
+  if(db){var id=+db.dataset.done,kind=db.dataset.kind,prev=MARKS[id]?JSON.stringify(MARKS[id]):null,m=mk(id);
     m.done=m.done||{};
     m.done[kind==='חסר טופס 101'?'f101':(kind==='לברר אם עזב'?'left':(kind==='חסרים מסמכים'?'docs':(kind==='נדחה עד גיל'?'age':'pens')))]=true;
-    touch(id);save();render();ev.stopPropagation();return;}
+    touch(id);save();render();ev.stopPropagation();
+    var nm=(E.filter(function(x){return x.id===id;})[0]||{}).name||'';
+    toast('✓ '+esc(nm)+' — סומן «טופל»',function(){ if(prev)MARKS[id]=JSON.parse(prev); else delete MARKS[id]; PEND[id]=1; DIRTY=true; save(); render(); });
+    return;}
   var tr=ev.target.closest('[data-id]'); if(tr)open(+tr.dataset.id);});
 document.getElementById('pensView').addEventListener('click',function(ev){
   var c=ev.target.closest('button[data-ptf]'); if(!c)return; ev.stopPropagation(); PTF=c.dataset.ptf; renderPens();},true);
