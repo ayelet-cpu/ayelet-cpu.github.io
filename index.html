@@ -1992,8 +1992,13 @@ function docsBox(e){
 }
 function pformBox(e){
   var pf=e.pform;
-  if(!pf)return '<div class="pform"><h3>טופס «פרטי פנסיה של עובד»</h3><div class="pf">לא התקבל טופס'+
-    (e.pension==='פעילה'?'':' — כדאי לבקש מהעובד/ת למלא, כדי לדעת אם יש פנסיה פעילה (שכר רביעי) או לא (שכר שביעי)')+'.</div></div>';
+  if(!pf){
+    /* בלי טופס: מציגים רק כשזה משנה החלטה — הפנסיה עוד לא נפתחה והעובד/ת פעיל/ה (לא זר/ה). כשכבר מופרש — לא מציגים כלום */
+    if(e.pens_open||e.foreign||!e.active)return '';
+    if(e.pension==='פעילה'||e.pension==='אין'||e.pension==='אין פנסיה פעילה')
+      return '<div class="pform"><h3>טופס «פרטי פנסיה של עובד»</h3><div class="pf">לא התקבל טופס, אבל הפנסיה הקודמת כבר ידועה ('+esc(e.pension_disp)+').</div></div>';
+    return '<div class="pform"><h3>טופס «פרטי פנסיה של עובד»</h3><div class="pf">לא התקבל טופס — כדאי לבקש מהעובד/ת למלא, כדי לדעת אם יש פנסיה פעילה (שכר רביעי) או לא (שכר שביעי). חודש הפתיחה כרגע: <b>'+esc(e.pmonth_he||'—')+'</b>.</div></div>';
+  }
   var mt=pf.meta||{};
   var s='<div class="pform"><h3>טופס «פרטי פנסיה של עובד» <button class="fbtn" type="button" id="pfOpen" data-fid="'+esc(pf.id)+'">פתיחת הטופס</button></h3><div class="pf">'+
     '<span><i>תאריך</i>'+esc(mt.form_date||mt.date||String(pf.created_at||'').slice(0,10))+'</span>'+
