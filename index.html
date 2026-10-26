@@ -1157,6 +1157,19 @@ section.act .allgood,.act table{font-size:14.5px}
 .pktoast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .pktoast button{font:inherit;font-weight:800;margin-inline-start:10px;background:transparent;border:0;color:var(--accent-soft);text-decoration:underline;cursor:pointer}
 button.ps{font:inherit;cursor:pointer;background:var(--surface)}
+.ptrack .ptedit{min-width:220px}
+.ptrack select.pstage,.ptrack input.pnote{font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);width:100%;margin-bottom:4px}
+.ptrack .pinfo{display:block;font-style:normal;font-size:11.5px;color:var(--muted)}
+.ptrack button.dk{font:inherit;font-size:12px;border:1px solid transparent;background:transparent;border-radius:999px;padding:1px 6px;margin:0 0 2px;cursor:pointer}
+.ptrack button.dk.no{color:var(--muted)}.ptrack button.dk.ok{color:var(--ok)}
+.ptrack button.dk:not(:disabled):hover{border-color:var(--accent);color:var(--accent-ink)}
+.ptrack button.dk:disabled{cursor:default}
+.nmonth{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}
+.nmgrp{margin:8px 0 4px}
+.nmhd{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;color:var(--accent-ink);border-bottom:1px solid var(--line-2);padding:4px 0}
+.nmhd span{font-size:11.5px;font-weight:700;background:var(--accent-soft);border-radius:999px;padding:0 8px}
+.nmgrp li.ev{opacity:.85}
+.nmgrp .st-open{color:var(--warn)}.nmgrp .st-sent{color:var(--accent-ink)}.nmgrp .st-done{color:var(--ok)}
 button.ps:hover{background:var(--surface-2);box-shadow:0 0 0 2px var(--line)}
 button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 .psall{font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--accent-ink);cursor:pointer}
@@ -1252,10 +1265,15 @@ window.PK=PK;
 function empRest(id){ var e=(window.__PK_EMP||{})[id]; return e?(RC[e.rest]||'asa'):(PK.me&&PK.me.scope!=='all'?PK.me.scope:'asa'); }
 /* שמירות יוצאות אחת-אחת לפי הסדר — אחרת «טופל» ואחריו «בטל» מהר עלולים להגיע הפוך, והסימון «חוזר» (26.10.2026) */
 var _saveQ=Promise.resolve();
-function queued(fn){ var p=_saveQ.then(fn,fn); _saveQ=p.catch(function(){}); return p; }
+var _saveGen=0;
+function queued(fn){ _saveGen++; var p=_saveQ.then(fn,fn); _saveQ=p.catch(function(){}); return p; }
+/* קריאה «יציבה»: אחרי כל השמירות שבדרך, ואם בזמן הקריאה נשמר משהו חדש — קוראים שוב */
+function readStable(path,tries){ var g=_saveGen; tries=tries||0;
+  return _saveQ.then(function(){return json(path);}).then(function(r){ return (g!==_saveGen&&tries<5)?readStable(path,tries+1):r; }); }
 var CALLS={
-  getAllMarks:function(){ return json('/rest/v1/pinkas_marks?select=emp_id,data&limit=10000').then(function(rows){var o={};(rows||[]).forEach(function(r){o[r.emp_id]=r.data;});return JSON.stringify(o);}); },
-  getNotes:function(){ return json('/rest/v1/pinkas_notes?select=id,data&limit=10000').then(function(rows){var o={};(rows||[]).forEach(function(r){o[r.id]=r.data;});return JSON.stringify(o);}); },
+  /* קריאה מהענן מחכה שכל השמירות שבדרך יסתיימו — אחרת רענון ברקע עלול להחזיר גרסה ישנה ולמחוק סימון שעוד לא הגיע */
+  getAllMarks:function(){ return readStable('/rest/v1/pinkas_marks?select=emp_id,data&limit=10000').then(function(rows){var o={};(rows||[]).forEach(function(r){o[r.emp_id]=r.data;});return JSON.stringify(o);}); },
+  getNotes:function(){ return readStable('/rest/v1/pinkas_notes?select=id,data&limit=10000').then(function(rows){var o={};(rows||[]).forEach(function(r){o[r.id]=r.data;});return JSON.stringify(o);}); },
   saveMarks:function(txt){ return queued(function(){ var p=JSON.parse(txt||'{}'), up=[], del=[];
     Object.keys(p).forEach(function(id){ if(p[id]==null)del.push(+id); else up.push({emp_id:+id,rest:empRest(+id),data:p[id]}); });
     var jobs=[]; if(up.length)jobs.push(json('/rest/v1/pinkas_marks?on_conflict=emp_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(up)}));
@@ -1378,6 +1396,8 @@ function GAS(){return (typeof google!=='undefined')&&google.script&&google.scrip
 var JUSTSAVED=0;
 function mk(id){if(!MARKS[id])MARKS[id]={};return MARKS[id];}
 function touch(id){mk(id).u=new Date().toISOString().slice(0,10);DIRTY=true;PEND[id]=1;}
+/* 26.10.2026: הכפתור «סמן/בטל לא פעיל» בטבלת העובדים קורא לפונקציה הזו מבחוץ — קודם היא לא הייתה זמינה והכפתור לא עבד */
+window.toggleInactiveById=function(eid){eid=+eid;var m=mk(eid);m.status=(m.status==='לא פעיל'?'':'לא פעיל');touch(eid);save();render();};
 function nMarks(){return Object.keys(MARKS).filter(function(k){var m=MARKS[k];
   return m&&Object.keys(m).some(function(f){return f!=='u'&&m[f]!==''&&m[f]!==false&&m[f]!=null&&!(Array.isArray(m[f])&&!m[f].length);});}).length;}
 function savebar(){var n=nMarks(),bar=document.getElementById('savebar');
@@ -1648,14 +1668,21 @@ function pensSec(cls,title,note,rows,body,always){
 }
 /* ---------- מעקב פנסיה: מי עם פנסיה פעילה, מתי לפתוח, אילו מסמכים יש ---------- */
 var PTF='all';
-var PTFS=[['all','כולם'],['act','פנסיה פעילה'],['noform','בלי טופס פרטי פנסיה'],['soon','לפתוח עד חודש הבא'],['open','נפתחה'],['talked','דיברנו']];
+var PTFS=[['all','כולם'],['act','פנסיה פעילה'],['noform','בלי טופס פרטי פנסיה'],['soon','לפתוח עד חודש הבא'],['open','נפתחה'],['talked','בטיפול']];
+/* 26.10.2026: מצב המעקב של כל עובד/ת — נבחר ידנית, נשמר בסימון (pstage) */
+var PSTAGES=[['','— מצב —'],['asked','ביקשנו מסמכים'],['wait_cub','ממתין/ה לטופס קוביות'],['wait_fund','ממתין/ה לאישור קרן'],
+  ['wait_form','ממתין/ה לטופס פרטי פנסיה'],['ready','הכול התקבל — לפתוח'],['sent','נשלח לחשבת לפתיחה']];
+function pstageSel(e,id){ var m=MARKS[e.id]||{};
+  return '<select class="pstage" data-pt="stage" data-emp="'+e.id+'"'+(id?' id="'+id+'"':'')+' aria-label="מצב מעקב">'+PSTAGES.map(function(p){
+    return '<option value="'+p[0]+'"'+((m.pstage||'')===p[0]?' selected':'')+'>'+esc(p[1])+'</option>';}).join('')+'</select>'; }
+function pstageInfo(e){ var m=MARKS[e.id]||{}; var w=[]; if(m.pstage_at)w.push(fmtD(m.pstage_at)); if(m.pstage_by)w.push(m.pstage_by); return w.join(' · '); }
 function ptMatch(e,k){
   var formYes=e.pform&&(e.pform.meta||{}).active==='כן';
   if(k==='act')return e.pension==='פעילה'||formYes;
   if(k==='noform')return !e.pform&&!e.pens_open&&!e.foreign;
   if(k==='soon')return !e.pens_open&&e.pmonth&&pmNum(e)<=NOWM+1;
   if(k==='open')return e.pens_open;
-  if(k==='talked')return e.talked;
+  if(k==='talked')return e.talked||!!(MARKS[e.id]||{}).pstage;
   return true;
 }
 function fmtD(d){var p=String(d||'').split('-');return p.length===3?(+p[2])+'.'+(+p[1])+'.'+p[0].slice(2):String(d||'');}
@@ -1664,12 +1691,14 @@ function isNewHire(e){ /* התחיל/ה בחודשיים האחרונים — ע
 function pensTrack(A){
   var rows=A.filter(function(e){return ptMatch(e,PTF);}).sort(function(x,y){
     return (x.pens_open-y.pens_open)||((x.pmonth?pmNum(x):99999)-(y.pmonth?pmNum(y):99999))||String(x.name).localeCompare(String(y.name),'he');});
-  function dk(e,t,lbl){var ok=e.dtypes.indexOf(t)>=0;return '<span class="dk '+(ok?'ok':'no')+'">'+(ok?'✓':'✗')+' '+lbl+'</span>';}
+  function dk(e,t,lbl){ /* לחיצה מסמנת «התקבל» / מבטלת. מסמך שיש לו קובץ — נעול */
+    var ok=t==='טופס 101'?e.s101==='יש':(e.dtypes.indexOf(t)>=0||(e.ds&&e.ds[t]==='got')), lock=t==='טופס 101'?(e.s101==='יש'&&!(MARKS[e.id]||{}).f101):!!(e.dlock&&e.dlock[t]);
+    return '<button type="button" class="dk '+(ok?'ok':'no')+'" data-pt="doc" data-emp="'+e.id+'" data-doc="'+esc(t)+'"'+(lock?' disabled title="יש קובץ — התקבל"':' title="לחיצה: '+(ok?'לבטל «התקבל»':'לסמן «התקבל»')+'"')+'>'+(ok?'✓':'✗')+' '+lbl+'</button>';}
   var h='<section class="ptrack"><header><h2>מעקב פנסיה</h2><div class="chips" id="ptChips">'+
     PTFS.map(function(p){var n=A.filter(function(e){return ptMatch(e,p[0]);}).length;
       return '<button type="button" data-ptf="'+p[0]+'" aria-pressed="'+(PTF===p[0])+'">'+esc(p[1])+' ('+n+')</button>';}).join('')+'</div></header>';
   if(!rows.length)return h+'<div class="empty">אין עובדים בסינון הזה.</div></section>';
-  h+='<div class="scroll"><table><thead><tr><th>עובד/ת</th><th>פנסיה קודמת</th><th>טופס פרטי פנסיה</th><th>חודש פתיחה</th><th>נפתחה</th><th>דיברנו</th><th>מסמכים</th></tr></thead><tbody>';
+  h+='<div class="scroll"><table><thead><tr><th>עובד/ת</th><th>פנסיה קודמת</th><th>טופס פרטי פנסיה</th><th>חודש פתיחה</th><th>נפתחה</th><th>מצב ומה נאמר</th><th>מסמכים <span style="font-weight:400">(לחיצה = התקבל)</span></th></tr></thead><tbody>';
   rows.forEach(function(e){
     var mt=(e.pform&&e.pform.meta)||{};
     var due=e.pens_open?'':(e.due==='עבר'?' <span class="pill p-crit">באיחור</span>':(e.due==='עכשיו'?' <span class="pill p-warn">החודש</span>':(e.due==='קרוב'?' <span class="pill p-warn">חודש הבא</span>':'')));
@@ -1679,7 +1708,9 @@ function pensTrack(A){
       '<td class="wrap">'+(e.pform?esc(pformLine(e.pform))+'<em style="display:block;font-style:normal;font-size:11.5px;color:var(--muted)">'+esc(mt.form_date||mt.date||'')+'</em>':'<span style="color:var(--muted)">—</span>')+'</td>'+
       '<td>'+(e.pens_open?'—':esc(e.pmonth_he||'חסר תאריך התחלה'))+due+'</td>'+
       '<td>'+(e.pens_open?'<span class="pill p-ok">✓ '+esc(e.opened_date?fmtD(e.opened_date):(e.opened_month||'מופרש'))+'</span>':'—')+'</td>'+
-      '<td class="wrap">'+(e.talked?'✓ '+esc(fmtD(e.talked_at))+(e.talked_note?'<em style="display:block;font-style:normal;font-size:11.5px;color:var(--muted)">'+esc(e.talked_note)+'</em>':''):'—')+'</td>'+
+      '<td class="wrap ptedit">'+pstageSel(e)+
+        '<input type="text" class="pnote" data-pt="note" data-emp="'+e.id+'" value="'+esc(e.talked_note||'')+'" placeholder="מה נאמר…" aria-label="מה נאמר">'+
+        ((pstageInfo(e)||e.talked_at)?'<em class="pinfo">'+esc(pstageInfo(e)||('דיברנו '+fmtD(e.talked_at)))+'</em>':'')+'</td>'+
       '<td class="wrap">'+dk(e,'טופס 101','101')+dk(e,'טופס קוביות','קוביות')+dk(e,'אישור קרן פנסיה פעילה','אישור קרן')+dk(e,'אישור ניהול חשבון','ניהול חשבון')+
         '<span class="dk '+(e.pform?'ok':'no')+'">'+(e.pform?'✓':'✗')+' פרטי פנסיה</span></td></tr>';
   });
@@ -1985,6 +2016,24 @@ function render(){
 
 /* ---------- drawer ---------- */
 var drawer=document.getElementById('drawer'),scrim=document.getElementById('scrim');
+/* 26.10.2026: בכרטיס — כל הערות השכר (מהפנקס ומהאקסל) מקובצות לפי חודש, החדש למעלה */
+function notesByMonth(e){
+  var groups={};
+  function g(y,m){var k=y*12+m; if(!groups[k])groups[k]={y:y,m:m,items:[]}; return groups[k];}
+  Object.keys(NOTES).map(function(k){return NOTES[k];}).filter(function(n){return n&&(n.eid===e.id||(n.emp===e.name&&(n.rest===e.rest||n.rest===e.orig_rest)));})
+    .forEach(function(n){ var nf=window.PK?PK.byNote(n.id).length:0;
+      g(n.y,n.m).items.push('<li><span class="m">'+esc(n.topic||'')+' · <span class="st st-'+(n.status||'open')+'">'+esc(NST[n.status||'open'])+'</span>'+(n.by?' · '+esc(n.by):'')+(nf?' · 📎 '+nf:'')+'</span><br>'+
+        esc(n.detail||'—')+(n.amount?' — '+esc(fmtAmt(n.amount)):'')+'</li>'); });
+  (e.events||[]).forEach(function(v){ var mm=+v.mnum||(HE.indexOf(v.month)+1); if(!mm)return;
+    g(2026,mm).items.push('<li class="ev"><span class="m">'+esc(v.topic||'')+' · מהאקסל</span><br>'+esc(v.detail||'—')+'</li>'); });
+  var ks=Object.keys(groups).map(Number).sort(function(a,b){return b-a;}), n=0;
+  ks.forEach(function(k){n+=groups[k].items.length;});
+  var s='<div class="sec"><h3>הערות שכר לפי חודש ('+n+')</h3>';
+  if(!n)s+='<p class="hint">אין עדיין הערות שכר לעובד/ת.</p>';
+  ks.forEach(function(k){ var G=groups[k];
+    s+='<div class="nmgrp"><div class="nmhd">'+esc(nlabel(G.y,G.m))+'<span>'+G.items.length+'</span></div><ul class="list">'+G.items.join('')+'</ul></div>'; });
+  return s+'<div class="mkfoot" style="margin-top:8px"><button class="btn" id="mAddNote" type="button">➕ הערת שכר</button></div></div>';
+}
 function allEmpFiles(e){
   var L=(e.cfiles||[]).slice(), seen={};
   L.forEach(function(f){seen[f.id]=1;});
@@ -2098,6 +2147,7 @@ function open(id){
         '<div class="fieldrow"><label for="mOpened">הפנסיה נפתחה</label><span>'+
           '<input type="checkbox" id="mOpened"'+(e.pens_open?' checked':'')+'>'+
           '<input type="date" id="mOpenedD" value="'+esc(m.opened_date&&/^\d{4}-\d{2}-\d{2}$/.test(m.opened_date)?m.opened_date:'')+'" aria-label="תאריך פתיחת הפנסיה"></span></div>'+
+        '<div class="fieldrow"><label for="mStage">מצב מעקב פנסיה</label>'+pstageSel(e,'mStage')+'</div>'+
         '<div class="fieldrow"><label for="mTalked">דיברנו עם העובד</label><span>'+
           '<input type="checkbox" id="mTalked"'+(m.talked?' checked':'')+'>'+
           '<input type="date" id="mTalkedD" value="'+esc(m.talked_at||'')+'" aria-label="תאריך השיחה"></span></div>'+
@@ -2150,13 +2200,7 @@ function open(id){
   h+=docsBox(e);
   if(e.f101.length)h+='<div class="sec"><h3>מקור טופס 101</h3><ul class="list">'+
      e.f101.map(function(f){return '<li><span class="m">'+esc(f.src)+' · '+esc(f.month)+'</span><br>'+esc(f.text)+'</li>';}).join('')+'</ul></div>';
-  var live=Object.keys(NOTES).map(function(k){return NOTES[k];}).filter(function(n){return n&&(n.eid===e.id||(n.emp===e.name&&(n.rest===e.rest||n.rest===e.orig_rest)));})
-    .sort(function(a,b){return (b.y*12+b.m)-(a.y*12+a.m);});
-  h+= live.length
-    ? '<div class="sec"><h3>הערות שכר ('+live.length+')</h3><ul class="list">'+live.map(function(n){return '<li><span class="m">'+esc(nlabel(n.y,n.m))+' · '+esc(n.topic||'')+' · '+esc(NST[n.status||'open'])+'</span><br>'+esc(n.detail||'—')+(n.amount?' — '+esc(fmtAmt(n.amount)):'')+'</li>';}).join('')+'</ul><div class="mkfoot" style="margin-top:8px"><button class="btn" id="mAddNote" type="button">➕ הערת שכר</button></div></div>'
-    : '<div class="sec addnote"><button class="btn" id="mAddNote" type="button">➕ הערת שכר לעובד/ת</button></div>';
-  if(e.events.length)h+='<div class="sec"><h3>הערות שכר שנקלטו מהאקסל ('+e.events.length+')</h3><ul class="list">'+
-     e.events.map(function(v){return '<li><span class="m">'+esc(v.month)+' · '+esc(v.topic)+'</span><br>'+esc(v.detail||'—')+'</li>';}).join('')+'</ul></div>';
+  h+=notesByMonth(e);
   document.getElementById('dbody').innerHTML='<div class="dcol">'+h+'</div><div class="dcol">'+hm+'</div>';
   wire(id);
   drawer.classList.add('on');scrim.classList.add('on');drawer.setAttribute('aria-hidden','false');
@@ -2174,6 +2218,7 @@ function wire(id){
   on('mOpened','change',function(){apply(function(m){m.opened=el('mOpened').checked;
     if(m.opened&&!m.opened_month){var d=new Date();m.opened_month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}});});
   on('mOpenedD','change',function(){apply(function(m){m.opened_date=el('mOpenedD').value; if(m.opened_date){m.opened=true;m.opened_month=m.opened_date.slice(0,7);}});});
+  on('mStage','change',function(){apply(function(m){m.pstage=el('mStage').value;m.pstage_at=new Date().toISOString().slice(0,10);m.pstage_by=(window.PK&&PK.me&&PK.me.name)||WHO||'';});});
   on('mTalked','change',function(){apply(function(m){m.talked=el('mTalked').checked; if(m.talked&&!m.talked_at)m.talked_at=new Date().toISOString().slice(0,10);});});
   on('mTalkedD','change',function(){apply(function(m){m.talked_at=el('mTalkedD').value; if(m.talked_at)m.talked=true;});});
   on('mTalkedN','input',function(){var m=mk(id);m.talked_note=el('mTalkedN').value.trim(); if(m.talked_note)m.talked=true; touch(id);JUSTSAVED=Date.now();save();
@@ -2258,6 +2303,23 @@ document.getElementById('todoView').addEventListener('click',function(ev){
     toast('✓ '+esc(nm)+' — סומן «טופל»',function(){ if(prev)MARKS[id]=JSON.parse(prev); else delete MARKS[id]; PEND[id]=1; DIRTY=true; save(); render(); });
     return;}
   var tr=ev.target.closest('[data-id]'); if(tr)open(+tr.dataset.id);});
+/* מעקב פנסיה: עריכה בתוך הטבלה (לא פותחת את הכרטיס) */
+function ptWho(){ return (window.PK&&PK.me&&PK.me.name)||WHO||''; }
+function ptSet(empId,fn){ fn(mk(empId)); touch(empId); save(); render(); }
+document.getElementById('pensView').addEventListener('click',function(ev){
+  var t=ev.target.closest('[data-pt]'); if(!t)return; ev.stopPropagation();
+  if(t.dataset.pt==='doc'&&!t.disabled){ var id=+t.dataset.emp, d=t.dataset.doc;
+    var e2=eff(E.filter(function(x){return x.id===id;})[0]);
+    ptSet(id,function(m){ if(d==='טופס 101'){ m.f101=(e2.s101==='יש')?'':'יש'; }
+      else { m.dstate=m.dstate||{}; m.dstate[d]=(e2.dtypes.indexOf(d)>=0||(e2.ds&&e2.ds[d]==='got'))?'':'got'; } });
+    toast('✓ עודכן: '+esc(e2.name)+' — '+esc(d)); }
+},true);
+document.getElementById('pensView').addEventListener('keydown',function(ev){ if(ev.target.closest('[data-pt]'))ev.stopPropagation(); },true);
+document.getElementById('pensView').addEventListener('change',function(ev){
+  var t=ev.target.closest('[data-pt]'); if(!t)return; var id=+t.dataset.emp, today=new Date().toISOString().slice(0,10);
+  if(t.dataset.pt==='stage')ptSet(id,function(m){ m.pstage=t.value; m.pstage_at=today; m.pstage_by=ptWho(); });
+  if(t.dataset.pt==='note')ptSet(id,function(m){ m.talked_note=t.value.trim(); if(m.talked_note){ m.talked=true; if(!m.talked_at)m.talked_at=today; } m.pstage_at=today; m.pstage_by=ptWho(); });
+});
 ['pensView','docsView'].forEach(function(vid){ document.getElementById(vid).addEventListener('click',function(ev){
   var b=ev.target.closest('button[data-psf]'); if(!b)return; ev.stopPropagation();
   var s=b.dataset.psf, k=b.dataset.k; PSF[s]=(PSF[s]===k?'':k);
@@ -2727,8 +2789,11 @@ var TOPICS=['עובדים חדשים','העלאות שכר','תוספות שכר
   'בירור תלוש שכר והשלמה','מתפטרים ומפוטרים- גמר חשבון','מתפטרים ומפוטרים- ללא גמר חשבון','מילואים','מחלה',
   'ניצול ימי חופש','מסמכים','פרטי חשבון בנק','תיאום מס','פנסיה','עובדי קבוצה שעבדו בעסק אחר','כללי'];
 var NST={open:'פתוח',sent:'נשלח',done:'טופל'};
-var NSEL=(function(){var d=new Date(),y=d.getFullYear(),m=d.getMonth()+1;
+var NDEF=(function(){var d=new Date(),y=d.getFullYear(),m=d.getMonth()+1;
   if(d.getDate()<=10){m--; if(m<1){m=12;y--;}} return {y:y,m:m};})();
+/* 26.10.2026: החודש שנבחר נשמר במכשיר עד שבוחרים אחר (או «לחודש הנוכחי») */
+var NSEL=(function(){try{var s=JSON.parse(localStorage.getItem('pnkas-nsel')||'null'); if(s&&s.y>2000&&s.m>=1&&s.m<=12)return {y:s.y,m:s.m};}catch(_){} return {y:NDEF.y,m:NDEF.m};})();
+function nSetMonth(y,m){ while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} NSEL={y:y,m:m}; try{localStorage.setItem('pnkas-nsel',JSON.stringify(NSEL));}catch(_){} NFORM=null; renderNotes(); }
 var NRES=null, NFORM=null, NSHOW=false, NQ='', NTOPIC='', NBOUND=false;
 var NOPT={pensNow:true,pensLate:true,newStart:true,no101:true};
 function nres(){return NRES||(REST==='זרים'?'אסא':REST);}
@@ -2794,7 +2859,10 @@ function renderNotes(){
   if(NQ){var q=NQ.toLowerCase();rows=rows.filter(function(n){return ((n.emp||'')+' '+(n.dept||'')+' '+(n.topic||'')+' '+(n.detail||'')).toLowerCase().indexOf(q)>=0;});}
   var open=all.filter(function(n){return (n.status||'open')==='open';}).length;
   var h='<div class="ntop">'+
+    '<span class="nmonth"><button type="button" class="btn ghost" id="nPrev" title="חודש קודם">→ קודם</button>'+
     '<select id="nMonth" aria-label="חודש">'+nMonths().map(function(o){var c=nlist(o.y,o.m,rest).length;return '<option value="'+o.y+'-'+o.m+'"'+((o.y===y&&o.m===m)?' selected':'')+'>'+esc(nlabel(o.y,o.m))+(c?' ('+c+' הערות)':'')+'</option>';}).join('')+'</select>'+
+    '<button type="button" class="btn ghost" id="nNext" title="חודש הבא">הבא ←</button>'+
+    ((NSEL.y!==NDEF.y||NSEL.m!==NDEF.m)?'<button type="button" class="btn ghost" id="nNow">לחודש הנוכחי ('+esc(nlabel(NDEF.y,NDEF.m))+')</button>':'')+'</span>'+
     '<select id="nRest" aria-label="מסעדה">'+['אסא',"צ'אקולי"].map(function(r){return '<option value="'+esc(r)+'"'+(r===rest?' selected':'')+'>'+esc(r)+'</option>';}).join('')+'</select>'+
     '<select id="nTopicF" aria-label="נושא"><option value="">כל הנושאים</option>'+TOPICS.map(function(t){return '<option value="'+esc(t)+'"'+(t===NTOPIC?' selected':'')+'>'+esc(t)+'</option>';}).join('')+'</select>'+
     '<input type="search" id="nQ" placeholder="חיפוש בהערות…" value="'+esc(NQ)+'" aria-label="חיפוש">'+
@@ -2947,7 +3015,10 @@ function renderNotesQuiet(){ /* מעדכן את מונה הקבצים בטבלה
 function nWire(rest,y,m){
   var box=document.getElementById('notesView');
   function el(x){return document.getElementById(x);}
-  el('nMonth').addEventListener('change',function(){var p=this.value.split('-');NSEL={y:+p[0],m:+p[1]};NFORM=null;renderNotes();});
+  el('nMonth').addEventListener('change',function(){var p=this.value.split('-');nSetMonth(+p[0],+p[1]);});
+  el('nPrev').addEventListener('click',function(){nSetMonth(NSEL.y,NSEL.m-1);});
+  el('nNext').addEventListener('click',function(){nSetMonth(NSEL.y,NSEL.m+1);});
+  var _nn=el('nNow'); if(_nn)_nn.addEventListener('click',function(){try{localStorage.removeItem('pnkas-nsel');}catch(_){} NSEL={y:NDEF.y,m:NDEF.m}; NFORM=null; renderNotes();});
   el('nRest').addEventListener('change',function(){NRES=this.value;NFORM=null;renderNotes();hero();});
   el('nTopicF').addEventListener('change',function(){NTOPIC=this.value;renderNotes();});
   el('nQ').addEventListener('input',function(){NQ=this.value.trim();var v=this.value;renderNotes();var q=el('nQ');q.focus();q.setSelectionRange(v.length,v.length);});
