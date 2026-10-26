@@ -1156,6 +1156,10 @@ section.act .allgood,.act table{font-size:14.5px}
   border-radius:12px;padding:11px 16px;font-size:14.5px;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px)}
 .pktoast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .pktoast button{font:inherit;font-weight:800;margin-inline-start:10px;background:transparent;border:0;color:var(--accent-soft);text-decoration:underline;cursor:pointer}
+button.ps{font:inherit;cursor:pointer;background:var(--surface)}
+button.ps:hover{background:var(--surface-2);box-shadow:0 0 0 2px var(--line)}
+button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
+.psall{font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--accent-ink);cursor:pointer}
 @media (max-width:760px){.tlrow{grid-template-columns:1fr}.tla{justify-content:flex-start}}
 @media (max-width:640px){.gcard{padding:24px 16px 18px}.gwho button{min-width:80px;padding:9px 14px}}
 </style>
@@ -1681,6 +1685,11 @@ function pensTrack(A){
   });
   return h+'</tbody></table></div></section>';
 }
+/* 26.10.2026: לחיצה על מספר בפס העליון מציגה רק את הקבוצה הזו (לחיצה נוספת / «הצג הכול» — הכול) */
+var PSF={pens:'',docs:''};
+function psBtn(strip,k,cls,n,label){
+  return '<button type="button" class="ps '+cls+(PSF[strip]===k?' on':'')+'" data-psf="'+strip+'" data-k="'+k+'" aria-pressed="'+(PSF[strip]===k)+'" title="להציג רק את «'+esc(label)+'»"><b>'+n+'</b>'+esc(label)+'</button>';
+}
 function renderPens(){
   var A=V().filter(function(e){return e.active&&!e.ext;});
   var opened=A.filter(function(e){return e.pens_open;});
@@ -1695,29 +1704,31 @@ function renderPens(){
   var openedNow=opened.filter(function(e){return e.pmonth&&pmNum(e)===NOWM;});
 
   var h='<div class="pwrap">';
-  h+='<div class="pstrip">'+
-    '<span class="ps crit"><b>'+late.length+'</b>באיחור</span>'+
-    '<span class="ps warn"><b>'+now.length+'</b>לפתוח החודש</span>'+
-    '<span class="ps warn"><b>'+next.length+'</b>חודש הבא</span>'+
-    '<span class="ps idle"><b>'+later.length+'</b>בהמשך</span>'+
-    '<span class="ps ok"><b>'+opened.length+'</b>כבר מופרש</span>'+
-    (nodate.length?'<span class="ps crit"><b>'+nodate.length+'</b>בלי תאריך</span>':'')+
+  h+='<div class="pstrip" data-strip="pens">'+
+    psBtn('pens','late','crit',late.length,'באיחור')+
+    psBtn('pens','now','warn',now.length,'לפתוח החודש')+
+    psBtn('pens','next','warn',next.length,'חודש הבא')+
+    psBtn('pens','later','idle',later.length,'בהמשך')+
+    psBtn('pens','opened','ok',opened.length,'כבר מופרש')+
+    (nodate.length?psBtn('pens','nodate','crit',nodate.length,'בלי תאריך'):'')+
+    (PSF.pens?'<button type="button" class="psall" data-psf="pens" data-k="">✕ הצג הכול</button>':'')+
     '<span class="pasof">נכון ל־'+pmLabel(NOWM)+'</span></div>';
-  h+=pensTrack(V().filter(function(e){return !e.ext&&(e.active||isNewHire(e));}));
+  var _s=PSF.pens; function show(k){return !_s||_s===k;}
+  if(!_s)h+=pensTrack(V().filter(function(e){return !e.ext&&(e.active||isNewHire(e));}));
 
-  h+=pensSec('sev-crit','באיחור — המועד חלף והפנסיה לא נפתחה',
+  if(show('late'))h+=pensSec('sev-crit','באיחור — המועד חלף והפנסיה לא נפתחה',
      'ממוין מהוותיק ביותר. המספר בסוגריים הוא כמה חודשים עברו.',late,function(e){
        var lateBy=NOWM-pmNum(e);
        return pensRow(e,'<span class="prep late">איחור '+lateBy+' ח׳ · '+esc(e.pmonth_he)+'</span>'+
          '<span class="prep2">'+pensPrep(e).replace(/<[^>]+>/g,'')+'</span>');});
 
-  h+=pensSec('sev-now','לפתוח החודש — '+pmLabel(NOWM),
+  if(show('now'))h+=pensSec('sev-now','לפתוח החודש — '+pmLabel(NOWM),
      'אלה חייבים להיפתח בתלוש של החודש הזה.',now,null,true);
 
-  h+=pensSec('sev-next','חודש הבא — '+pmLabel(NOWM+1),
+  if(show('next'))h+=pensSec('sev-next','חודש הבא — '+pmLabel(NOWM+1),
      'להשלים עכשיו את המסמכים שכתובים בטור «להכין», כדי לא להיתקע בסוף החודש.',next,null,true);
 
-  if(later.length){
+  if(later.length&&show('later')){
     var by={},ord=[];
     later.forEach(function(e){var k=pmNum(e);if(!by[k]){by[k]=[];ord.push(k);}by[k].push(e);});
     h+='<section class="psec sev-later"><header><span class="pcnt">'+later.length+'</span>'+
@@ -1728,11 +1739,11 @@ function renderPens(){
     h+='</section>';
   }
 
-  h+=pensSec('sev-crit','בלי תאריך תחילת עבודה — אי אפשר לחשב',
+  if(show('nodate'))h+=pensSec('sev-crit','בלי תאריך תחילת עבודה — אי אפשר לחשב',
      'חסר תאריך תחילת עבודה, ולכן אין להם חודש פתיחה. צריך להשלים.',nodate,
      function(e){return pensRow(e,'<span class="prep late">חסר תאריך תחילת עבודה</span>');});
 
-  h+=pensSec('sev-done','כבר מופרש בפועל','לפי הפנסיה בתלוש. '+
+  if(show('opened'))h+=pensSec('sev-done','כבר מופרש בפועל','לפי הפנסיה בתלוש. '+
      (openedNow.length?openedNow.length+' מתוכם נפתחו החודש.':'אין מתוכם שנפתחו החודש.'),opened,
      function(e){
        var isNow=e.pmonth&&pmNum(e)===NOWM;
@@ -1773,33 +1784,35 @@ function renderDocs(){
     return (e.missing||[]).some(function(t){return t!=='טופס 101'&&PENS_DOCS.indexOf(t)<0;});});
   var clean=A.filter(function(e){return !(e.missing||[]).length;});
 
-  h+='<div class="pstrip">'+
-    '<span class="ps crit"><b>'+no101.length+'</b>חסר טופס 101</span>'+
-    '<span class="ps warn"><b>'+needCub.length+'</b>חסר טופס קוביות</span>'+
-    '<span class="ps warn"><b>'+needFund.length+'</b>חסר אישור קרן</span>'+
-    '<span class="ps idle"><b>'+other.length+'</b>מסמכים אחרים</span>'+
-    '<span class="ps ok"><b>'+clean.length+'</b>שלם</span>'+
+  h+='<div class="pstrip" data-strip="docs">'+
+    psBtn('docs','no101','crit',no101.length,'חסר טופס 101')+
+    psBtn('docs','cub','warn',needCub.length,'חסר טופס קוביות')+
+    psBtn('docs','fund','warn',needFund.length,'חסר אישור קרן')+
+    psBtn('docs','other','idle',other.length,'מסמכים אחרים')+
+    psBtn('docs','clean','ok',clean.length,'שלם')+
+    (PSF.docs?'<button type="button" class="psall" data-psf="docs" data-k="">✕ הצג הכול</button>':'')+
     '<span class="pasof">מתוך '+A.length+' פעילים · '+pmLabel(NOWM)+'</span></div>';
+  var _s=PSF.docs; function show(k){return !_s||_s===k;}
 
-  h+=pensSec('sev-crit','חסר טופס 101','ממוין מהוותיק ביותר — מי שעובד הכי הרבה זמן בלי טופס נמצא למעלה.',
+  if(show('no101'))h+=pensSec('sev-crit','חסר טופס 101','ממוין מהוותיק ביותר — מי שעובד הכי הרבה זמן בלי טופס נמצא למעלה.',
      no101,function(e){
        var q=e.start?e.start.split('-'):null, d=q?NOWM-((+q[0])*12+(+q[1])):0;
        return docRow(e,'לבקש טופס 101',d>=2);},true);
 
-  h+=pensSec('sev-now','חסר טופס קוביות','נדרש לפתיחת הפנסיה. ממוין לפי חודש הפתיחה — הדחוף למעלה.',
+  if(show('cub'))h+=pensSec('sev-now','חסר טופס קוביות','נדרש לפתיחת הפנסיה. ממוין לפי חודש הפתיחה — הדחוף למעלה.',
      needCub,function(e){
        return docRow(e,'לפתיחה ב'+esc(e.pmonth_he||'—'),!!(e.due==='עבר'||e.due==='עכשיו'));},true);
 
-  h+=pensSec('sev-next','חסר אישור קרן פנסיה פעילה','נדרש לפתיחת הפנסיה. ממוין לפי חודש הפתיחה.',
+  if(show('fund'))h+=pensSec('sev-next','חסר אישור קרן פנסיה פעילה','נדרש לפתיחת הפנסיה. ממוין לפי חודש הפתיחה.',
      needFund,function(e){
        return docRow(e,'לפתיחה ב'+esc(e.pmonth_he||'—'),!!(e.due==='עבר'||e.due==='עכשיו'));},true);
 
-  h+=pensSec('sev-later','מסמכים אחרים שחסרים','לפי מה שהעובד הצהיר בטופס 101 — תיאום מס, תעודת שחרור, תעודת עולה וכדומה.',
+  if(show('other'))h+=pensSec('sev-later','מסמכים אחרים שחסרים','לפי מה שהעובד הצהיר בטופס 101 — תיאום מס, תעודת שחרור, תעודת עולה וכדומה.',
      other,function(e){
        var L=(e.missing||[]).filter(function(t){return t!=='טופס 101'&&PENS_DOCS.indexOf(t)<0;});
        return docRow(e,'חסר: '+esc(L.join(' · ')),false);});
 
-  h+=pensSec('sev-done','שלם — אין מסמך חסר','לא נדרש מהם כלום כרגע.',clean,
+  if(show('clean'))h+=pensSec('sev-done','שלם — אין מסמך חסר','לא נדרש מהם כלום כרגע.',clean,
      function(e){return docRow(e,'הכול התקבל ✓',false);});
 
   if(!A.length)h+='<section class="psec sev-done"><header><h2>אין עובדים פעילים במסעדה הזו</h2></header></section>';
@@ -2245,6 +2258,11 @@ document.getElementById('todoView').addEventListener('click',function(ev){
     toast('✓ '+esc(nm)+' — סומן «טופל»',function(){ if(prev)MARKS[id]=JSON.parse(prev); else delete MARKS[id]; PEND[id]=1; DIRTY=true; save(); render(); });
     return;}
   var tr=ev.target.closest('[data-id]'); if(tr)open(+tr.dataset.id);});
+['pensView','docsView'].forEach(function(vid){ document.getElementById(vid).addEventListener('click',function(ev){
+  var b=ev.target.closest('button[data-psf]'); if(!b)return; ev.stopPropagation();
+  var s=b.dataset.psf, k=b.dataset.k; PSF[s]=(PSF[s]===k?'':k);
+  if(s==='pens')renderPens(); else renderDocs();
+  try{document.querySelector('#'+vid+' .pstrip').scrollIntoView({block:'nearest'});}catch(_){} },true); });
 document.getElementById('pensView').addEventListener('click',function(ev){
   var c=ev.target.closest('button[data-ptf]'); if(!c)return; ev.stopPropagation(); PTF=c.dataset.ptf; renderPens();},true);
 ['pensView','docsView'].forEach(function(vid){
@@ -2776,7 +2794,7 @@ function renderNotes(){
   if(NQ){var q=NQ.toLowerCase();rows=rows.filter(function(n){return ((n.emp||'')+' '+(n.dept||'')+' '+(n.topic||'')+' '+(n.detail||'')).toLowerCase().indexOf(q)>=0;});}
   var open=all.filter(function(n){return (n.status||'open')==='open';}).length;
   var h='<div class="ntop">'+
-    '<select id="nMonth" aria-label="חודש">'+nMonths().map(function(o){return '<option value="'+o.y+'-'+o.m+'"'+((o.y===y&&o.m===m)?' selected':'')+'>'+esc(nlabel(o.y,o.m))+'</option>';}).join('')+'</select>'+
+    '<select id="nMonth" aria-label="חודש">'+nMonths().map(function(o){var c=nlist(o.y,o.m,rest).length;return '<option value="'+o.y+'-'+o.m+'"'+((o.y===y&&o.m===m)?' selected':'')+'>'+esc(nlabel(o.y,o.m))+(c?' ('+c+' הערות)':'')+'</option>';}).join('')+'</select>'+
     '<select id="nRest" aria-label="מסעדה">'+['אסא',"צ'אקולי"].map(function(r){return '<option value="'+esc(r)+'"'+(r===rest?' selected':'')+'>'+esc(r)+'</option>';}).join('')+'</select>'+
     '<select id="nTopicF" aria-label="נושא"><option value="">כל הנושאים</option>'+TOPICS.map(function(t){return '<option value="'+esc(t)+'"'+(t===NTOPIC?' selected':'')+'>'+esc(t)+'</option>';}).join('')+'</select>'+
     '<input type="search" id="nQ" placeholder="חיפוש בהערות…" value="'+esc(NQ)+'" aria-label="חיפוש">'+
