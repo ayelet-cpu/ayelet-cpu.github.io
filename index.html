@@ -456,6 +456,17 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:po
 .rpfoot{display:flex;align-items:center;gap:10px;padding:13px 20px;border-top:1px solid var(--line,#eceff2);background:var(--soft,#f7f8fa)}
 .rpcount{font-size:12.5px;color:var(--mut,#79818c);flex:1}
 .rpsp{display:flex;gap:8px}
+/* ---- חלון «עובד חדש» ---- */
+.nehint{font-size:13px;color:var(--ink-2)}
+.negrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px 14px}
+.negrid label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;color:var(--muted)}
+.negrid input[type=text],.negrid input[type=tel],.negrid input[type=email],.negrid input[type=date],.negrid select{
+  font:inherit;font-size:14px;font-weight:400;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0}
+.negrid label.necheck{flex-direction:row;align-items:center;gap:8px;font-size:13px;color:var(--ink);align-self:end;padding-bottom:9px}
+.negrid label.newide{grid-column:1/-1}
+.negrid .bad{border-color:var(--crit) !important}
+.nemsg{color:var(--crit);font-size:13px;font-weight:700;min-height:1px}
+.nemsg:empty{display:none}
 /* ---- כרטיס עובד: רשימת עובדות רגועה במקום ענן תוויות ---- */
 .facts{display:block !important;grid-column:1/-1;background:var(--surface-2);border:1px solid var(--line-2);
   border-radius:12px;padding:4px 14px;margin:0}
@@ -959,6 +970,7 @@ section.act .allgood,.act table{font-size:14.5px}
     <span class="msg" id="saveMsg">אין סימונים עדיין</span>
     <span class="syncchip s-local" id="syncChip">⏳ מתחבר…</span>
     <span class="sp">
+      <button class="btn primary" id="btnNewEmp" type="button">+ עובד חדש</button>
       <button class="btn primary" id="btnXls" type="button">אקסל</button>
       <button class="btn primary" id="btnPdf" type="button">PDF</button>
       <button class="btn" id="btnExport" type="button" hidden>ייצוא סימונים לקובץ</button>
@@ -1045,6 +1057,37 @@ section.act .allgood,.act table{font-size:14.5px}
     <span class="rpsp">
       <button class="btn ghost" id="rpCancel" type="button">ביטול</button>
       <button class="btn primary" id="rpGo" type="button">הורד</button>
+    </span>
+  </div>
+</div>
+<div class="rpdlg" id="neDlg" hidden role="dialog" aria-label="עובד חדש">
+  <div class="rphead"><h2 id="neTitle">עובד חדש</h2><button class="rpx" id="neClose" type="button" aria-label="סגירה">×</button></div>
+  <div class="rpbody">
+    <div class="nehint">ממלאים לפי טופס 101. חודש פתיחת הפנסיה מחושב לבד מתאריך תחילת העבודה, הפנסיה הקודמת והגיל.</div>
+    <div class="negrid" id="neForm">
+      <label>שם מלא *<input type="text" id="ne_name" autocomplete="off"></label>
+      <label>מסעדה *<select id="ne_rest"></select></label>
+      <label class="necheck"><input type="checkbox" id="ne_foreign"> עובד זר (דרכון במקום ת״ז)</label>
+      <label><span id="ne_tzl">תעודת זהות *</span><input type="text" id="ne_tz" inputmode="numeric" autocomplete="off"></label>
+      <label>תאריך לידה *<input type="date" id="ne_birth"></label>
+      <label>מין *<select id="ne_gender"><option value="">— לבחור —</option><option value="F">נקבה</option><option value="M">זכר</option></select></label>
+      <label>תאריך תחילת עבודה *<input type="date" id="ne_start"></label>
+      <label>טופס 101 *<select id="ne_s101"><option value="">— לבחור —</option><option value="יש">יש</option><option value="חסר">חסר</option></select></label>
+      <label>פנסיה קודמת<select id="ne_pension"><option value="">לא ידוע → שכר שביעי</option><option value="אין פנסיה פעילה">אין פנסיה פעילה → שכר שביעי</option><option value="פעילה">פעילה, יש אישור קרן תקף → שכר רביעי</option></select></label>
+      <label>מחלקה<input type="text" id="ne_dept" list="ne_depts" autocomplete="off"><datalist id="ne_depts"></datalist></label>
+      <label>תפקיד<input type="text" id="ne_role" autocomplete="off"></label>
+      <label>תעריף לשעה (₪)<input type="text" id="ne_rate" inputmode="decimal" autocomplete="off"></label>
+      <label>טלפון<input type="tel" id="ne_phone" autocomplete="off"></label>
+      <label>מייל<input type="email" id="ne_email" autocomplete="off"></label>
+      <label class="newide">כתובת<input type="text" id="ne_addr" autocomplete="off"></label>
+    </div>
+    <div class="nemsg" id="neMsg" role="alert"></div>
+  </div>
+  <div class="rpfoot">
+    <span class="rpcount">העובד יופיע עם התווית «נוסף ידנית» עד שיגיע מהמחשב (לפי ת״ז), ואז יחובר אליו לבד.</span>
+    <span class="rpsp">
+      <button class="btn ghost" id="neCancel" type="button">ביטול</button>
+      <button class="btn primary" id="neGo" type="button">שמירה</button>
     </span>
   </div>
 </div>
@@ -1261,6 +1304,79 @@ var PK={
 };
 window.PK=PK;
 
+/* ---------- עובד חדש שנקלט בענן (28.10.2026) ----------
+   כל עובד = קבצים <rest>/new/<id>__<זמן>.json ב-bucket הפרטי (פרטים רגישים לא נכנסים לטבלאות).
+   כל שמירה היא קובץ חדש — הגרסה האחרונה קובעת, והקודמות נשמרות כהיסטוריה. הסנכרון מהמחשב דורס רק את app.json.
+   כשאותה ת״ז מגיעה ב-app.json — העובד מחובר אליה: הסימונים, ההערות והמסמכים עוברים למספר של המחשב,
+   והפרטים שהוקלדו כאן ממלאים רק שדות שריקים שם. */
+var NEW_FIELDS=['addr','phone','email','birth','gender','start','role','dept','rate'];
+function tzKey(s){ return String(s||'').toUpperCase().replace(/[^0-9A-Z]/g,'').replace(/^0+/,''); }  /* ת״ז בלי אפסים מובילים; דרכון — אותיות וספרות */
+function tzValid(s){ s=String(s||'').replace(/\D/g,''); if(!s||s.length>9)return false; s=('000000000'+s).slice(-9);
+  var t=0; for(var i=0;i<9;i++){var d=(+s[i])*((i%2)+1); t+=d>9?d-9:d;} return t%10===0; }
+PK.tzKey=tzKey; PK.tzValid=tzValid;
+PK.newId=function(){ return 1000000000+Math.floor((Date.now()-Date.UTC(2026,0,1))/1000); };
+PK.newSave=function(rec){
+  var path=(RC[rec.rest]||rec.rest)+'/new/'+rec.id+'__'+Date.now()+'.json';
+  rec.saved_at=new Date().toISOString(); rec.saved_by=PK.me?PK.me.name:'';
+  return api('/storage/v1/object/pinkas/'+path,{method:'POST',headers:{'Content-Type':'application/json','x-upsert':'false'},body:JSON.stringify(rec)})
+    .then(function(){ return rec; });
+};
+/* הגרסה האחרונה של כל עובד שנקלט בענן, בכל המסעדות שמותר לראות */
+PK.newList=function(rests){
+  return Promise.all(rests.map(function(r){
+    return json('/storage/v1/object/list/pinkas',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prefix:r+'/new',limit:1000,offset:0,sortBy:{column:'name',order:'asc'}})})
+      .then(function(list){ var last={};
+        (list||[]).forEach(function(o){ var m=/^(\d+)__(\d+)\.json$/.exec(o.name||''); if(m&&(!last[m[1]]||+m[2]>last[m[1]].t))last[m[1]]={t:+m[2],n:o.name}; });
+        return Promise.all(Object.keys(last).map(function(id){ return json('/storage/v1/object/authenticated/pinkas/'+r+'/new/'+last[id].n); })); })
+      .catch(function(e){ try{console.warn('pinkas new',e);}catch(_){} return []; });
+  })).then(function(a){ return [].concat.apply([],a).filter(Boolean); });
+};
+function monthsSince(d){ var p=String(d||'').split('-'); if(p.length<2)return null; var n=new Date();
+  var v=(n.getFullYear()*12+n.getMonth()+1)-((+p[0])*12+(+p[1])); return v>=0?v:0; }
+PK.newEmp=function(r){
+  return {id:r.id,name:r.name,rest:r.rest,tz:r.tz||'',birth:r.birth||'',gender:r.gender||'',start:r.start||'',
+    addr:r.addr||'',phone:r.phone||'',email:r.email||'',role:r.role||'',dept:r.dept||'',rate:r.rate||'',
+    pension:r.pension||'',s101:r.s101||'חסר',status:'פעיל',foreign:!!r.foreign,months:monthsSince(r.start),
+    dtypes:[],ndocs:0,docs:[],f101:[],events:[],sept_roles:[],manual:true,manual_by:r.created_by||'',manual_at:r.created_at||'',_rec:r};
+};
+/* העברת סימונים, הערות ומסמכים מהמספר של הענן למספר של המחשב (פעם אחת, כשהעובד מופיע ב-app.json) */
+function relink(r,to){
+  var from=r.id, rc=RC[r.rest]||r.rest;
+  return json('/rest/v1/pinkas_marks?select=emp_id,data&emp_id=in.('+from+','+to+')').then(function(rows){
+    var a=null,b=null; (rows||[]).forEach(function(x){ if(x.emp_id===from)a=x.data; else b=x.data; });
+    if(!a)return null;
+    var d={}; Object.keys(a).forEach(function(k){d[k]=a[k];}); Object.keys(b||{}).forEach(function(k){d[k]=b[k];});
+    return json('/rest/v1/pinkas_marks?on_conflict=emp_id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+        body:JSON.stringify([{emp_id:to,rest:rc,data:d}])})
+      .then(function(){ return json('/rest/v1/pinkas_marks?emp_id=eq.'+from,{method:'DELETE',headers:{'Prefer':'return=minimal'}}); });
+  }).then(function(){
+    return json('/rest/v1/pinkas_files?emp_id=eq.'+from,{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({emp_id:to})});
+  }).then(function(){
+    return json('/rest/v1/pinkas_notes?select=id,data&data->>eid=eq.'+from);
+  }).then(function(ns){
+    return Promise.all((ns||[]).map(function(n){ var d=n.data; d.eid=to;
+      return json('/rest/v1/pinkas_notes?id=eq.'+encodeURIComponent(n.id),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({data:d})}); }));
+  }).then(function(){
+    var v={}; Object.keys(r).forEach(function(k){v[k]=r[k];}); v.merged_into=to; v.merged_at=new Date().toISOString();
+    return PK.newSave(v);
+  });
+}
+/* מוסיף ל-D את מי שנקלט בענן; מי שכבר מופיע ב-app.json (אותה ת״ז, אותה מסעדה) — מחובר אליו */
+function addNew(D,recs){
+  var byTz={};
+  D.employees.forEach(function(e){ if(e.system||!tzKey(e.tz))return;
+    [e.rest,e.orig_rest].forEach(function(x){ if(x&&RC[x])byTz[RC[x]+':'+tzKey(e.tz)]=e; }); });
+  var jobs=[];
+  recs.forEach(function(r){ if(!r||r.deleted||!r.id)return;
+    var hit=tzKey(r.tz)?byTz[(RC[r.rest]||r.rest)+':'+tzKey(r.tz)]:null;
+    if(!hit){ D.employees.push(PK.newEmp(r)); return; }
+    NEW_FIELDS.forEach(function(k){ if(!hit[k]&&r[k])hit[k]=r[k]; });
+    if(r.merged_into!==hit.id)jobs.push(function(){ return relink(r,hit.id).catch(function(e){ try{console.warn('pinkas relink',r.id,e);}catch(_){} }); });
+  });
+  return jobs.reduce(function(p,f){ return p.then(f); },Promise.resolve()).then(function(){ return jobs.length; });
+}
+
 /* ---------- google.script.run → Supabase (כדי שקוד הפנקס הקיים יעבוד בלי שינוי) ---------- */
 function empRest(id){ var e=(window.__PK_EMP||{})[id]; return e?(RC[e.rest]||'asa'):(PK.me&&PK.me.scope!=='all'?PK.me.scope:'asa'); }
 /* שמירות יוצאות אחת-אחת לפי הסדר — אחרת «טופל» ואחריו «בטל» מהר עלולים להגיע הפוך, והסימון «חוזר» (26.10.2026) */
@@ -1326,11 +1442,11 @@ function boot(){
     if(!me){ store(SK,null); S=null; throw new Error('למשתמש הזה אין הרשאה לבקרת השכר'); }
     PK.me=me;
     var rs=me.scope==='all'?['asa','chakoli']:[me.scope];
-    return Promise.all(rs.map(function(r){ return json('/storage/v1/object/authenticated/pinkas/'+r+'/app.json').catch(function(e){ if(e.status===400||e.status===404)return null; throw e; }); }))
-      .then(function(ps){ return PK.reload().then(function(){ return ps; }); });
-  }).then(function(ps){
-    var D=mergePayloads(ps);
-    if(!D.employees.length) throw new Error('נתוני העובדים עוד לא הועלו לענן');
+    return Promise.all([Promise.all(rs.map(function(r){ return json('/storage/v1/object/authenticated/pinkas/'+r+'/app.json').catch(function(e){ if(e.status===400||e.status===404)return null; throw e; }); })),
+                        PK.newList(rs)])
+      .then(function(x){ var D=mergePayloads(x[0]); if(!D.employees.length) throw new Error('נתוני העובדים עוד לא הועלו לענן');
+        return addNew(D,x[1]).then(function(){ return PK.reload(); }).then(function(){ return D; }); });
+  }).then(function(D){
     var m={}; D.employees.forEach(function(e){m[e.id]=e;}); window.__PK_EMP=m;
     $('payload').textContent=JSON.stringify(D);
     if(PK.me.scope==='chakoli')window.__FORCE_REST__='cha';
@@ -1473,7 +1589,7 @@ function eff(e){
   /* state */
   /* 25.10.2026: עובד/ת שהתחיל/ה בחודשיים האחרונים עוד לא מופיע/ה בתלוש או בנוכחות — לא «לא פעיל» */
   o.newhire=!m.status&&o.status==='פעיל'&&!!o.start&&(function(){var q=String(o.start).split('-');return ((+q[0])*12+(+q[1]))>=NOWM-2;})();
-  o.active=(m.status==='פעיל')||((o.slip||o.worked_sept||o.global||o.ext||o.newhire)&&o.status!=='עזב'&&o.status!=='לא פעיל');
+  o.active=(m.status==='פעיל')||((o.slip||o.worked_sept||o.global||o.ext||o.newhire||o.manual)&&o.status!=='עזב'&&o.status!=='לא פעיל');
   o.state=o.active?'פעיל':'לא פעיל';
   o.pens_state=o.ext?'—':(o.pens_open?'מופרש':(o.active?'טרם':'—'));
   /* --- מצב כל מסמך: '' לא רלוונטי · 'need' נדרש · 'got' התקבל --- */
@@ -1562,7 +1678,7 @@ function reasonFor(e,t){
   if(t==='תעודת עולה')return 'נדרש לעולה חדש';
   return '';
 }
-function pFlags(e){return (e.extlbl?'<span class="pill p-acc">'+(e.invoice?'חשבונית':'כוח אדם')+'</span>':'')+
+function pFlags(e){return (e.manual?'<span class="pill p-warn" title="נוסף בבקרת השכר — יחובר לבד כשיופיע ברשימה מהמחשב">נוסף ידנית — עוד לא בשיפט</span>':'')+(e.extlbl?'<span class="pill p-acc">'+(e.invoice?'חשבונית':'כוח אדם')+'</span>':'')+
   (e.foreign?'<span class="pill p-acc">עובד זר</span>':'')+
   (e.intern?'<span class="pill p-acc">מתמחה</span>':'')+
   (e.global?'<span class="pill p-acc">גלובלי — לא מחתים</span>':'');}
@@ -2089,6 +2205,8 @@ function open(id){
   var h='<div class="statusline">'+pState(e)+'<button class="pill" id="btnToggleActive" type="button" style="cursor:pointer;border:1px solid #bbb;background:#fff">'+(e.state==='לא פעיל'?'↩ החזר לפעיל':'➖ סמן כלא פעיל')+'</button>'+pFlags(e)+
     (e.ext?'':'<span class="pill '+(e.s101==='יש'?'p-ok':'p-crit')+'">טופס 101 '+(e.s101==='יש'?'✓':'חסר')+'</span>')+
     pensTag(e)+'</div>';
+  if(raw.manual)h+='<div class="statusline"><span class="hint">נוסף ידנית'+(raw.manual_by?' על ידי '+esc(raw.manual_by):'')+(raw.manual_at?' · '+esc(fmtD(String(raw.manual_at).slice(0,10))):'')+'</span>'+
+    '<button class="btn" id="mNeEdit" type="button">✎ תיקון פרטים</button><button class="btn ghost" id="mNeDel" type="button">נוסף בטעות — למחוק</button></div>';
   if(e.ext){
     h+='<div class="callout calm"><span class="cap">סוג העסקה</span><span class="big">'+esc(e.extlbl)+'</span>'+
        '<div style="font-size:12.5px;margin-top:4px">'+(e.invoice?'נותן שירות מול חשבונית':'מועסק דרך חברת כוח אדם')+' — אין פנסיה, אין טופס 101 ואין דרישת מסמכים.</div></div>';
@@ -2246,6 +2364,9 @@ function wire(id){
   on('mNote','input',function(){var m=mk(id);m.note=el('mNote').value.trim();touch(id);JUSTSAVED=Date.now();save();
     var s=el('mSaved'); if(s){s.textContent='✓ נשמר';s.className='hint savedmsg on';}});
   on('mNote','blur',function(){render();});
+  function neRaw(){ return E.filter(function(x){return x.id===id;})[0]; }
+  on('mNeEdit','click',function(){ close(); neOpen(neRaw()); });
+  on('mNeDel','click',function(){ neDelete(neRaw()); });
   on('mReset','click',function(){delete MARKS[id];DIRTY=true;if(typeof PEND!=='undefined')PEND[id]=1;JUSTSAVED=0;save();render();open(id);});
   document.querySelectorAll('.docbtn[data-doc]').forEach(function(btn){
     if(btn.disabled)return;
@@ -2439,6 +2560,82 @@ document.getElementById('rpClose').addEventListener('click',rpClose);
 document.getElementById('rpCancel').addEventListener('click',rpClose);
 rpScrim.addEventListener('click',rpClose);
 document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&!rpDlg.hidden)rpClose();});
+
+/* ----- עובד חדש (28.10.2026) — נשמר בענן, ראו PK.newSave ----- */
+var neDlg=document.getElementById('neDlg'), NE_EDIT=null;
+var NE_F=['name','tz','birth','gender','start','s101','pension','dept','role','rate','phone','email','addr'];
+function neEl(k){return document.getElementById('ne_'+k);}
+function neRests(){ var s=PK.me&&PK.me.scope; return s==='asa'?['אסא']:(s==='chakoli'?["צ'אקולי"]:['אסא',"צ'אקולי"]); }
+function neDepts(){ var r=neEl('rest').value, ds={};
+  E.forEach(function(e){ if((e.rest===r||e.orig_rest===r)&&eff(e).dept)ds[eff(e).dept]=1; });
+  document.getElementById('ne_depts').innerHTML=Object.keys(ds).sort(function(a,b){return a.localeCompare(b,'he');}).map(function(d){return '<option value="'+esc(d)+'">';}).join(''); }
+function neTzLbl(){ document.getElementById('ne_tzl').textContent=neEl('foreign').checked?'מספר דרכון *':'תעודת זהות *'; }
+function neOpen(rec){
+  NE_EDIT=rec||null; var r=rec&&rec._rec||{};
+  document.getElementById('neTitle').textContent=rec?'תיקון פרטים — '+(rec.name||''):'עובד חדש';
+  var rs=neRests(); neEl('rest').innerHTML=rs.map(function(x){return '<option>'+esc(x)+'</option>';}).join('');
+  neEl('rest').value=rec?rec.rest:(rs.indexOf(REST)>=0?REST:rs[0]); neEl('rest').disabled=!!rec||rs.length<2;
+  NE_F.forEach(function(k){ neEl(k).value=r[k]||''; neEl(k).classList.remove('bad'); });
+  neEl('foreign').checked=!!r.foreign; neTzLbl(); neDepts();
+  document.getElementById('neMsg').textContent='';
+  rpShow(neDlg); setTimeout(function(){try{neEl('name').focus();}catch(_){}},60);
+}
+function neClose(){ neDlg.hidden=true; NE_EDIT=null; }
+function neErr(t,k){ document.getElementById('neMsg').textContent=t; if(k){neEl(k).classList.add('bad');try{neEl(k).focus();}catch(_){}} return false; }
+function neRead(){
+  var v={}; NE_F.forEach(function(k){ v[k]=String(neEl(k).value||'').trim(); neEl(k).classList.remove('bad'); });
+  v.rest=neEl('rest').value; v.foreign=neEl('foreign').checked;
+  if(!v.name)return neErr('חסר שם מלא','name');
+  if(!v.tz)return neErr(v.foreign?'חסר מספר דרכון':'חסרה תעודת זהות','tz');
+  if(!v.foreign){ v.tz=v.tz.replace(/\D/g,''); if(!PK.tzValid(v.tz))return neErr('מספר תעודת הזהות לא תקין (ספרת הביקורת לא מתאימה) — לבדוק מול טופס 101','tz'); }
+  if(!v.birth)return neErr('חסר תאריך לידה — הוא קובע מתי מתחילה הפנסיה (בנות 20, בנים 21)','birth');
+  if(!v.gender)return neErr('חסר מין — הוא קובע את גיל הפנסיה','gender');
+  if(!v.start)return neErr('חסר תאריך תחילת עבודה','start');
+  if(v.birth>=v.start)return neErr('תאריך הלידה מאוחר מתחילת העבודה — לבדוק','birth');
+  if(!v.s101)return neErr('לבחור אם יש טופס 101','s101');
+  if(v.rate&&!/^\d+(\.\d+)?$/.test(v.rate))return neErr('תעריף — רק מספר (למשל 35.5)','rate');
+  var me=NE_EDIT?NE_EDIT.id:null, rc=PK.rc(v.rest), k=PK.tzKey(v.tz);
+  var dup=E.filter(function(e){ return e.id!==me&&!e.system&&k&&PK.tzKey(e.tz)===k&&(PK.rc(e.rest)===rc||PK.rc(e.orig_rest)===rc); })[0];
+  if(dup)return neErr('העובד/ת כבר קיים/ת בבקרת השכר: '+dup.name+' (אותה '+(v.foreign?'מספר דרכון':'ת״ז')+')','tz');
+  var same=E.filter(function(e){ return e.id!==me&&!e.system&&e.name===v.name&&(e.rest===v.rest||e.orig_rest===v.rest); })[0];
+  if(same&&!confirm('יש כבר עובד/ת בשם «'+v.name+'» ב'+v.rest+' (ת״ז אחרת). להוסיף בכל זאת?'))return false;
+  return v;
+}
+function neSaved(rec){
+  var emp=PK.newEmp(rec), i=-1;
+  E.forEach(function(e,j){ if(e.id===emp.id)i=j; });
+  if(i>=0)E[i]=emp; else E.push(emp);
+  if(window.__PK_EMP)window.__PK_EMP[emp.id]=emp;
+  return emp;
+}
+document.getElementById('btnNewEmp').addEventListener('click',function(){ neOpen(null); });
+document.getElementById('neClose').addEventListener('click',neClose);
+document.getElementById('neCancel').addEventListener('click',neClose);
+document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&!neDlg.hidden)neClose();});
+neEl('rest').addEventListener('change',neDepts);
+neEl('foreign').addEventListener('change',neTzLbl);
+document.getElementById('neGo').addEventListener('click',function(){
+  var v=neRead(); if(!v)return;
+  var b=this, old=NE_EDIT&&NE_EDIT._rec, rec={};
+  if(old)Object.keys(old).forEach(function(k){rec[k]=old[k];});
+  Object.keys(v).forEach(function(k){rec[k]=v[k];});
+  if(!old){ rec.id=PK.newId(); while(E.some(function(e){return e.id===rec.id;}))rec.id++; rec.created_at=new Date().toISOString(); rec.created_by=PK.me?PK.me.name:''; }
+  b.disabled=true; document.getElementById('neMsg').textContent='';
+  PK.newSave(rec).then(function(r){
+    var emp=neSaved(r); neClose();
+    if(emp.rest!==REST)setRest(emp.rest);
+    render(); open(emp.id); toast('✓ '+esc(emp.name)+' — '+(old?'הפרטים עודכנו':'נוסף/ה לבקרת השכר'));
+  },function(e){ neErr('לא נשמר — '+e.message+'. אפשר לנסות שוב.'); }).then(function(){ b.disabled=false; });
+});
+function neDelete(raw){
+  if(!confirm('למחוק את «'+raw.name+'» מבקרת השכר? (רק עובד שנוסף כאן בטעות)'))return;
+  var rec={}; Object.keys(raw._rec).forEach(function(k){rec[k]=raw._rec[k];}); rec.deleted=true;
+  PK.newSave(rec).then(function(){
+    E=E.filter(function(e){return e.id!==raw.id;}); if(window.__PK_EMP)delete window.__PK_EMP[raw.id];
+    close();
+    render(); toast('נמחק: '+esc(raw.name));
+  },function(e){ alert('לא נמחק: '+e.message); });
+}
 document.getElementById('rpCols').addEventListener('change',function(ev){
   var k=ev.target&&ev.target.dataset&&ev.target.dataset.k; if(!k)return;
   var i=RPST.cols.indexOf(k);
