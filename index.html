@@ -1019,7 +1019,7 @@ section.act .allgood,.act table{font-size:14.5px}
     </table></div></div>
   </div>
 
-  <footer>מקורות: תלושי שכר 8/2026 · דוחות נוכחות ספטמבר 2026 · הערות שכר (בבקרת השכר) · תיקיות המסמכים · טופסי 101 מהמייל</footer>
+  <footer id="srcFoot">מקורות: תלושי שכר 8/2026 · דוחות נוכחות ספטמבר 2026 · הערות שכר (בבקרת השכר) · תיקיות המסמכים · טופסי 101 מהמייל</footer>
 </div>
 
 <div class="rpscrim" id="rpScrim" hidden></div>
@@ -1432,6 +1432,8 @@ function mergePayloads(list){
     if(String(p.generated||'')>out.generated)out.generated=p.generated||'';
     (p.unattributed||[]).forEach(function(x){ if(out.unattributed.indexOf(x)<0)out.unattributed.push(x); });
     (p.pending_new||[]).forEach(function(x){ out.pending_new.push(x); });
+    /* חודש התלושים/הנוכחות: אם המסעדות שונות — המוקדם (לא להציג חודש שלא כל הנתונים ממנו) */
+    ['slip_month','att_month'].forEach(function(k){ var v=String(p[k]||''); if(/^\d{4}-\d{2}$/.test(v)&&(!out[k]||v<out[k]))out[k]=v; });
   });
   return out;
 }
@@ -1479,6 +1481,11 @@ var TAB='todo', REST='אסא', DEPTS=[];
 var F={q:'',dept:'',what:''};
 var SORT={key:'name',dir:1};
 var HE=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+/* מאיזה חודש התלושים והנוכחות — מגיע מהמחשב (slip_month / att_month, «YYYY-MM»). בלי זה: אוגוסט/ספטמבר 2026, הנתונים שנבנו עד 28.10.2026 */
+function _ym(v,d){v=/^\d{4}-\d{2}$/.test(String(v||''))?String(v):d;var q=v.split('-');return {y:+q[0],m:+q[1]};}
+var SLIP=_ym(D.slip_month,'2026-08'), ATT=_ym(D.att_month,'2026-09');
+try{var _sf=document.getElementById('srcFoot');if(_sf)_sf.innerHTML=_sf.innerHTML.replace('8/2026',SLIP.m+'/'+SLIP.y).replace('ספטמבר 2026',HE[ATT.m-1]+' '+ATT.y);}catch(_){}
+var SLIP_N=SLIP.m+'/'+SLIP.y, SLIP_HE=HE[SLIP.m-1], ATT_HE=HE[ATT.m-1], ATT_FULL=HE[ATT.m-1]+' '+ATT.y;
 var DOCTYPES=['טופס 101','טופס קוביות','אישור קרן פנסיה פעילה','תיאום מס','תעודת שחרור',
               'תעודת עולה','אישור ניהול חשבון','תיאום ביטוח','אישור תושבות','אישור מילואים','אישור מחלה'];
 /* מה הצהיר העובד בטופס 101 → אילו מסמכים נדרשים ממנו */
@@ -1549,7 +1556,7 @@ function eff(e){
   else {o.foreign=!!e.foreign; if(o.foreign)o.pension='אין פנסיה פעילה';}
   o.pension_disp=o.foreign?'עובד זר':o.pension;
   o.pens_open=(m.opened===false)?false:(!!m.opened||!!e.pens_open);
-  o.opened_month=m.opened_month||(e.pens_open?'תלוש 8/2026':'');
+  o.opened_month=m.opened_month||(e.pens_open?'תלוש '+SLIP_N:'');
   o.opened_date=m.opened_date||'';
   o.talked=!!m.talked; o.talked_at=m.talked_at||''; o.talked_note=m.talked_note||'';
   var md=m.docs||[];
@@ -1617,7 +1624,7 @@ function eff(e){
   else if(o.state==='פעיל'){
     if(o.s101!=='יש'&&!done.f101){o.todo='חסר טופס 101';
       o.why='לא התקבל טופס 101';}
-    else if(!o.slip&&!o.worked_sept&&o.status!=='עזב'&&!done.left&&(function(){var s=String(o.start||'');if(!s)return false;var q=s.split('-');return ((+q[0])*12+(+q[1]))<=NOWM-2;})()){o.todo='לברר אם עזב';o.why='אין תלוש אוגוסט ולא עבד בספטמבר — לברר לפני שפותחים פנסיה';}
+    else if(!o.slip&&!o.worked_sept&&o.status!=='עזב'&&!done.left&&(function(){var s=String(o.start||'');if(!s)return false;var q=s.split('-');return ((+q[0])*12+(+q[1]))<=NOWM-2;})()){o.todo='לברר אם עזב';o.why='אין תלוש '+SLIP_HE+' ולא עבד ב'+ATT_HE+' — לברר לפני שפותחים פנסיה';}
     else if(o.foreign&&!o.pens_open){o.todo='';o.why='עובד זר — לא נדרשת פתיחת פנסיה';}
     else if(!o.pens_open&&o.due==='עבר'&&!done.pens){o.todo='פנסיה באיחור';o.why='היה אמור להיפתח ב'+o.pmonth_he;}
     else if(!o.pens_open&&o.due==='עכשיו'&&!done.pens){o.todo='לפתוח פנסיה';o.why='מועד הפתיחה: '+o.pmonth_he;}
@@ -1626,7 +1633,7 @@ function eff(e){
       o.why='מגיע לגיל '+o.age_thr+' ב-'+o.age_gate+' — הפתיחה נדחתה ל'+o.pmonth_he;}
     else if(o.missing.filter(function(t){return t!=='טופס 101';}).length&&!done.docs){
       o.todo='חסרים מסמכים';o.why='חסר: '+o.missing.filter(function(t){return t!=='טופס 101';}).join(' · ');}
-  } else if(o.status!=='עזב'&&!done.left){o.todo='לברר אם עזב';o.why='אין תלוש אוגוסט ולא החתים בספטמבר';}
+  } else if(o.status!=='עזב'&&!done.left){o.todo='לברר אם עזב';o.why='אין תלוש '+SLIP_HE+' ולא החתים ב'+ATT_HE;}
   o.marked=Object.keys(m).some(function(f){
     if(f==='u')return false;
     if(f==='done'||f==='dstate')return Object.keys(m[f]||{}).length>0;
@@ -1698,7 +1705,7 @@ var ACTS=[
  {k:'חסרים מסמכים',sev:'warn',t:'חסרים מסמכים',
   d:'לפי מה שהעובד הצהיר בטופס 101, ולפי מסמכי הפנסיה הנדרשים כשמועד הפתיחה מתקרב (עד חודשיים קדימה).'},
  {k:'לברר אם עזב',sev:'info',t:'לברר אם עזבו',
-  d:'אין להם תלוש אוגוסט והם לא החתימו אצבע בספטמבר. לחצי «עזב» או «פעיל» כדי לקבוע — הסימון נשמר וגובר על הנתונים. עזיבה אמיתית נקבעת לפי הערת שכר «מתפטרים ומפוטרים» או סטטוס לא-פעיל בשיפט — אפס נוכחות לבדו אינו מספיק.'},
+  d:'אין להם תלוש '+SLIP_HE+' והם לא החתימו אצבע ב'+ATT_HE+'. לחצי «עזב» או «פעיל» כדי לקבוע — הסימון נשמר וגובר על הנתונים. עזיבה אמיתית נקבעת לפי הערת שכר «מתפטרים ומפוטרים» או סטטוס לא-פעיל בשיפט — אפס נוכחות לבדו אינו מספיק.'},
  {k:'נדחה עד גיל',sev:'info',t:'פנסיה נדחית — טרם בגיל ההפרשה',
   d:'בנים עד גיל 21 ובנות עד גיל 20 לא מפרישים. חודש הפתיחה נדחה לחודש שבו מגיעים לגיל.'}
 ];
@@ -1733,7 +1740,7 @@ function renderTodo(){
       h+='<div class="tlrow" data-id="'+e.id+'" tabindex="0">'+
         '<div class="tln"><b>'+esc(e.name)+'</b>'+(e.foreign?'<span class="pill p-acc">זר</span>':'')+(e.global?'<span class="pill p-acc">גלובלי</span>':'')+(e.newhire?'<span class="pill p-acc">חדש/ה</span>':'')+
           '<em>'+esc(e.dept)+(e.start?' · התחיל/ה '+esc(fmtD(e.start)):'')+(e.months!=null?' · ותק '+e.months+' ח׳':'')+
-          (pensSec?'':(e.worked_sept?' · '+e.sept_days+' ימים בספטמבר':(e.global?'':' · לא החתים/ה בספטמבר')))+'</em></div>'+
+          (pensSec?'':(e.worked_sept?' · '+e.sept_days+' ימים ב'+ATT_HE:(e.global?'':' · לא החתים/ה ב'+ATT_HE)))+'</em></div>'+
         '<div class="tlf">'+fact+'</div><div class="tla">'+act+'</div></div>';
     });
     h+='</div></section>';
@@ -1914,7 +1921,7 @@ function docRow(e,note,late){
     '<span class="pn"><b>'+esc(e.name)+'</b>'+(e.foreign?' <span class="pill p-acc">זר</span>':'')+
       '<em>'+esc(e.dept)+(e.start?' · החל '+esc(fmtD(e.start)):' · אין תאריך תחילת עבודה')+'</em></span>'+
     '<span class="pb"><span class="pill '+(late?'p-crit':'p-idle')+'">'+esc(docSince(e)||'—')+'</span>'+
-      (e.worked_sept?'<span class="pill p-idle">'+e.sept_days+' ימים בספטמבר</span>':'')+'</span>'+
+      (e.worked_sept?'<span class="pill p-idle">'+e.sept_days+' ימים ב'+ATT_HE+'</span>':'')+'</span>'+
     '<span class="pp"><span class="prep'+(late?' late':'')+'">'+esc(note||'')+'</span></span></div>';
 }
 function renderDocs(){
@@ -1978,7 +1985,7 @@ var COLS_ALL=[
  ['pens_state','פנסיה',function(e){return pPens(e)+(e.pens_open&&e.kahal?'<div class="sub">+ השתלמות</div>':'');}],
  ['pmonth','חודש פתיחה',function(e){return e.pens_open?'<span class="sub">נפתחה</span>':
     (e.pmonth_he?'<span class="pmonth">'+esc(e.pmonth_he)+'</span><div class="sub">'+esc(e.wait)+'</div>':'—');}],
- ['sept_days','ספטמבר',function(e){return e.worked_sept?'<span class="n">'+e.sept_days+' ימים</span><div class="sub n">'+(e.sept_hours||0)+' ש׳</div>':
+ ['sept_days',ATT_HE,function(e){return e.worked_sept?'<span class="n">'+e.sept_days+' ימים</span><div class="sub n">'+(e.sept_hours||0)+' ש׳</div>':
     (e.global?'<span class="sub">גלובלי — לא מחתים</span>':'<span class="sub">לא החתים</span>');}],
  ['ndocs','מסמכים',function(e){
     if(!e.required.length)return '<span class="sub">—</span>';
@@ -2016,7 +2023,7 @@ var COLS_OFF=[
  ['months','ותק',function(e){return e.months!=null?'<span class="n">'+e.months+' ח׳</span>':'—';}],
  ['status','מצב',function(e){return e.status==='עזב'?'<span class="pill p-idle">עזב</span>':'<span class="pill p-crit">לא פעיל</span>';}],
  ['left_last','משמרת אחרונה',function(e){return '<span class="n">'+esc(e.left_last||'—')+'</span>';}],
- ['left_detail','פירוט',function(e){return '<span class="sub">'+esc(e.left_detail||e.note||'אין תלוש אוגוסט ולא החתים בספטמבר')+'</span>';}]
+ ['left_detail','פירוט',function(e){return '<span class="sub">'+esc(e.left_detail||e.note||'אין תלוש '+SLIP_HE+' ולא החתים ב'+ATT_HE)+'</span>';}]
 ];
 function tableRows(){
   var A=V();
@@ -2109,7 +2116,7 @@ var SCOPED_USERS={}; /* בענן: ההרשאה למסעדה נקבעת לפי ה
   document.documentElement.setAttribute('data-rest',r==='אסא'?'asa':(r==='זרים'?'frn':'cha'));
   document.querySelectorAll('#restbar button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.rest===r);if(USER_SCOPE){b.style.display=(b.dataset.rest===USER_SCOPE?'':'none');}});
   document.getElementById('stamp').textContent=(r==='אסא'?'אלמוגי עדן אחזקות':(r==='זרים'?"עובדים זרים — אסא ופינצ'וס":"פינצ'וס דולפינריום"))+
-    ' · תלושי 8/2026 · נוכחות ספטמבר 2026';
+    ' · תלושי '+SLIP_N+' · נוכחות '+ATT_FULL;
   var A=E.filter(function(e){return e.rest===r;}),ds={};
   A.forEach(function(e){ds[eff(e).dept]=1;});
   DEPTS=Object.keys(ds).sort(function(a,b){return a.localeCompare(b,'he');});
@@ -2215,7 +2222,7 @@ function open(id){
   h+='<div class="callout '+cl+'"><span class="cap">'+(e.pens_open?'הפנסיה נפתחה':'חודש פתיחת פנסיה')+'</span>'+
      '<span class="big">'+esc(e.pens_open?(e.opened_date?fmtD(e.opened_date):(e.opened_month||'מופרש')):(e.pmonth_he||'חסר תאריך תחילת עבודה'))+'</span>'+
      (e.start?'<div style="font-size:12.5px;margin-top:4px">'+
-       (e.pens_open?'הפרשה לקופ״ג מופיעה בתלוש 8/2026':'<b>'+esc(e.wait)+'</b> מתחילת העבודה · '+
+       (e.pens_open?'הפרשה לקופ״ג מופיעה בתלוש '+SLIP_N:'<b>'+esc(e.wait)+'</b> מתחילת העבודה · '+
         (e.foreign?'עובד זר — פתיחה אחרי חצי שנה':(e.pension==='פעילה'?'יש פנסיה קודמת פעילה':(e.pension==='אין פנסיה פעילה'?'אין פנסיה קודמת':'הפנסיה הקודמת לא סומנה'))))+
        '</div>':'')+'</div>';
   }
@@ -2226,8 +2233,8 @@ function open(id){
   if(e.phone)F('טלפון',esc(e.phone));
   if(e.email)F('מייל',esc(e.email));
   F('תחילת עבודה',e.start?esc(fmtD(e.start))+(e.months!=null?' · ותק '+e.months+' ח׳':''):'<b>חסר</b>');
-  F('תלוש 8/2026',e.slip?'יש':'<b>אין</b>');
-  F('ספטמבר',e.worked_sept?(e.sept_days+' ימים · '+(e.sept_hours||0)+' ש׳'):(e.global?'לא מחתים':'<b>לא החתים</b>'));
+  F('תלוש '+SLIP_N,e.slip?'יש':'<b>אין</b>');
+  F(ATT_HE,e.worked_sept?(e.sept_days+' ימים · '+(e.sept_hours||0)+' ש׳'):(e.global?'לא מחתים':'<b>לא החתים</b>'));
   if(e.sept_roles&&e.sept_roles.length)F('תפקידים',e.sept_roles.map(function(r){return esc(r.role)+' ('+r.days+')';}).join(' · '));
   if(e.rate)F('תעריף',esc(e.rate));
   if(e.slip){
