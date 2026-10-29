@@ -3251,8 +3251,8 @@ function nXlsxDownload(rest,y,m){
 var NXCOLS=[['month','חודש',12],['emp','עובד',18],['dept','מחלקה',12],['topic','נושא',16],['to','מופנית ל',11],['detail','הערה / פירוט',48],['amount','סכום',10],
   ['status','סטטוס',8],['ans','תשובה / החלטה',30],['by','נוסף ע״י',12],['at','תאריך',11],['docs','מסמכים',24]];
 var NXPRE={pay:['month','emp','dept','topic','detail','amount','ans','docs'],short:['emp','detail','amount'],full:NXCOLS.map(function(c){return c[0];})};
-var NXST={scope:'view',fixed:true,cols:NXPRE.pay.slice()};
-try{ var _nx=JSON.parse(localStorage.getItem('pnkas-nx')||'null'); if(_nx&&_nx.cols)NXST=_nx; }catch(_){}
+var NXST={scope:'view',fixed:true,docs:true,cols:NXPRE.pay.slice()};
+try{ var _nx=JSON.parse(localStorage.getItem('pnkas-nx')||'null'); if(_nx&&_nx.cols){ NXST=_nx; if(NXST.docs==null)NXST.docs=true; } }catch(_){}
 function nxSave(){ try{localStorage.setItem('pnkas-nx',JSON.stringify(NXST));}catch(_){} }
 var NXCTX=null;
 function nxRows(){ var c=NXCTX; if(!c)return [];
@@ -3263,7 +3263,7 @@ function nxCell(n,k){ var a=+n.amount;
     case 'to':return nPriv(n)?'🔒 פרטי':nTo(n); case 'detail':return (n.until?'עד '+nlabel(n.until.y,n.until.m)+' · ':'')+(n.detail||'');
     case 'amount':return (n.amount!==''&&!isNaN(a)&&a)?a:''; case 'status':return NST[n.status||'open']; case 'ans':return n.ay_ans||'';
     case 'by':return String(n.by||'').replace(/@.*$/,''); case 'at':return n.at||'';
-    case 'docs':return nFilesLink(n.id)||(n.doc?{t:'קישור',u:n.doc}:''); }
+    case 'docs':{ var L=window.PK?PK.byNote(n.id):[]; return L.length?'📎 '+L.map(function(f){return f.name||'קובץ';}).join(', '):(n.doc?{t:'קישור',u:n.doc}:''); } }
   return ''; }
 function nxCols(){ var on={}; NXST.cols.forEach(function(k){on[k]=1;}); return NXCOLS.filter(function(c){return c[0]==='emp'||on[c[0]];}); }
 function nxDlgEl(){
@@ -3271,7 +3271,8 @@ function nxDlgEl(){
   d=document.createElement('div'); d.className='rpdlg'; d.id='nxDlg'; d.hidden=true; d.setAttribute('role','dialog');
   d.innerHTML='<div class="rphead"><h2 id="nxTitle">ייצוא</h2><button class="rpx" id="nxClose" type="button" aria-label="סגירה">×</button></div><div class="rpbody">'+
     '<div class="rpsec"><span class="rplbl">מה ייכלל</span><div class="rpseg" id="nxScope"><button type="button" data-v="view">מה שמוצג בטבלה</button><button type="button" data-v="month">כל ההערות של החודש</button><button type="button" data-v="open">רק פתוחות</button></div>'+
-      '<label class="nchk" style="margin-top:8px;display:block"><input type="checkbox" id="nxFixed"> כולל הערות קבועות</label></div>'+
+      '<label class="nchk" style="margin-top:8px;display:block"><input type="checkbox" id="nxFixed"> כולל הערות קבועות</label>'+
+      '<label class="nchk" id="nxDocsBox" style="margin-top:6px;display:block"><input type="checkbox" id="nxDocs"> 📎 לצרף את המסמכים — קובץ ZIP אחד: האקסל + תיקיית «מסמכים», והקישורים באקסל פותחים את הקבצים (בלי כניסה — מתאים לשליחה לחשבת השכר)</label></div>'+
     '<div class="rpsec"><span class="rplbl">עמודות <button type="button" class="rplink" id="nxAll">סמן הכל</button><button type="button" class="rplink" id="nxNone">נקה</button></span><div class="rpcols" id="nxCols"></div></div>'+
     '<div class="rpsec"><span class="rplbl">תבניות מהירות</span><div class="rpchips" id="nxPresets"><button type="button" data-p="pay">לחשבת השכר</button><button type="button" data-p="short">קצר</button><button type="button" data-p="full">הכל</button></div></div>'+
     '<div class="rpsec"><span class="rplbl">שם הקובץ</span><div class="rpfile"><input type="text" id="nxName" autocomplete="off"><span class="rpext" id="nxExt">.xlsx</span></div></div>'+
@@ -3285,6 +3286,7 @@ function nxDlgEl(){
     if(t.id==='nxGo'){ d.hidden=true; if(NXCTX.mode==='xls')nxDoXls(); else nxDoPdf(); } });
   d.addEventListener('change',function(ev){ var t=ev.target;
     if(t.id==='nxFixed'){ NXST.fixed=t.checked; nxSave(); nxRender(); return; }
+    if(t.id==='nxDocs'){ NXST.docs=t.checked; nxSave(); nxRender(); return; }
     var k=t.dataset&&t.dataset.k; if(!k)return; var i=NXST.cols.indexOf(k);
     if(t.checked){ if(i<0)NXST.cols.push(k); } else if(i>=0)NXST.cols.splice(i,1); nxSave(); nxRender(); });
   document.addEventListener('keydown',function(ev){ if(ev.key==='Escape'&&!d.hidden)d.hidden=true; });
@@ -3296,12 +3298,13 @@ function nxRender(){ var on={}; NXST.cols.forEach(function(k){on[k]=1;});
     return '<label class="'+(lock?'lock':'')+'"><input type="checkbox" data-k="'+c[0]+'"'+((lock||on[c[0]])?' checked':'')+(lock?' disabled':'')+'><span>'+esc(c[1])+'</span></label>'; }).join('');
   [].slice.call(document.querySelectorAll('#nxScope button')).forEach(function(b){ b.classList.toggle('on',b.dataset.v===NXST.scope); });
   var fx=NALLM?[]:nFixed(NXCTX.y,NXCTX.m,NXCTX.rest), fxEl=document.getElementById('nxFixed'); fxEl.checked=!!NXST.fixed; fxEl.disabled=!fx.length;
+  var dBox=document.getElementById('nxDocsBox'); dBox.hidden=NXCTX.mode!=='xls'; document.getElementById('nxDocs').checked=!!NXST.docs;
+  var ext=NXCTX.mode==='xls'?(NXST.docs?'.zip':'.xlsx'):'.pdf'; document.getElementById('nxExt').textContent=ext;
   document.getElementById('nxCount').textContent=nxRows().length+' הערות'+(NXST.fixed&&fx.length?' + '+fx.length+' קבועות':'')+' · '+nxCols().length+' עמודות'; }
 function nxDefName(){ var c=NXCTX; return 'הערות שכר — '+c.rest+' '+(NALLM&&NXST.scope==='view'?'כל החודשים':nlabel(c.y,c.m)); }
 function nxOpen(mode,rest,y,m){
   NXCTX={mode:mode,rest:rest,y:y,m:m}; var d=nxDlgEl();
   document.getElementById('nxTitle').textContent=mode==='xls'?'ייצוא לאקסל — הערות שכר':'ייצוא ל-PDF — הערות שכר';
-  document.getElementById('nxExt').textContent=mode==='xls'?'.xlsx':'.pdf';
   document.getElementById('nxGo').textContent=mode==='xls'?'הורד אקסל':'שמור כ-PDF';
   document.getElementById('nxName').value=nxDefName();
   nxRender(); rpShow(d);
@@ -3311,14 +3314,40 @@ function nxSub(rows){ var c=NXCTX, f=[NXST.scope==='view'?(NALLM?'כל החוד�
   if(NXST.scope==='open')f.push('רק פתוחות'); if(NXST.scope==='view'){ if(NTOF)f.push(NTOF==='__priv'?'פרטיות':'מופנית ל'+NTOF); if(NTOPIC)f.push(NTOPIC); if(NQ)f.push('חיפוש: '+NQ); }
   return f.join(' · ')+' · '+rows.length+' הערות · הופק '+new Date().toLocaleDateString('he-IL'); }
 function nxDoXls(){
-  var c=NXCTX, rows=nxRows(), C=nxCols(), sh=[{name:'הערות שכר',title:'הערות שכר — '+c.rest,sub:nxSub(rows)+' · הקישורים נפתחים אחרי כניסה לבקרת השכר',
-    head:C.map(function(x){return x[1];}),widths:C.map(function(x){return x[2];}),rows:rows.map(function(n){ return C.map(function(x){ return nxCell(n,x[0]); }); })}];
-  var FX=(NXST.fixed&&!NALLM)?nFixed(c.y,c.m,c.rest):[];
-  if(FX.length){ var C2=C.filter(function(x){return x[0]!=='month'&&x[0]!=='status';});
-    sh.push({name:'הערות קבועות',title:'הערות קבועות — '+c.rest+' · בתוקף ב'+nlabel(c.y,c.m),sub:FX.length+' הערות',head:C2.map(function(x){return x[1];}),widths:C2.map(function(x){return x[2];}),
-      rows:FX.map(function(n){ return C2.map(function(x){ return nxCell(n,x[0]); }); })}); }
-  var blob; try{ blob=nXlsxBlob(sh); }catch(err){ alert('שגיאה ביצירת קובץ האקסל: '+err.message); return; }
-  _dlBlob(blob,nxFile()+'.xlsx');
+  var c=NXCTX, rows=nxRows(), C=nxCols(), FX=(NXST.fixed&&!NALLM)?nFixed(c.y,c.m,c.rest):[];
+  if(NXST.docs&&C.every(function(x){return x[0]!=='docs';}))C=C.concat(NXCOLS.filter(function(x){return x[0]==='docs';}));
+  var C2=C.filter(function(x){return x[0]!=='month'&&x[0]!=='status';});
+  function sheets(docOf){
+    function cell(n,k){ return (k==='docs'&&docOf)?docOf(n):nxCell(n,k); }
+    var sh=[{name:'הערות שכר',title:'הערות שכר — '+c.rest,sub:nxSub(rows)+(docOf?' · המסמכים בתיקייה «מסמכים» שליד הקובץ':' · המסמכים לא צורפו (לצירוף: «📎 לצרף את המסמכים»)'),
+      head:C.map(function(x){return x[1];}),widths:C.map(function(x){return x[2];}),rows:rows.map(function(n){ return C.map(function(x){ return cell(n,x[0]); }); })}];
+    if(FX.length)sh.push({name:'הערות קבועות',title:'הערות קבועות — '+c.rest+' · בתוקף ב'+nlabel(c.y,c.m),sub:FX.length+' הערות',head:C2.map(function(x){return x[1];}),widths:C2.map(function(x){return x[2];}),
+      rows:FX.map(function(n){ return C2.map(function(x){ return cell(n,x[0]); }); })});
+    return sh; }
+  if(!NXST.docs){ var blob; try{ blob=nXlsxBlob(sheets(null)); }catch(err){ alert('שגיאה ביצירת קובץ האקסל: '+err.message); return; } _dlBlob(blob,nxFile()+'.xlsx'); return; }
+  /* עם המסמכים: ZIP = האקסל + «מסמכים/…». לכל הערה עם קובץ אחד — קישור לקובץ; עם כמה — לתיקייה של ההערה */
+  var notes=rows.concat(FX.filter(function(n){ return rows.indexOf(n)<0; })), jobs=[], seq=0, link={}, used={};
+  notes.forEach(function(n){ var L=window.PK?PK.byNote(n.id):[]; if(!L.length)return; seq++;
+    var base='מסמכים/'+String(seq).padStart(2,'0')+' — '+_safeName(n.emp||'כללי')+(n.topic?' — '+_safeName(n.topic):'');
+    if(L.length===1){ var f=L[0], nm=base+' — '+_safeName(String(f.name||'קובץ').replace(/\.[^.]+$/,''))+'.'+_ext(f.name); jobs.push({f:f,path:nm}); link[n.id]={t:'📎 '+(f.name||'קובץ'),u:nm}; }
+    else { L.forEach(function(f){ var nm=base+'/'+_safeName(String(f.name||'קובץ').replace(/\.[^.]+$/,''))+'.'+_ext(f.name); while(used[nm])nm=nm.replace(/(\.[^.]+)$/,'_$1'); used[nm]=1; jobs.push({f:f,path:nm}); });
+      link[n.id]={t:'📎 '+L.length+' קבצים (תיקייה)',u:base+'/'}; } });
+  if(!jobs.length){ var b0; try{ b0=nXlsxBlob(sheets(null)); }catch(err){ alert('שגיאה ביצירת קובץ האקסל: '+err.message); return; } alert('אין מסמכים מצורפים להערות האלה — ירד רק האקסל'); _dlBlob(b0,nxFile()+'.xlsx'); return; }
+  var tb=document.getElementById('nXlsx'), lbl=tb?tb.textContent:'', out=[], bad=[], i=0;
+  (function next(){
+    if(i>=jobs.length)return finish();
+    if(tb){ tb.disabled=true; tb.textContent='טוענת מסמך '+(i+1)+'/'+jobs.length+'…'; }
+    var j=jobs[i++]; PK.blob(j.f).then(function(b){ return b.arrayBuffer(); }).then(function(ab){ out.push({name:j.path,data:new Uint8Array(ab)}); next(); },function(){ bad.push(j.f.name); next(); });
+  })();
+  function finish(){
+    if(tb){ tb.disabled=false; tb.textContent=lbl; }
+    var x; try{ x=nXlsxBlob(sheets(function(n){ return link[n.id]||(n.doc?{t:'קישור',u:n.doc}:''); })); }catch(err){ alert('שגיאה ביצירת קובץ האקסל: '+err.message); return; }
+    x.arrayBuffer().then(function(ab){
+      var files=[{name:nxFile()+'.xlsx',data:new Uint8Array(ab)}].concat(out);
+      _dlBlob(_zip(files,'application/zip'),nxFile()+'.zip');
+      alert('ירד קובץ ZIP: האקסל + '+out.length+' מסמכים.\nכדי שהקישורים יעבדו — לחלץ קודם את הקובץ (קליק ימני ← «חלץ הכל»), ורק אז לפתוח את האקסל.'+(bad.length?'\n\nלא נטענו: '+bad.join(', '):''));
+    });
+  }
 }
 function nxDoPdf(){
   var c=NXCTX, rows=nxRows(), C=nxCols(), FX=(NXST.fixed&&!NALLM)?nFixed(c.y,c.m,c.rest):[];
