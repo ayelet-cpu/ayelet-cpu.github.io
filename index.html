@@ -2776,25 +2776,25 @@ function rpDoPdf(){
 var _crcT=(function(){var t=new Int32Array(256);for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c;}return t;})();
 function _crc32(u8){var c=-1;for(var i=0;i<u8.length;i++)c=_crcT[(c^u8[i])&0xFF]^(c>>>8);return (c^-1)>>>0;}
 function _utf8(s){return new TextEncoder().encode(s);}
-function _zip(files){
+function _zip(files,type){
   var parts=[],cen=[],off=0;
   function u16(v){return [v&255,(v>>8)&255];}
   function u32(v){return [v&255,(v>>8)&255,(v>>16)&255,(v>>>24)&255];}
   files.forEach(function(f){
-    var data=_utf8(f.data), crc=_crc32(data), nm=_utf8(f.name);
-    var lh=[].concat(u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(nm.length),u16(0));
+    var data=(f.data instanceof Uint8Array)?f.data:_utf8(f.data), crc=_crc32(data), nm=_utf8(f.name), fl=/[^\x20-\x7e]/.test(f.name)?0x0800:0;   /* 0x0800 = שם בעברית (UTF-8) */
+    var lh=[].concat(u32(0x04034b50),u16(20),u16(fl),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(nm.length),u16(0));
     parts.push(new Uint8Array(lh),nm,data);
-    cen.push({nm:nm,crc:crc,len:data.length,off:off});
+    cen.push({nm:nm,crc:crc,len:data.length,off:off,fl:fl});
     off+=lh.length+nm.length+data.length;
   });
   var cstart=off, cparts=[];
   cen.forEach(function(e){
-    var ch=[].concat(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(e.crc),u32(e.len),u32(e.len),
+    var ch=[].concat(u32(0x02014b50),u16(20),u16(20),u16(e.fl),u16(0),u16(0),u16(0),u32(e.crc),u32(e.len),u32(e.len),
       u16(e.nm.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(e.off));
     cparts.push(new Uint8Array(ch),e.nm); off+=ch.length+e.nm.length;
   });
   var eo=[].concat(u32(0x06054b50),u16(0),u16(0),u16(cen.length),u16(cen.length),u32(off-cstart),u32(cstart),u16(0));
-  return new Blob(parts.concat(cparts,[new Uint8Array(eo)]),{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  return new Blob(parts.concat(cparts,[new Uint8Array(eo)]),{type:type||'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 }
 function _xe(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
   .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'');}
@@ -3121,6 +3121,8 @@ function renderNotes(){
     '<button class="btn primary" id="nAdd" type="button">➕ הערה חדשה</button>'+
     '<button class="btn" id="nSend" type="button" aria-pressed="'+(NSHOW?'true':'false')+'">📤 לשליחה לחשבת שכר</button>'+
     '<button class="btn" id="nXlsx" type="button" title="מה שמוצג בטבלה (לפי הסינון) + ההערות הקבועות, עם קישור לכל מסמך">⬇ אקסל</button>'+
+    (function(){ var c=nFilesFor(rest,y,m).length; return c?'<button class="btn" id="nFilesOne" type="button" title="כל הקבצים המצורפים להערות שמוצגות (+ הערות קבועות) — PDF אחד ארוך, לפי סדר העובדים">📎 '+c+' קבצים — בקובץ אחד</button>'+
+      '<button class="btn" id="nFilesZip" type="button" title="אותם קבצים, כל קובץ בנפרד (קובץ ZIP אחד)">📎 כל קובץ בנפרד</button>':''; })()+
     '<span class="count">'+(NALLM||NTOF||NTOPIC||NQ?rows.length+' מוצגות · ':'')+all.length+' הערות ב'+esc(nlabel(y,m))+' · '+open+' פתוחות</span></div>';
   if(NFORM)h+=nFormHtml(rest,y,m);
   if(NSHOW)h+=nSendHtml(rest,y,m,all);
@@ -3238,6 +3240,72 @@ function nXlsxDownload(rest,y,m){
   var fn='הערות שכר '+rest+' '+(NALLM?'כל החודשים':nlabel(y,m))+(NTOF?' — '+NTOF:'')+'.xlsx', url=URL.createObjectURL(blob);
   var a=document.createElement('a'); a.href=url; a.download=fn; a.style.display='none'; document.body.appendChild(a); a.click();
   setTimeout(function(){try{a.remove();URL.revokeObjectURL(url);}catch(_){}},60000);
+}
+/* ---------- קבצי ההערות — בקובץ אחד או כל קובץ בנפרד (איילת 29.10.2026) ----------
+   מה שמוצג בטבלה (לפי הסינון) + ההערות הקבועות של החודש. הערות «🔒 רק שלי» — לא נכללות (חוץ מכשמסננים «פרטי»). */
+function nFilesFor(rest,y,m){
+  if(!window.PK)return [];
+  var seen={}, notes=[];
+  (window.__NROWS||[]).concat(NALLM?[]:nFixed(y,m,rest)).forEach(function(n){ if(n&&!seen[n.id]&&(NTOF==='__priv'||!nPriv(n))){ seen[n.id]=1; notes.push(n); } });
+  notes.sort(function(a,b){ return String(a.emp||'').localeCompare(String(b.emp||''),'he')||((a.y*12+a.m)-(b.y*12+b.m)); });
+  var out=[]; notes.forEach(function(n){ PK.byNote(n.id).forEach(function(f){ out.push({f:f,n:n}); }); });
+  return out;
+}
+function _pdfLib(){
+  if(window.PDFLib)return Promise.resolve(window.PDFLib);
+  return new Promise(function(res,rej){ var sc=document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+    sc.onload=function(){ res(window.PDFLib); }; sc.onerror=function(){ rej(new Error('אין חיבור לאינטרנט לטעינת רכיב ה-PDF')); }; document.head.appendChild(sc); });
+}
+function _ext(n){ var m=/\.([A-Za-z0-9]{1,8})$/.exec(n||''); return m?m[1].toLowerCase():'bin'; }
+function _safeName(s){ return String(s||'').replace(/[\\\/:*?"<>|\r\n\t]+/g,' ').replace(/\s+/g,' ').trim().slice(0,80); }
+function _dlBlob(blob,fn){ var url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download=fn; a.style.display='none'; document.body.appendChild(a); a.click();
+  setTimeout(function(){try{a.remove();URL.revokeObjectURL(url);}catch(_){}},60000); }
+function nFilesDownload(rest,y,m,mode,btn){
+  var L=nFilesFor(rest,y,m); if(!L.length){ alert('אין קבצים מצורפים להערות שמוצגות'); return; }
+  var label=btn?btn.textContent:'', i=0, base='קבצי הערות שכר '+rest+' '+(NALLM?'כל החודשים':nlabel(y,m));
+  function prog(t){ if(btn){ btn.disabled=true; btn.textContent=t; } }
+  function done(){ if(btn){ btn.disabled=false; btn.textContent=label; } }
+  var blobs=[];
+  (function next(){
+    if(i>=L.length) return build();
+    prog('טוענת '+(i+1)+'/'+L.length+'…');
+    var it=L[i++]; PK.blob(it.f).then(function(b){ return b.arrayBuffer(); }).then(function(ab){ blobs.push({it:it,u8:new Uint8Array(ab)}); next(); },
+      function(e){ blobs.push({it:it,err:e&&e.message||'שגיאה'}); next(); });
+  })();
+  function build(){
+    if(mode==='zip'){
+      var used={}, files=[];
+      blobs.forEach(function(x,k){ if(!x.u8)return; var n=x.it.n, f=x.it.f, ext=_ext(f.name);
+        var nm=String(k+1).padStart(2,'0')+' — '+_safeName(n.emp||'כללי')+' — '+_safeName(n.topic||nlabel(n.y,n.m))+' — '+_safeName(String(f.name||'קובץ').replace(/\.[^.]+$/,''));
+        while(used[nm+'.'+ext])nm+='_'; used[nm+'.'+ext]=1; files.push({name:nm+'.'+ext,data:x.u8}); });
+      _dlBlob(_zip(files,'application/zip'),base+'.zip'); done();
+      var bad=blobs.filter(function(x){return !x.u8;}); if(bad.length)alert(bad.length+' קבצים לא נטענו: '+bad.map(function(x){return x.it.f.name;}).join(', '));
+      return;
+    }
+    prog('מחברת לקובץ אחד…');
+    _pdfLib().then(function(P){ return P.PDFDocument.create().then(function(doc){
+      var skipped=[];
+      return blobs.reduce(function(pr,x){ return pr.then(function(){
+        var f=x.it.f, ext=_ext(f.name), mime=String(f.mime||'').toLowerCase();
+        if(!x.u8){ skipped.push(f.name+' (לא נטען)'); return; }
+        if(ext==='pdf'||mime==='application/pdf'){
+          return P.PDFDocument.load(x.u8,{ignoreEncryption:true}).then(function(src){ return doc.copyPages(src,src.getPageIndices()); })
+            .then(function(pages){ pages.forEach(function(pg){ doc.addPage(pg); }); },function(){ skipped.push(f.name+' (PDF נעול/פגום)'); });
+        }
+        var isJpg=/^(jpe?g)$/.test(ext)||mime==='image/jpeg', isPng=ext==='png'||mime==='image/png';
+        if(isJpg||isPng){
+          return (isJpg?doc.embedJpg(x.u8):doc.embedPng(x.u8)).then(function(img){
+            var W=595.28,H=841.89,M=24, s=Math.min((W-2*M)/img.width,(H-2*M)/img.height,1), w=img.width*s, h=img.height*s;
+            var pg=doc.addPage([W,H]); pg.drawImage(img,{x:(W-w)/2,y:(H-h)/2,width:w,height:h}); },function(){ skipped.push(f.name+' (תמונה פגומה)'); });
+        }
+        skipped.push(f.name+' (סוג קובץ שלא נכנס ל-PDF — יש אותו ב«כל קובץ בנפרד»)');
+      }); },Promise.resolve()).then(function(){
+        if(!doc.getPageCount()){ done(); alert('אף קובץ לא נכנס ל-PDF.\n'+skipped.join('\n')); return; }
+        return doc.save({useObjectStreams:false}).then(function(bytes){ _dlBlob(new Blob([bytes],{type:'application/pdf'}),base+'.pdf'); done();
+          if(skipped.length)alert('ירד קובץ אחד עם '+(blobs.length-skipped.length)+' קבצים. לא נכנסו:\n'+skipped.join('\n')); });
+      });
+    }); }).catch(function(e){ done(); alert('לא הצלחתי ליצור את הקובץ: '+(e&&e.message||e)); });
+  }
 }
 /* כניסה מקישור (#f=<קובץ> / #n=<הערה>) — פותחים את ההערה, ולקובץ מציגים כפתור פתיחה (דפדפן חוסם פתיחה בלי לחיצה) */
 function nDeep(tries){
@@ -3420,6 +3488,8 @@ function nWire(rest,y,m){
   el('nToF').addEventListener('change',function(){NTOF=this.value;renderNotes();});
   el('nAllM').addEventListener('change',function(){NALLM=this.checked;NFORM=null;renderNotes();});
   el('nXlsx').addEventListener('click',function(){ nXlsxDownload(rest,y,m); });
+  if(el('nFilesOne'))el('nFilesOne').addEventListener('click',function(){ nFilesDownload(rest,y,m,'pdf',this); });
+  if(el('nFilesZip'))el('nFilesZip').addEventListener('click',function(){ nFilesDownload(rest,y,m,'zip',this); });
   var _cf=el('nClrF'); if(_cf)_cf.addEventListener('click',function(){NTOF='';NALLM=false;renderNotes();});
   var _tg=el('nFixTg'); if(_tg)_tg.addEventListener('click',function(){NFIXOPEN=!NFIXOPEN;try{localStorage.setItem('pnkas-fixopen',NFIXOPEN?'1':'0');}catch(_){}renderNotes();});
   var _ax=el('nAddFix'); if(_ax)_ax.addEventListener('click',function(){NFORM={topic:FIXT};NSHOW=false;renderNotes();var f=el('fEmp');if(f)f.focus();});
