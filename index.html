@@ -398,6 +398,22 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:po
 .ibtn:hover{border-color:var(--accent);color:var(--accent)}
 .ibtn.del:hover{border-color:var(--crit);color:var(--crit)}
 .nmeta{font-size:11px;color:var(--muted);white-space:nowrap}
+/* 29.10.2026: הערות קבועות + הערות לאיילת */
+.nfix{background:var(--surface);border:1px solid var(--line);border-inline-start:4px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:14px;box-shadow:var(--shadow)}
+.nfixhd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.nfixhd h3{margin:0;font-size:14px;color:var(--accent-ink)}
+.nfixhd .sum{font-size:12.5px;color:var(--ink-2)} .nfixhd .btn{margin-inline-start:auto}
+.nfix .ntab td{vertical-align:top}
+.nfix .new{font-size:11px;font-weight:700;color:var(--ok);background:var(--ok-bg);border-radius:6px;padding:1px 6px;margin-inline-start:6px}
+.nfix .fb{font:inherit;font-size:12px;background:transparent;border:1px solid var(--line);border-radius:7px;padding:4px 8px;cursor:pointer;color:var(--ink-2);white-space:nowrap}
+.nfix .fb:hover{border-color:var(--accent);color:var(--accent)} .nfix .fb.end:hover{border-color:var(--crit);color:var(--crit)}
+.aystrip{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:13px}
+.aystrip .btn{margin-inline-start:auto}
+.aytag{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;margin-top:4px;background:var(--warn-bg);color:var(--warn)}
+.aytag.ok{background:var(--ok-bg);color:var(--ok)}
+.ayans{margin-top:6px;padding:6px 8px;border-radius:7px;background:var(--ok-bg);color:var(--ink);font-size:12.5px;white-space:pre-wrap}
+.ngrid .chk{flex-direction:row;align-items:center;gap:6px;font-weight:700;cursor:pointer}
+.ngrid .chk input{width:auto}
 .ntopic{display:inline-block;font-size:11.5px;font-weight:700;color:var(--accent-ink);background:var(--accent-soft);border-radius:6px;padding:2px 7px;white-space:nowrap}
 .nempty{padding:28px;text-align:center;color:var(--muted);font-style:italic}
 @media (max-width:640px){.ntab td.det{min-width:160px}}
@@ -2145,8 +2161,8 @@ function notesByMonth(e){
   function g(y,m){var k=y*12+m; if(!groups[k])groups[k]={y:y,m:m,items:[]}; return groups[k];}
   Object.keys(NOTES).map(function(k){return NOTES[k];}).filter(function(n){return n&&(n.eid===e.id||(n.emp===e.name&&(n.rest===e.rest||n.rest===e.orig_rest)));})
     .forEach(function(n){ var nf=window.PK?PK.byNote(n.id).length:0;
-      g(n.y,n.m).items.push('<li><span class="m">'+esc(n.topic||'')+' · <span class="st st-'+(n.status||'open')+'">'+esc(NST[n.status||'open'])+'</span>'+(n.by?' · '+esc(n.by):'')+(nf?' · 📎 '+nf:'')+'</span><br>'+
-        esc(n.detail||'—')+(n.amount?' — '+esc(fmtAmt(n.amount)):'')+'</li>'); });
+      g(n.y,n.m).items.push('<li><span class="m">'+esc(n.topic||'')+' · '+(nIsFixed(n)?'<span class="st st-sent">📌 קבועה'+(n.until?' עד '+esc(nlabel(n.until.y,n.until.m)):' — בתוקף')+'</span>':'<span class="st st-'+(n.status||'open')+'">'+esc(NST[n.status||'open'])+'</span>')+(nToAy(n)?' · '+(n.ay_ans?'איילת ענתה ✓':'📣 לאיילת'):'')+(n.by?' · '+esc(n.by):'')+(nf?' · 📎 '+nf:'')+'</span><br>'+
+        esc(n.detail||'—')+(n.amount?' — '+esc(fmtAmt(n.amount)):'')+(n.ay_ans?'<br><b>איילת:</b> '+esc(n.ay_ans):'')+'</li>'); });
   (e.events||[]).forEach(function(v){ var mm=+v.mnum||(HE.indexOf(v.month)+1); if(!mm)return;
     g(2026,mm).items.push('<li class="ev"><span class="m">'+esc(v.topic||'')+' · מהאקסל</span><br>'+esc(v.detail||'—')+'</li>'); });
   var ks=Object.keys(groups).map(Number).sort(function(a,b){return b-a;}), n=0;
@@ -2999,7 +3015,7 @@ var NDEF=(function(){var d=new Date(),y=d.getFullYear(),m=d.getMonth()+1;
 var NSEL=(function(){try{var s=JSON.parse(localStorage.getItem('pnkas-nsel')||'null'); if(s&&s.y>2000&&s.m>=1&&s.m<=12)return {y:s.y,m:s.m};}catch(_){} return {y:NDEF.y,m:NDEF.m};})();
 function nSetMonth(y,m){ while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} NSEL={y:y,m:m}; try{localStorage.setItem('pnkas-nsel',JSON.stringify(NSEL));}catch(_){} NFORM=null; renderNotes(); }
 var NRES=null, NFORM=null, NSHOW=false, NQ='', NTOPIC='', NBOUND=false;
-var NOPT={pensNow:true,pensLate:true,newStart:true,no101:true};
+var NOPT={fixed:true,pensNow:true,pensLate:true,newStart:true,no101:true};
 function nres(){return NRES||(REST==='זרים'?'אסא':REST);}
 function nid(){return 'n'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function nlabel(y,m){return HE[m-1]+' '+y;}
@@ -3031,9 +3047,22 @@ function npull(first){
     .getNotes();
   if(first){google.script.run.withSuccessHandler(function(w){if(w&&!WHO)WHO=w;try{applyUserScope(w);}catch(e){}}).withFailureHandler(function(){}).whoAmI();}
 }
+/* 29.10.2026 (בקשת טלי): «הערות קבועות» — הערה בנושא הזה תקפה מהחודש שבו נרשמה ובכל חודש אחריו, עד «הסתיים» (until = החודש האחרון). */
+var FIXT='הערות קבועות';
+function nIsFixed(n){return !!n&&n.topic===FIXT;}
+function nFixedOn(n,y,m){ if(!nIsFixed(n))return false; var T=y*12+m; if(n.y*12+n.m>T)return false; if(n.until&&(n.until.y*12+n.until.m)<T)return false; return true; }
+function nFixed(y,m,rest){ return Object.keys(NOTES).map(function(k){return NOTES[k];}).filter(function(n){return n&&n.rest===rest&&nFixedOn(n,y,m);})
+  .sort(function(a,b){return String(a.dept||'').localeCompare(String(b.dept||''),'he')||String(a.emp||'').localeCompare(String(b.emp||''),'he');}); }
+/* הערה לאיילת: סימון בטופס (to_ay), או בהערות ישנות — הטקסט פונה לאיילת («הערה לאיילת…», «איילת- …») */
+var AYRE=/הערה\s*ל\s*איילת|(^|[\s("'])איילת\s*[-–:,]/;
+function nToAy(n){ if(!n)return false; if(n.to_ay===true||n.to_ay===false)return n.to_ay; return AYRE.test(String(n.detail||'')); }
+function nAyWait(n){ return nToAy(n)&&!n.ay_ans&&(n.status||'open')!=='done'; }
+function nAyList(rest){ return Object.keys(NOTES).map(function(k){return NOTES[k];}).filter(function(n){return n&&n.rest===rest&&nAyWait(n);})
+  .sort(function(a,b){return (a.y*12+a.m)-(b.y*12+b.m)||String(a.at||'').localeCompare(String(b.at||''));}); }
+var NAYF=false;
 function nlist(y,m,rest){
   return Object.keys(NOTES).map(function(k){return NOTES[k];})
-    .filter(function(n){return n&&n.y===y&&n.m===m&&n.rest===rest;})
+    .filter(function(n){return n&&n.y===y&&n.m===m&&n.rest===rest&&!nIsFixed(n);})
     .sort(function(a,b){return String(a.at||'').localeCompare(String(b.at||''))||String(a.id).localeCompare(String(b.id));});
 }
 function nOpenCount(){return nlist(NSEL.y,NSEL.m,nres()).filter(function(n){return (n.status||'open')==='open';}).length;}
@@ -3058,8 +3087,10 @@ function nEmpOf(n){
 }
 function renderNotes(){
   var box=document.getElementById('notesView'), rest=nres(), y=NSEL.y, m=NSEL.m;
-  var all=nlist(y,m,rest), rows=all;
-  if(NTOPIC)rows=rows.filter(function(n){return n.topic===NTOPIC;});
+  var all=nlist(y,m,rest), rows=all, ayw=nAyList(rest);
+  if(NAYF&&!ayw.length)NAYF=false;
+  if(NAYF)rows=ayw;
+  if(NTOPIC&&!NAYF)rows=rows.filter(function(n){return n.topic===NTOPIC;});
   if(NQ){var q=NQ.toLowerCase();rows=rows.filter(function(n){return ((n.emp||'')+' '+(n.dept||'')+' '+(n.topic||'')+' '+(n.detail||'')).toLowerCase().indexOf(q)>=0;});}
   var open=all.filter(function(n){return (n.status||'open')==='open';}).length;
   var h='<div class="ntop">'+
@@ -3075,9 +3106,13 @@ function renderNotes(){
     '<span class="count">'+all.length+' הערות · '+open+' פתוחות</span></div>';
   if(NFORM)h+=nFormHtml(rest,y,m);
   if(NSHOW)h+=nSendHtml(rest,y,m,all);
+  if(ayw.length)h+='<div class="aystrip"><b>📣 '+ayw.length+' '+(ayw.length===1?'הערה לאיילת מחכה':'הערות לאיילת מחכות')+' לתשובה</b><span>לא נכללות בהודעה לחשבת השכר עד שאיילת עונה</span>'+
+    '<button class="btn" id="nAyF" type="button" aria-pressed="'+(NAYF?'true':'false')+'">'+(NAYF?'חזרה לכל ההערות':'הצגת ההערות לאיילת')+'</button></div>';
+  if(!NAYF)h+=nFixHtml(rest,y,m);
+  if(NAYF)h+='<h3 style="margin:4px 0 8px;font-size:14px">📣 הערות לאיילת שמחכות לתשובה — מכל החודשים</h3>';
   h+='<div class="tablecard"><div class="scroll"><table class="ntab"><thead><tr>'+
      '<th>#</th><th>עובד</th><th>מחלקה</th><th>נושא</th><th>הערה / פירוט</th><th>סכום</th><th>מסמך</th><th>סטטוס</th><th>נוסף</th><th></th></tr></thead><tbody>';
-  if(!rows.length)h+='<tr><td colspan="10" class="nempty">'+(all.length?'אין הערות שמתאימות לסינון':'אין עדיין הערות ל'+esc(nlabel(y,m))+' — לחצי «➕ הערה חדשה»')+'</td></tr>';
+  if(!rows.length)h+='<tr><td colspan="10" class="nempty">'+(all.length||NAYF?'אין הערות שמתאימות לסינון':'אין עדיין הערות ל'+esc(nlabel(y,m))+' — לחצי «➕ הערה חדשה»')+'</td></tr>';
   rows.forEach(function(n,i){
     var e=nEmpOf(n);
     h+='<tr data-nid="'+esc(n.id)+'" style="cursor:pointer" title="לחצי כאן לעריכה">'+
@@ -3085,12 +3120,12 @@ function renderNotes(){
       '<td class="nm">'+(e?'<a href="#" data-emp="'+e.id+'" style="color:inherit;text-decoration:none">'+esc(n.emp)+'</a>':esc(n.emp||'—'))+
          (e&&e.state!=='פעיל'?'<div class="sub">לא פעיל</div>':'')+'</td>'+
       '<td>'+esc(n.dept||(e?e.dept:''))+'</td>'+
-      '<td><span class="ntopic">'+esc(n.topic||'כללי')+'</span></td>'+
-      '<td class="det">'+esc(n.detail||'')+'</td>'+
+      '<td><span class="ntopic">'+esc(n.topic||'כללי')+'</span>'+(nToAy(n)?'<br>'+(n.ay_ans?'<span class="aytag ok">איילת ענתה ✓</span>':'<span class="aytag">📣 לאיילת</span>'):'')+'</td>'+
+      '<td class="det">'+esc(n.detail||'')+(n.ay_ans?'<div class="ayans"><b>איילת:</b> '+esc(n.ay_ans)+'</div>':'')+'</td>'+
       '<td class="amt">'+esc(fmtAmt(n.amount))+'</td>'+
       '<td>'+(n.doc?'<a href="'+esc(n.doc)+'" target="_blank" rel="noopener">🔗 קישור</a> ':'')+(window.PK&&PK.byNote(n.id).length?'<span class="ftag" title="קבצים מצורפים">📎 '+PK.byNote(n.id).length+'</span>':'')+'</td>'+
       '<td>'+nStatusPill(n)+'</td>'+
-      '<td class="nmeta">'+esc((n.by||'').replace(/@.*$/,''))+(n.at?'<br>'+esc(n.at):'')+'</td>'+
+      '<td class="nmeta">'+(NAYF?'<b>'+esc(nlabel(n.y,n.m))+'</b><br>':'')+esc((n.by||'').replace(/@.*$/,''))+(n.at?'<br>'+esc(n.at):'')+'</td>'+
       '<td class="ops">'+
         '<button class="ibtn del" data-del="'+esc(n.id)+'" type="button" title="מחיקה">🗑</button></td></tr>';
   });
@@ -3101,11 +3136,31 @@ function renderNotes(){
   var _fb=document.getElementById('nFormBox'); if(_fb)_fb.__nf=NFORM;
   nWire(rest,y,m);
 }
+function nPrevM(y,m){ return m>1?{y:y,m:m-1}:{y:y-1,m:12}; }
+function nFixHtml(rest,y,m){
+  var L=nFixed(y,m,rest), sum=0; L.forEach(function(n){var a=+n.amount; if(a&&!isNaN(a))sum+=a;});
+  var h='<div class="nfix" id="nFixBox"><div class="nfixhd"><h3>📌 הערות קבועות — '+esc(rest)+' · בתוקף ב'+esc(nlabel(y,m))+'</h3>'+
+    '<span class="sum">'+L.length+' הערות'+(sum?' · סה״כ סכומים '+esc(fmtAmt(sum))+' בחודש':'')+'</span>'+
+    '<button class="btn" id="nAddFix" type="button">➕ הערה קבועה</button></div>';
+  if(!L.length)return h+'<p class="hint" style="margin:0">אין הערות קבועות בתוקף. הערה קבועה (כמו תוספת ניהול) מופיעה כאן בכל חודש, וגם בהודעה לחשבת השכר, עד שלוחצים «הסתיים».</p></div>';
+  h+='<div class="scroll"><table class="ntab"><thead><tr><th>עובד</th><th>מחלקה</th><th>פירוט</th><th>סכום</th><th>מאז</th><th></th></tr></thead><tbody>';
+  L.forEach(function(n){ var e=nEmpOf(n), isNew=(n.y===y&&n.m===m);
+    h+='<tr data-nid="'+esc(n.id)+'" style="cursor:pointer" title="לחצי לעריכה">'+
+      '<td class="nm">'+(e?'<a href="#" data-emp="'+e.id+'" style="color:inherit;text-decoration:none">'+esc(n.emp)+'</a>':esc(n.emp||'—'))+(e&&e.state!=='פעיל'?'<div class="sub">לא פעיל</div>':'')+'</td>'+
+      '<td>'+esc(n.dept||(e?e.dept:''))+'</td>'+
+      '<td class="det">'+esc(n.detail||'')+(window.PK&&PK.byNote(n.id).length?' <span class="ftag">📎 '+PK.byNote(n.id).length+'</span>':'')+'</td>'+
+      '<td class="amt">'+esc(fmtAmt(n.amount))+'</td>'+
+      '<td class="nmeta">'+esc(nlabel(n.y,n.m))+(isNew?'<span class="new">חדש</span>':'')+'<br>'+esc((n.by||'').replace(/@.*$/,''))+'</td>'+
+      '<td class="ops"><button class="fb" type="button" data-fchg="'+esc(n.id)+'" title="הסכום או הפירוט משתנים מהחודש הזה (מה שהיה עד עכשיו נשמר)">שינוי מ'+esc(HE[m-1])+'</button> '+
+      '<button class="fb end" type="button" data-fend="'+esc(n.id)+'" title="לא בתוקף מ'+esc(nlabel(y,m))+'">הסתיים</button></td></tr>'; });
+  return h+'</tbody></table></div></div>';
+}
 function nFormHtml(rest,y,m){
   var n=NFORM||{}, isNew=!n.id;
   if(isNew&&NFORM&&!NFORM._nid)NFORM._nid=nid();
   var emps=nEmps(rest), depts=nDepts(rest);
-  var h='<div class="nform" id="nFormBox"><h3>'+(isNew?'הערה חדשה — '+esc(rest)+' · '+esc(nlabel(y,m)):'עריכת הערה')+'</h3><div class="ngrid">'+
+  var fx=nIsFixed(n), toAy=nToAy(n);
+  var h='<div class="nform" id="nFormBox"><h3>'+(isNew?(fx?'הערה קבועה חדשה — '+esc(rest)+' · החל מ'+esc(nlabel(y,m)):'הערה חדשה — '+esc(rest)+' · '+esc(nlabel(y,m))):(fx?'עריכת הערה קבועה (בתוקף מ'+esc(nlabel(n.y,n.m))+')':'עריכת הערה'))+'</h3><div class="ngrid">'+
     '<label>עובד/ת<input type="text" id="fEmp" list="empList" autocomplete="off" placeholder="שם העובד" value="'+esc(n.emp||'')+'">'+
       '<datalist id="empList">'+emps.map(function(e){return '<option value="'+esc(e.name)+'">'+esc(e.dept)+(e.state!=='פעיל'?' · לא פעיל':'')+'</option>';}).join('')+'</datalist></label>'+
     '<label>מחלקה<input type="text" id="fDeptN" list="deptList" autocomplete="off" value="'+esc(n.dept||'')+'">'+
@@ -3113,13 +3168,16 @@ function nFormHtml(rest,y,m){
     '<label>נושא<select id="fTopic">'+(n.topic&&TOPICS.indexOf(n.topic)<0?[n.topic]:[]).concat(TOPICS).map(function(t){return '<option value="'+esc(t)+'"'+((n.topic||'')===t?' selected':'')+'>'+esc(t)+'</option>';}).join('')+'</select></label>'+
     '<label>סכום (₪, אם יש)<input type="number" id="fAmt" inputmode="decimal" step="1" value="'+esc(n.amount||'')+'"></label>'+
     '<label class="full">הערה / פירוט<textarea id="fDetail" placeholder="מה לעדכן לחשבת השכר…">'+esc(n.detail||'')+'</textarea></label>'+
+    '<label class="full chk"><input type="checkbox" id="fToAy"'+(toAy?' checked':'')+'> 📣 הערה לאיילת — לא נשלחת לחשבת השכר עד שאיילת עונה</label>'+
+    '<label class="full" id="fAyBox"'+(toAy?'':' hidden')+'>תשובת איילת'+(n.ay_ans&&n.ay_by?' <span class="hint">('+esc(n.ay_by)+(n.ay_at?' · '+esc(n.ay_at):'')+')</span>':'')+
+      '<textarea id="fAyAns" placeholder="איילת: מה עושים…">'+esc(n.ay_ans||'')+'</textarea></label>'+
     '<div class="full nfiles"><b>📎 קבצים מצורפים</b> <span class="hint">אישורי מחלה, מילואים, 101, תלושים — אפשר כמה קבצים יחד</span>'+
       '<ul class="flist" id="fFiles"></ul>'+
       '<div class="fup"><button class="fbtn" id="fAddFiles" type="button">➕ צירוף קבצים</button>'+
       '<input type="file" id="fFileIn" multiple hidden><span class="fstat" id="fFileStat"></span></div></div>'+
     (n.doc?'<label class="full">קישור למסמך (מהגרסה הקודמת)<input type="url" id="fDoc" value="'+esc(n.doc||'')+'"></label>':'<input type="hidden" id="fDoc" value="">')+
     '<label>מי מעדכן/ת<input type="text" id="fWho" placeholder="השם שלך" value="'+esc(isNew?WHO:(n.by||WHO))+'"></label>'+
-    (isNew?'':'<label>סטטוס<select id="fStatus">'+Object.keys(NST).map(function(k){return '<option value="'+k+'"'+((n.status||'open')===k?' selected':'')+'>'+NST[k]+'</option>';}).join('')+'</select></label>')+
+    (isNew||fx?'':'<label>סטטוס<select id="fStatus">'+Object.keys(NST).map(function(k){return '<option value="'+k+'"'+((n.status||'open')===k?' selected':'')+'>'+NST[k]+'</option>';}).join('')+'</select></label>')+
     '</div><div class="nfoot">'+
     '<button class="btn primary" id="fSave" type="button">שמירה</button>'+
     '<button class="btn ghost" id="fCancel" type="button">ביטול</button>'+
@@ -3145,15 +3203,21 @@ function nSysNotes(rest,y,m){
   });
   return out;
 }
+/* לחשבת השכר: בלי הפנייה לאיילת, ועם ההחלטה של איילת אם יש */
+function nDetailOut(n){ var d=String(n.detail||''); if(nToAy(n))d=d.replace(/^\s*(הערה\s*ל\s*)?איילת\s*[-–:,]\s*/,''); return d+(n.ay_ans?' (החלטה: '+n.ay_ans+')':''); }
 function nSendText(rest,y,m,all){
-  var mgr=all.filter(function(n){return (n.status||'open')!=='done';});
+  var mgr=all.filter(function(n){return (n.status||'open')!=='done'&&!nAyWait(n);});
   var lines=['הערות שכר '+rest+' — '+nlabel(y,m),'(הופק '+new Date().toLocaleDateString('he-IL')+')',''];
   var byT={},ord=[];
   mgr.forEach(function(n){var t=n.topic||'כללי';if(!byT[t]){byT[t]=[];ord.push(t);}byT[t].push(n);});
   if(!mgr.length)lines.push('— אין הערות מנהלים לחודש זה —','');
   ord.forEach(function(t){lines.push('▪ '+t);
-    byT[t].forEach(function(n){lines.push('• '+(n.emp||'—')+(n.dept?' ('+n.dept+')':'')+': '+(n.detail||'')+(n.amount?' — '+fmtAmt(n.amount):'')+(n.doc?' [מסמך: '+n.doc+']':''));});
+    byT[t].forEach(function(n){lines.push('• '+(n.emp||'—')+(n.dept?' ('+n.dept+')':'')+': '+nDetailOut(n)+(n.amount?' — '+fmtAmt(n.amount):'')+(n.doc?' [מסמך: '+n.doc+']':''));});
     lines.push('');});
+  var FX=nFixed(y,m,rest);
+  if(NOPT.fixed&&FX.length){lines.push('▪ הערות קבועות (כל חודש)');
+    FX.forEach(function(n){lines.push('• '+(n.emp||'—')+(n.dept?' ('+n.dept+')':'')+': '+nDetailOut(n)+(n.amount?' — '+fmtAmt(n.amount):'')+((n.y===y&&n.m===m)?' [חדש מהחודש]':''));});
+    lines.push('');}
   var S=nSysNotes(rest,y,m), any=false;
   function sec(k,title,arr){if(!NOPT[k]||!arr.length)return;any=true;lines.push('▪ '+title);arr.forEach(function(l){lines.push('• '+l);});lines.push('');}
   sec('pensNow','מהמערכת — פנסיה לפתוח בתלוש '+nlabel(y,m),S.pensNow);
@@ -3164,23 +3228,24 @@ function nSendText(rest,y,m,all){
 }
 function nCsv(rest,y,m,all){
   var rows=[['מסעדה','חודש','מקור','עובד','מחלקה','נושא','הערה / פירוט','סכום','סטטוס','נוסף על ידי','תאריך']];
-  all.forEach(function(n){rows.push([rest,nlabel(y,m),'מנהלים',n.emp||'',n.dept||'',n.topic||'',n.detail||'',n.amount||'',NST[n.status||'open'],n.by||'',n.at||'']);});
+  all.filter(function(n){return !nAyWait(n);}).forEach(function(n){rows.push([rest,nlabel(y,m),'מנהלים',n.emp||'',n.dept||'',n.topic||'',nDetailOut(n),n.amount||'',NST[n.status||'open'],n.by||'',n.at||'']);});
+  if(NOPT.fixed)nFixed(y,m,rest).forEach(function(n){rows.push([rest,nlabel(y,m),'קבועה (מ'+nlabel(n.y,n.m)+')',n.emp||'',n.dept||'',n.topic||'',nDetailOut(n),n.amount||'','',n.by||'',n.at||'']);});
   var S=nSysNotes(rest,y,m);
   [['pensNow','פנסיה — לפתוח החודש'],['pensLate','פנסיה — באיחור'],['newStart','עובדים חדשים'],['no101','חסר טופס 101']].forEach(function(p){
     if(!NOPT[p[0]])return; S[p[0]].forEach(function(l){rows.push([rest,nlabel(y,m),'מערכת',l.split(' (')[0],'',p[1],l,'','','','']);});});
   return '﻿'+rows.map(function(r){return r.map(function(c){return '"'+String(c==null?'':c).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');
 }
 function nSendHtml(rest,y,m,all){
-  var txt=nSendText(rest,y,m,all), open=all.filter(function(n){return (n.status||'open')==='open';}).length;
+  var txt=nSendText(rest,y,m,all), open=all.filter(function(n){return (n.status||'open')==='open'&&!nAyWait(n);}).length, ayn=all.filter(nAyWait).length;
   return '<div class="nsend"><h3>📤 לשליחה לחשבת השכר — '+esc(rest)+' · '+esc(nlabel(y,m))+'</h3>'+
-    '<div class="opts"><span>לכלול מהמערכת:</span>'+
-    [['pensNow','פנסיה לפתוח החודש'],['pensLate','פנסיה באיחור'],['newStart','עובדים חדשים'],['no101','חסר טופס 101']].map(function(p){
+    '<div class="opts"><span>לכלול:</span>'+
+    [['fixed','הערות קבועות'],['pensNow','פנסיה לפתוח החודש'],['pensLate','פנסיה באיחור'],['newStart','עובדים חדשים'],['no101','חסר טופס 101']].map(function(p){
       return '<label><input type="checkbox" data-opt="'+p[0]+'"'+(NOPT[p[0]]?' checked':'')+'>'+p[1]+'</label>';}).join('')+'</div>'+
     '<pre id="nSendTxt">'+esc(txt)+'</pre>'+
     '<div class="nfoot"><button class="btn primary" id="nCopy" type="button">📋 העתקה (וואטסאפ / מייל)</button>'+
     '<button class="btn" id="nXls" type="button">⬇ הורדה לאקסל</button>'+
     (open?'<button class="btn" id="nMarkSent" type="button">✓ סמן '+open+' הערות פתוחות כ«נשלח»</button>':'')+
-    '<span class="hint">הערות שסומנו «טופל» לא נכללות.</span></div></div>';
+    '<span class="hint">הערות שסומנו «טופל» לא נכללות.'+(ayn?' <b style="color:var(--warn)">'+ayn+' הערות לאיילת מחכות לתשובה ולא נכללו.</b>':'')+'</span></div></div>';
 }
 /* קבצים מצורפים להערת שכר (בענן) */
 function fSize(b){b=+b||0;return b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';}
@@ -3228,20 +3293,27 @@ function nWire(rest,y,m){
   el('nQ').addEventListener('input',function(){NQ=this.value.trim();var v=this.value;renderNotes();var q=el('nQ');q.focus();q.setSelectionRange(v.length,v.length);});
   el('nAdd').addEventListener('click',function(){NFORM={};NSHOW=false;renderNotes();var f=el('fEmp');if(f)f.focus();});
   el('nSend').addEventListener('click',function(){NSHOW=!NSHOW;NFORM=null;renderNotes();});
+  var _af=el('nAyF'); if(_af)_af.addEventListener('click',function(){NAYF=!NAYF;NFORM=null;renderNotes();});
+  var _ax=el('nAddFix'); if(_ax)_ax.addEventListener('click',function(){NFORM={topic:FIXT};NSHOW=false;renderNotes();var f=el('fEmp');if(f)f.focus();});
+  var _ta=el('fToAy'); if(_ta)_ta.addEventListener('change',function(){el('fAyBox').hidden=!this.checked;});
   var fe=el('fEmp');
   if(fe){
     fe.addEventListener('change',function(){var nm=this.value.trim(),d=el('fDeptN');
       var e=nEmps(rest).filter(function(x){return x.name===nm;})[0]; if(e&&d&&!d.value)d.value=e.dept;});
     nFilesWire(rest);el('fSave').addEventListener('click',function(){
-      var n=NFORM.id?NOTES[NFORM.id]:null, isNew=!n;
+      var n=NFORM.id?NOTES[NFORM.id]:null, isNew=!n, prevId=NFORM._prev||null;
       if(!n)n={id:(NFORM&&NFORM._nid)||nid(),rest:rest,y:y,m:m,by:WHO||'',at:today(),status:'open'};
       n.emp=el('fEmp').value.trim(); n.dept=el('fDeptN').value.trim(); n.topic=el('fTopic').value;
       n.amount=el('fAmt').value?+el('fAmt').value:''; n.detail=el('fDetail').value.trim(); n.doc=el('fDoc').value.trim();
       if(!isNew&&el('fStatus'))n.status=el('fStatus').value;
+      n.to_ay=!!el('fToAy').checked||AYRE.test(n.detail); /* טקסט שפונה לאיילת נחשב הערה לאיילת גם בלי הסימון */
+      var ans=n.to_ay?el('fAyAns').value.trim():(n.ay_ans||'');
+      if(ans!==(n.ay_ans||'')){n.ay_ans=ans; n.ay_at=ans?today():''; n.ay_by=ans?(el('fWho').value.trim()||WHO||''):'';}
       if(!n.emp&&!n.detail){alert('צריך לפחות שם עובד או פירוט.');return;}
       var e=nEmps(rest).filter(function(x){return x.name===n.emp;})[0]; n.eid=e?e.id:null;
       var w=el('fWho').value.trim(); if(w){WHO=w;try{localStorage.setItem('pnkas-who',w);}catch(e){}}
       n.upd=today(); if(w||!n.by)n.by=w||WHO||'';
+      if(isNew&&prevId&&NOTES[prevId]){var po=NOTES[prevId]; po.until=nPrevM(y,m); po.upd=today(); NPEND[prevId]=1;}
       NOTES[n.id]=n; NPEND[n.id]=1; NFORM=null; nsave(); renderNotes(); hero();});
     el('fCancel').addEventListener('click',function(){NFORM=null;renderNotes();});
     var fd=el('fDel'); if(fd)fd.addEventListener('click',function(){if(!confirm('למחוק את ההערה?'))return;delete NOTES[NFORM.id];NPEND[NFORM.id]=1;NFORM=null;nsave();renderNotes();hero();});
@@ -3259,13 +3331,23 @@ function nWire(rest,y,m){
         a.download='הערות שכר '+rest+' '+nlabel(y,m)+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);
         setTimeout(function(){URL.revokeObjectURL(a.href);},2000);}catch(e){alert('ההורדה נכשלה');}});
     var ms=el('nMarkSent'); if(ms)ms.addEventListener('click',function(){
-      nlist(y,m,rest).forEach(function(n){if((n.status||'open')==='open'){n.status='sent';n.upd=today();NPEND[n.id]=1;}});
+      nlist(y,m,rest).forEach(function(n){if((n.status||'open')==='open'&&!nAyWait(n)){n.status='sent';n.upd=today();NPEND[n.id]=1;}});
       nsave();renderNotes();hero();});
   }
   if(NBOUND)return; NBOUND=true;
   box.addEventListener('click',function(ev){
     var st=ev.target.closest('.pill[data-st]');
     if(st){var n=NOTES[st.dataset.st]; if(!n)return; var s=n.status||'open'; n.status=(s==='open'?'sent':(s==='sent'?'done':'open')); n.upd=today();NPEND[n.id]=1;nsave();renderNotes();hero();return;}
+    var fe2=ev.target.closest('button[data-fend]');
+    if(fe2){var fn=NOTES[fe2.dataset.fend]; if(!fn)return; var old=fn.until||null, pm=nPrevM(NSEL.y,NSEL.m);
+      fn.until=pm; fn.upd=today(); NPEND[fn.id]=1; nsave(); renderNotes(); hero();
+      toast('ההערה הקבועה של '+esc(fn.emp||'')+' הסתיימה — הופיעה עד '+esc(nlabel(pm.y,pm.m)),function(){fn.until=old; fn.upd=today(); NPEND[fn.id]=1; nsave(); renderNotes(); hero();});
+      return;}
+    var fc=ev.target.closest('button[data-fchg]');
+    if(fc){var on=NOTES[fc.dataset.fchg]; if(!on)return;
+      if(on.y===NSEL.y&&on.m===NSEL.m){NFORM=on;} /* נרשמה החודש — פשוט עורכים אותה */
+      else NFORM={topic:FIXT,emp:on.emp,dept:on.dept,eid:on.eid,amount:on.amount,detail:on.detail,_prev:on.id}; NSHOW=false; renderNotes();
+      window.scrollTo({top:0,behavior:'smooth'}); var fa=document.getElementById('fAmt'); if(fa)fa.focus(); return;}
     var dl=ev.target.closest('button[data-del]');
     if(dl){var nn=NOTES[dl.dataset.del]; if(!nn)return; if(!confirm('למחוק את ההערה של '+(nn.emp||'')+'?'))return;
       delete NOTES[dl.dataset.del];NPEND[dl.dataset.del]=1;nsave();renderNotes();hero();return;}
