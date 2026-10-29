@@ -469,6 +469,12 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:po
 .rpseg button{font:inherit;font-size:13px;padding:7px 15px;border:0;background:transparent;cursor:pointer;color:var(--ink,#1b1f24)}
 .rpseg button+button{border-inline-start:1px solid var(--line,#d6dae0)}
 .rpseg button.on{background:var(--ink,#1b1f24);color:#fff}
+.nflist{max-height:52vh;overflow:auto;border:1px solid var(--line,#e3e7ec);border-radius:9px;padding:4px}
+.nfgrp{font-size:12px;font-weight:700;color:#4a525c;padding:8px 8px 3px}
+.nfrow{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;font-size:13px;cursor:pointer}
+.nfrow:hover{background:var(--soft,#f3f5f7)}
+.nfrow .fn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nfrow em{font-style:normal;color:#8a929b;font-size:11.5px}
+.nfrow button{font:inherit;font-size:12px;border:1px solid var(--line,#dfe3e8);background:#fff;border-radius:7px;padding:3px 9px;cursor:pointer}
 .rpcols{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:4px 10px}
 .rpcols label{display:flex;align-items:center;gap:7px;font-size:13px;padding:5px 8px;border-radius:7px;cursor:pointer}
 .rpcols label:hover{background:var(--soft,#f3f5f7)}
@@ -3126,8 +3132,7 @@ function renderNotes(){
     '<button class="btn" id="nSend" type="button" aria-pressed="'+(NSHOW?'true':'false')+'">📤 לשליחה לחשבת שכר</button>'+
     '<button class="btn" id="nXlsx" type="button" title="בחירת עמודות ומה ייכלל — אקסל">⬇ אקסל</button>'+
     '<button class="btn" id="nPdf" type="button" title="בחירת עמודות ומה ייכלל — מסך מסודר להדפסה / שמירה כ-PDF">PDF</button>'+
-    (function(){ var c=nFilesFor(rest,y,m).length; return c?'<button class="btn" id="nFilesOne" type="button" title="כל הקבצים המצורפים להערות שמוצגות (+ הערות קבועות) — PDF אחד ארוך, לפי סדר העובדים">📎 '+c+' קבצים — בקובץ אחד</button>'+
-      '<button class="btn" id="nFilesZip" type="button" title="אותם קבצים, כל קובץ בנפרד (קובץ ZIP אחד)">📎 כל קובץ בנפרד</button>':''; })()+
+    (function(){ var c=nFilesFor(rest,y,m).length; return c?'<button class="btn" id="nFiles" type="button" title="המסמכים של ההערות שמוצגות (+ הערות קבועות) — להוריד הכול, כמה או אחד">📎 '+c+' קבצים — הורדה</button>':''; })()+
     '<span class="count">'+(NALLM||NTOF||NTOPIC||NQ?rows.length+' מוצגות · ':'')+all.length+' הערות ב'+esc(nlabel(y,m))+' · '+open+' פתוחות</span></div>';
   if(NFORM)h+=nFormHtml(rest,y,m);
   if(NSHOW)h+=nSendHtml(rest,y,m,all);
@@ -3272,7 +3277,7 @@ function nxDlgEl(){
   d.innerHTML='<div class="rphead"><h2 id="nxTitle">ייצוא</h2><button class="rpx" id="nxClose" type="button" aria-label="סגירה">×</button></div><div class="rpbody">'+
     '<div class="rpsec"><span class="rplbl">מה ייכלל</span><div class="rpseg" id="nxScope"><button type="button" data-v="view">מה שמוצג בטבלה</button><button type="button" data-v="month">כל ההערות של החודש</button><button type="button" data-v="open">רק פתוחות</button></div>'+
       '<label class="nchk" style="margin-top:8px;display:block"><input type="checkbox" id="nxFixed"> כולל הערות קבועות</label>'+
-      '<label class="nchk" id="nxDocsBox" style="margin-top:6px;display:block"><input type="checkbox" id="nxDocs"> 📎 לצרף את המסמכים — קובץ ZIP אחד: האקסל + תיקיית «מסמכים», והקישורים באקסל פותחים את הקבצים (בלי כניסה — מתאים לשליחה לחשבת השכר)</label></div>'+
+      '<label class="nchk" id="nxDocsBox" style="margin-top:6px;display:block"><input type="checkbox" id="nxDocs"> <span id="nxDocsTx"></span></label></div>'+
     '<div class="rpsec"><span class="rplbl">עמודות <button type="button" class="rplink" id="nxAll">סמן הכל</button><button type="button" class="rplink" id="nxNone">נקה</button></span><div class="rpcols" id="nxCols"></div></div>'+
     '<div class="rpsec"><span class="rplbl">תבניות מהירות</span><div class="rpchips" id="nxPresets"><button type="button" data-p="pay">לחשבת השכר</button><button type="button" data-p="short">קצר</button><button type="button" data-p="full">הכל</button></div></div>'+
     '<div class="rpsec"><span class="rplbl">שם הקובץ</span><div class="rpfile"><input type="text" id="nxName" autocomplete="off"><span class="rpext" id="nxExt">.xlsx</span></div></div>'+
@@ -3283,7 +3288,7 @@ function nxDlgEl(){
     if(t.dataset&&t.dataset.p&&NXPRE[t.dataset.p]){ NXST.cols=NXPRE[t.dataset.p].slice(); nxSave(); nxRender(); return; }
     if(t.id==='nxAll'){ NXST.cols=NXPRE.full.slice(); nxSave(); nxRender(); return; }
     if(t.id==='nxNone'){ NXST.cols=['emp']; nxSave(); nxRender(); return; }
-    if(t.id==='nxGo'){ d.hidden=true; if(NXCTX.mode==='xls')nxDoXls(); else nxDoPdf(); } });
+    if(t.id==='nxGo'){ d.hidden=true; if(NXCTX.mode==='xls')nxDoXls(); else if(NXST.docs)nxDoPdfDocs(); else nxDoPdf(); } });
   d.addEventListener('change',function(ev){ var t=ev.target;
     if(t.id==='nxFixed'){ NXST.fixed=t.checked; nxSave(); nxRender(); return; }
     if(t.id==='nxDocs'){ NXST.docs=t.checked; nxSave(); nxRender(); return; }
@@ -3298,14 +3303,16 @@ function nxRender(){ var on={}; NXST.cols.forEach(function(k){on[k]=1;});
     return '<label class="'+(lock?'lock':'')+'"><input type="checkbox" data-k="'+c[0]+'"'+((lock||on[c[0]])?' checked':'')+(lock?' disabled':'')+'><span>'+esc(c[1])+'</span></label>'; }).join('');
   [].slice.call(document.querySelectorAll('#nxScope button')).forEach(function(b){ b.classList.toggle('on',b.dataset.v===NXST.scope); });
   var fx=NALLM?[]:nFixed(NXCTX.y,NXCTX.m,NXCTX.rest), fxEl=document.getElementById('nxFixed'); fxEl.checked=!!NXST.fixed; fxEl.disabled=!fx.length;
-  var dBox=document.getElementById('nxDocsBox'); dBox.hidden=NXCTX.mode!=='xls'; document.getElementById('nxDocs').checked=!!NXST.docs;
+  document.getElementById('nxDocs').checked=!!NXST.docs;
+  document.getElementById('nxDocsTx').textContent=NXCTX.mode==='xls'?'📎 לצרף את המסמכים — קובץ ZIP אחד: האקסל + תיקיית «מסמכים», והקישורים באקסל פותחים את הקבצים (בלי כניסה — מתאים לשליחה לחשבת השכר)':
+    '📎 לצרף את המסמכים — קובץ PDF אחד: טבלת ההערות ואחריה המסמכים של כל הערה. לחיצה על שורה בטבלה קופצת למסמכים שלה (בלי — מסך הדפסה רגיל)';
+  document.getElementById('nxGo').textContent=NXCTX.mode==='xls'?'הורד אקסל':(NXST.docs?'הורד PDF':'שמור כ-PDF');
   var ext=NXCTX.mode==='xls'?(NXST.docs?'.zip':'.xlsx'):'.pdf'; document.getElementById('nxExt').textContent=ext;
   document.getElementById('nxCount').textContent=nxRows().length+' הערות'+(NXST.fixed&&fx.length?' + '+fx.length+' קבועות':'')+' · '+nxCols().length+' עמודות'; }
 function nxDefName(){ var c=NXCTX; return 'הערות שכר — '+c.rest+' '+(NALLM&&NXST.scope==='view'?'כל החודשים':nlabel(c.y,c.m)); }
 function nxOpen(mode,rest,y,m){
   NXCTX={mode:mode,rest:rest,y:y,m:m}; var d=nxDlgEl();
   document.getElementById('nxTitle').textContent=mode==='xls'?'ייצוא לאקסל — הערות שכר':'ייצוא ל-PDF — הערות שכר';
-  document.getElementById('nxGo').textContent=mode==='xls'?'הורד אקסל':'שמור כ-PDF';
   document.getElementById('nxName').value=nxDefName();
   nxRender(); rpShow(d);
 }
@@ -3394,8 +3401,8 @@ function _ext(n){ var m=/\.([A-Za-z0-9]{1,8})$/.exec(n||''); return m?m[1].toLow
 function _safeName(s){ return String(s||'').replace(/[\\\/:*?"<>|\r\n\t]+/g,' ').replace(/\s+/g,' ').trim().slice(0,80); }
 function _dlBlob(blob,fn){ var url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download=fn; a.style.display='none'; document.body.appendChild(a); a.click();
   setTimeout(function(){try{a.remove();URL.revokeObjectURL(url);}catch(_){}},60000); }
-function nFilesDownload(rest,y,m,mode,btn){
-  var L=nFilesFor(rest,y,m); if(!L.length){ alert('אין קבצים מצורפים להערות שמוצגות'); return; }
+function nFilesDownload(rest,y,m,mode,btn,list){
+  var L=list||nFilesFor(rest,y,m); if(!L.length){ alert('אין קבצים מצורפים להערות שמוצגות'); return; }
   var label=btn?btn.textContent:'', i=0, base='קבצי הערות שכר '+rest+' '+(NALLM?'כל החודשים':nlabel(y,m));
   function prog(t){ if(btn){ btn.disabled=true; btn.textContent=t; } }
   function done(){ if(btn){ btn.disabled=false; btn.textContent=label; } }
@@ -3440,6 +3447,176 @@ function nFilesDownload(rest,y,m,mode,btn){
       });
     }); }).catch(function(e){ done(); alert('לא הצלחתי ליצור את הקובץ: '+(e&&e.message||e)); });
   }
+}
+/* ---------- PDF אחד עם הכול (איילת 29.10.2026): טבלת ההערות, ואחריה לכל הערה דף פתיחה + המסמכים שלה.
+   לחיצה על שורה בטבלה קופצת למסמכים שלה, ובדף הפתיחה «↩ חזרה לטבלה». הטבלה מצוירת בדפדפן (עברית/RTL) ונכנסת כתמונה. ---------- */
+var _CVF='"Assistant","Segoe UI",Arial,sans-serif';
+function _cvPage(w,h){ var S=2.2, cv=document.createElement('canvas'); cv.width=Math.round(w*S); cv.height=Math.round(h*S);
+  var g=cv.getContext('2d'); g.scale(S,S); g.fillStyle='#fff'; g.fillRect(0,0,w,h); g.direction='rtl'; g.textAlign='right'; g.textBaseline='top'; return {cv:cv,g:g}; }
+function _cvWrap(g,txt,w){ var out=[]; String(txt==null?'':txt).split(/\n/).forEach(function(par){ var line='';
+    par.split(/\s+/).forEach(function(word){ if(!word)return; var t=line?line+' '+word:word;
+      if(g.measureText(t).width<=w||!line){ line=t; while(g.measureText(line).width>w&&line.length>1){ var k=line.length-1; while(k>1&&g.measureText(line.slice(0,k)).width>w)k--; out.push(line.slice(0,k)); line=line.slice(k); } }
+      else { out.push(line); line=word; } });
+    out.push(line); });
+  return out; }
+function _cvPng(cv){ return new Promise(function(res){ cv.toBlob(function(b){ b.arrayBuffer().then(function(ab){ res(new Uint8Array(ab)); }); },'image/png'); }); }
+function _pdfLink(P,doc,page,r,dest){ var ctx=doc.context, H=page.getHeight(), d={Type:'Annot',Subtype:'Link',Rect:[r[0],H-r[1]-r[3],r[0]+r[2],H-r[1]],Border:[0,0,0]};
+  if(typeof dest==='string')d.A={Type:'Action',S:'URI',URI:P.PDFString.of(dest)}; else d.Dest=[dest.ref,'Fit'];
+  var ref=ctx.register(ctx.obj(d)), A=page.node.lookup(P.PDFName.of('Annots'));
+  if(A&&A.push)A.push(ref); else page.node.set(P.PDFName.of('Annots'),ctx.obj([ref])); }
+/* מוסיף קובץ (PDF/תמונה) ל-doc; מחזיר כמה עמודים נוספו (0 = לא נכנס, והסיבה ב-skipped) */
+function _pdfAppend(P,doc,u8,f,skipped){
+  var ext=_ext(f.name), mime=String(f.mime||'').toLowerCase();
+  if(!u8){ skipped.push(f.name+' (לא נטען)'); return Promise.resolve(0); }
+  if(ext==='pdf'||mime==='application/pdf')
+    return P.PDFDocument.load(u8,{ignoreEncryption:true}).then(function(src){ return doc.copyPages(src,src.getPageIndices()); })
+      .then(function(pages){ pages.forEach(function(pg){ doc.addPage(pg); }); return pages.length; },function(){ skipped.push(f.name+' (PDF נעול/פגום)'); return 0; });
+  var isJpg=/^(jpe?g)$/.test(ext)||mime==='image/jpeg', isPng=ext==='png'||mime==='image/png';
+  if(isJpg||isPng)
+    return (isJpg?doc.embedJpg(u8):doc.embedPng(u8)).then(function(img){
+      var W=595.28,H=841.89,M=24, s=Math.min((W-2*M)/img.width,(H-2*M)/img.height,1), w=img.width*s, h=img.height*s;
+      doc.addPage([W,H]).drawImage(img,{x:(W-w)/2,y:(H-h)/2,width:w,height:h}); return 1; },function(){ skipped.push(f.name+' (תמונה פגומה)'); return 0; });
+  skipped.push(f.name+' (סוג קובץ שלא נכנס ל-PDF — אפשר להוריד אותו בנפרד מ«📎 קבצים»)'); return Promise.resolve(0);
+}
+function nxDoPdfDocs(){
+  var c=NXCTX, rows=nxRows(), C=nxCols(), FX=(NXST.fixed&&!NALLM)?nFixed(c.y,c.m,c.rest):[];
+  if(C.every(function(x){return x[0]!=='docs';}))C=C.concat(NXCOLS.filter(function(x){return x[0]==='docs';}));
+  var C2=C.filter(function(x){return x[0]!=='month'&&x[0]!=='status';});
+  function srt(a,b){ return String(a.emp||'').localeCompare(String(b.emp||''),'he')||((a.y*12+a.m)-(b.y*12+b.m)); }
+  rows=rows.slice().sort(srt); FX=FX.filter(function(n){return rows.indexOf(n)<0;}).sort(srt);
+  var notes=rows.concat(FX).filter(function(n){ return window.PK&&PK.byNote(n.id).length; });
+  if(!notes.length){ alert('אין מסמכים מצורפים להערות האלה — נפתח מסך הדפסה רגיל'); nxDoPdf(); return; }
+  var tb=document.getElementById('nPdf'), lbl=tb?tb.textContent:'', jobs=[], i=0, data={};
+  notes.forEach(function(n){ PK.byNote(n.id).forEach(function(f){ jobs.push(f); }); });
+  function prog(t){ if(tb){ tb.disabled=true; tb.textContent=t; } }
+  function done(){ if(tb){ tb.disabled=false; tb.textContent=lbl; } }
+  (function next(){
+    if(i>=jobs.length)return build();
+    prog('טוענת מסמך '+(i+1)+'/'+jobs.length+'…');
+    var f=jobs[i++]; PK.blob(f).then(function(b){ return b.arrayBuffer(); }).then(function(ab){ data[f.id]=new Uint8Array(ab); next(); },function(){ next(); });
+  })();
+  var LW=841.89, LH=595.28, M=26, FS=8.5, LN=11.5, PAD=4;
+  var meas=_cvPage(10,10).g;
+  function txt(n,k,info){ if(k==='docs'){ var I=info&&info[n.id]; return I?'📎 עמ׳ '+(I.page+1)+(I.n>1?' · '+I.n+' קבצים':''):(n.doc?'קישור':''); }
+    var v=nxCell(n,k); if(k==='amount'&&v!=='')return Number(v).toLocaleString('he-IL')+' ₪';
+    var dm=k==='at'&&/^(\d{4})-(\d{2})-(\d{2})/.exec(v); if(dm)return +dm[3]+'.'+(+dm[2])+'.'+dm[1].slice(2); return v; }
+  /* פריסה: מחזירה עמודים, בכל עמוד פריטים עם y וגובה */
+  function layout(info){
+    var pages=[], cur=null, y=0;
+    function newPage(first){ cur={items:[]}; pages.push(cur); y=M;
+      if(first){ cur.items.push({t:'title',y:y}); y+=40; } else { cur.items.push({t:'cont',y:y}); y+=18; } }
+    function section(list,cols,title){
+      if(!list.length)return;
+      var tw=cols.reduce(function(s,x){return s+x[2];},0), W=LW-2*M, ws=cols.map(function(x){return x[2]/tw*W;});
+      if(title){ if(y+60>LH-M-16)newPage(false); cur.items.push({t:'sec',y:y+6,text:title}); y+=26; }
+      function head(){ cur.items.push({t:'head',y:y,cols:cols,ws:ws}); y+=18; }
+      head();
+      list.forEach(function(n){
+        meas.font=FS+'px '+_CVF;
+        var cells=cols.map(function(x,j){ var s=txt(n,x[0],info); if(s&&typeof s==='object')s=s.t||''; return _cvWrap(meas,s,ws[j]-2*PAD); });
+        var h=Math.max.apply(null,cells.map(function(l){return l.length;}))*LN+2*PAD;
+        if(y+h>LH-M-16){ newPage(false); head(); }
+        cur.items.push({t:'row',y:y,h:h,n:n,cells:cells,ws:ws,cols:cols}); y+=h; });
+    }
+    newPage(true);
+    section(rows,C,null);
+    section(FX,C2,'הערות קבועות — בתוקף ב'+nlabel(c.y,c.m)+' ('+FX.length+')');
+    return pages;
+  }
+  function drawTable(pages){
+    var out=[]; pages.forEach(function(pg,pi){
+      var P=_cvPage(LW,LH), g=P.g, R=LW-M;
+      pg.items.forEach(function(it){
+        if(it.t==='title'){ g.fillStyle='#14181d'; g.font='700 19px '+_CVF; g.fillText('הערות שכר — '+c.rest,R,it.y);
+          g.font='9px '+_CVF; g.fillStyle='#737b85'; g.fillText(nxSub(rows)+' · לחיצה על שורה עם 📎 קופצת למסמכים שלה',R,it.y+25);
+          g.fillStyle='#14181d'; g.fillRect(M,it.y+37,LW-2*M,1.5); }
+        else if(it.t==='cont'){ g.fillStyle='#737b85'; g.font='9px '+_CVF; g.fillText('הערות שכר — '+c.rest+' (המשך)',R,it.y); }
+        else if(it.t==='sec'){ g.fillStyle='#14181d'; g.font='700 12px '+_CVF; g.fillText(it.text,R,it.y); }
+        else if(it.t==='head'){ g.fillStyle='#14181d'; g.fillRect(M,it.y,LW-2*M,18); g.fillStyle='#fff'; g.font='600 8.5px '+_CVF;
+          var x=R; it.cols.forEach(function(col,j){ g.fillText(col[1],x-PAD,it.y+4.5,it.ws[j]-2*PAD); x-=it.ws[j]; }); }
+        else if(it.t==='row'){ var off=(it.n.status||'open')!=='open', x=R;
+          it.cols.forEach(function(col,j){ var k=col[0];
+            g.font=(k==='emp'?'600 ':(k==='docs'?'600 ':''))+FS+'px '+_CVF; g.fillStyle=k==='docs'?'#1a5fb4':(off?'#7b838d':'#14181d');
+            it.cells[j].forEach(function(line,li){ g.fillText(line,x-PAD,it.y+PAD+li*LN); }); x-=it.ws[j]; });
+          g.fillStyle='#e6e9ed'; g.fillRect(M,it.y+it.h-0.6,LW-2*M,0.6); }
+      });
+      g.fillStyle='#8a929b'; g.font='8px '+_CVF; g.textAlign='center'; g.fillText('עמוד '+(pi+1)+' מתוך '+pages.length+' (טבלה) · הופק '+new Date().toLocaleDateString('he-IL'),LW/2,LH-M+6);
+      out.push(P.cv); });
+    return out;
+  }
+  function divider(n,files){
+    var W=595.28,H=841.89,P=_cvPage(W,H), g=P.g, R=W-48, y=60;
+    g.fillStyle='#1a5fb4'; g.font='600 11px '+_CVF; g.fillText('↩ חזרה לטבלה',R,y); y+=34;
+    g.fillStyle='#14181d'; g.font='700 24px '+_CVF; g.fillText(n.emp||'כללי',R,y); y+=34;
+    g.font='13px '+_CVF; g.fillStyle='#4a525c'; g.fillText([n.dept,n.topic,nlabel(n.y,n.m),(n.amount!==''&&+n.amount)?Number(n.amount).toLocaleString('he-IL')+' ₪':''].filter(Boolean).join(' · '),R,y); y+=30;
+    g.fillStyle='#14181d'; g.fillRect(48,y,W-96,1.2); y+=16;
+    g.font='12px '+_CVF; _cvWrap(g,(n.until?'עד '+nlabel(n.until.y,n.until.m)+' · ':'')+(n.detail||''),W-96).slice(0,30).forEach(function(l){ g.fillText(l,R,y); y+=18; });
+    if(n.ay_ans){ y+=8; g.fillStyle='#4a525c'; g.font='600 11px '+_CVF; g.fillText('תשובה:',R,y); y+=17; g.font='11px '+_CVF; _cvWrap(g,n.ay_ans,W-96).slice(0,12).forEach(function(l){ g.fillText(l,R,y); y+=16; }); }
+    y+=18; g.fillStyle='#14181d'; g.font='600 12px '+_CVF; g.fillText('📎 '+files.length+' מסמכים בעמודים הבאים:',R,y); y+=20;
+    g.font='11px '+_CVF; g.fillStyle='#4a525c'; files.forEach(function(f){ if(y<H-60){ g.fillText('• '+(f.name||'קובץ'),R,y); y+=16; } });
+    return P.cv;
+  }
+  function build(){
+    prog('בונה את הקובץ…');
+    var P, docs, info={}, skipped=[], divs=[];
+    (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(_pdfLib).then(function(p){ P=p; return P.PDFDocument.create(); }).then(function(d){ docs=d;
+      return notes.reduce(function(pr,n){ return pr.then(function(){
+        var L=PK.byNote(n.id), start=docs.getPageCount();
+        return _cvPng(divider(n,L)).then(function(png){ return docs.embedPng(png); }).then(function(img){
+          var pg=docs.addPage([595.28,841.89]); pg.drawImage(img,{x:0,y:0,width:595.28,height:841.89}); divs.push({page:start,n:n});
+          return L.reduce(function(p2,f){ return p2.then(function(){ return _pdfAppend(P,docs,data[f.id],f,skipped); }); },Promise.resolve()); })
+          .then(function(){ info[n.id]={start:start,n:L.length}; }); }); },Promise.resolve());
+    }).then(function(){
+      /* כמה עמודי טבלה — תלוי במספרי העמודים שבטבלה, לכן פורסים עד שהמספר יציב */
+      var pages=layout(null), T=-1, k=0;
+      while(T!==pages.length&&k++<4){ T=pages.length; Object.keys(info).forEach(function(id){ info[id].page=T+info[id].start; }); pages=layout(info); }
+      return Promise.all(drawTable(pages).map(_cvPng)).then(function(pngs){ return P.PDFDocument.create().then(function(fin){
+        return pngs.reduce(function(pr,png){ return pr.then(function(){ return fin.embedPng(png).then(function(img){ fin.addPage([LW,LH]).drawImage(img,{x:0,y:0,width:LW,height:LH}); }); }); },Promise.resolve())
+          .then(function(){ return fin.copyPages(docs,docs.getPageIndices()); }).then(function(cp){ cp.forEach(function(pg){ fin.addPage(pg); });
+            var all=fin.getPages(), back={};
+            pages.forEach(function(pg,pi){ pg.items.forEach(function(it){ if(it.t!=='row')return; var I=info[it.n.id];
+              if(I){ _pdfLink(P,fin,all[pi],[M,it.y,LW-2*M,it.h],all[I.page]); if(back[it.n.id]==null)back[it.n.id]=pi; }
+              else if(it.n.doc&&/^https?:/i.test(it.n.doc))_pdfLink(P,fin,all[pi],[M,it.y,LW-2*M,it.h],it.n.doc); }); });
+            divs.forEach(function(dv){ _pdfLink(P,fin,all[T+dv.page],[595.28-48-170,52,170,26],all[back[dv.n.id]||0]); });
+            return fin.save({useObjectStreams:false}); }); }); });
+    }).then(function(bytes){ done(); _dlBlob(new Blob([bytes],{type:'application/pdf'}),nxFile()+'.pdf');
+      if(skipped.length)alert('ירד קובץ PDF אחד. לא נכנסו:\n'+skipped.join('\n'));
+    }).catch(function(e){ done(); alert('לא הצלחתי ליצור את הקובץ: '+(e&&e.message||e)); });
+  }
+}
+/* ---------- חלון «📎 קבצים» (איילת 29.10.2026): כל המסמכים של ההערות שמוצגות — לבחור ולהוריד: הכול, כמה, או אחד ---------- */
+var NFCTX=null;
+function nfDlgEl(){
+  var d=document.getElementById('nfDlg'); if(d)return d;
+  d=document.createElement('div'); d.className='rpdlg'; d.id='nfDlg'; d.hidden=true; d.setAttribute('role','dialog');
+  d.innerHTML='<div class="rphead"><h2>📎 המסמכים של ההערות</h2><button class="rpx" id="nfClose" type="button" aria-label="סגירה">×</button></div><div class="rpbody">'+
+    '<div class="rpsec"><span class="rplbl">לבחור מה להוריד <button type="button" class="rplink" id="nfAll">סמן הכל</button><button type="button" class="rplink" id="nfNone">נקה</button></span>'+
+    '<div id="nfList" class="nflist"></div></div></div>'+
+    '<div class="rpfoot"><span class="rpcount" id="nfCount"></span><span class="rpsp"><button class="btn ghost" id="nfCancel" type="button">סגירה</button>'+
+    '<button class="btn" id="nfZip" type="button" title="כל קובץ בנפרד — קובץ אחד נבחר יורד כמו שהוא, כמה — בקובץ ZIP">⬇ כל קובץ בנפרד</button>'+
+    '<button class="btn primary" id="nfOne" type="button" title="הקבצים שנבחרו — PDF אחד ארוך, לפי סדר העובדים">⬇ PDF אחד</button></span></div>';
+  d.addEventListener('click',function(ev){ var t=ev.target;
+    if(fListClick(ev))return;
+    if(t.id==='nfClose'||t.id==='nfCancel'){ d.hidden=true; return; }
+    if(t.id==='nfAll'||t.id==='nfNone'){ [].slice.call(d.querySelectorAll('#nfList input')).forEach(function(x){ x.checked=t.id==='nfAll'; }); nfCount(); return; }
+    if(t.id==='nfOne'||t.id==='nfZip'){ var L=nfSel(); if(!L.length){ alert('לא נבחר אף קובץ'); return; }
+      if(t.id==='nfZip'&&L.length===1){ PK.open(L[0].f,true); return; }
+      nFilesDownload(NFCTX.rest,NFCTX.y,NFCTX.m,t.id==='nfOne'?'pdf':'zip',t,L); } });
+  d.addEventListener('change',nfCount);
+  document.addEventListener('keydown',function(ev){ if(ev.key==='Escape'&&!d.hidden)d.hidden=true; });
+  var w=rpHost(); w.insertBefore(d,w.firstChild);
+  return d;
+}
+function nfSel(){ var on={}; [].slice.call(document.querySelectorAll('#nfList input:checked')).forEach(function(x){ on[x.dataset.i]=1; });
+  return NFCTX.list.filter(function(_,i){ return on[i]; }); }
+function nfCount(){ var n=nfSel().length; document.getElementById('nfCount').textContent='נבחרו '+n+' מתוך '+NFCTX.list.length; }
+function nfOpen(rest,y,m){
+  var L=nFilesFor(rest,y,m); NFCTX={rest:rest,y:y,m:m,list:L}; var d=nfDlgEl(), last=null, h='';
+  L.forEach(function(it,i){ var n=it.n, f=it.f, g=n.id;
+    if(g!==last){ last=g; h+='<div class="nfgrp">'+esc(n.emp||'כללי')+(n.topic?' · '+esc(n.topic):'')+' · '+esc(nlabel(n.y,n.m))+'</div>'; }
+    h+='<label class="nfrow"><input type="checkbox" data-i="'+i+'" checked><span class="fn">'+esc(f.name||'קובץ')+' <em>'+fSize(f.bytes)+'</em></span>'+
+      '<button type="button" data-fopen="'+esc(f.id)+'">פתיחה</button><button type="button" data-fdl="'+esc(f.id)+'">הורדה</button></label>'; });
+  document.getElementById('nfList').innerHTML=h||'<p>אין מסמכים</p>'; nfCount(); rpShow(d);
 }
 /* כניסה מקישור (#f=<קובץ> / #n=<הערה>) — פותחים את ההערה, ולקובץ מציגים כפתור פתיחה (דפדפן חוסם פתיחה בלי לחיצה) */
 function nDeep(tries){
@@ -3623,8 +3800,7 @@ function nWire(rest,y,m){
   el('nAllM').addEventListener('change',function(){NALLM=this.checked;NFORM=null;renderNotes();});
   el('nXlsx').addEventListener('click',function(){ nxOpen('xls',rest,y,m); });
   el('nPdf').addEventListener('click',function(){ nxOpen('pdf',rest,y,m); });
-  if(el('nFilesOne'))el('nFilesOne').addEventListener('click',function(){ nFilesDownload(rest,y,m,'pdf',this); });
-  if(el('nFilesZip'))el('nFilesZip').addEventListener('click',function(){ nFilesDownload(rest,y,m,'zip',this); });
+  if(el('nFiles'))el('nFiles').addEventListener('click',function(){ nfOpen(rest,y,m); });
   var _cf=el('nClrF'); if(_cf)_cf.addEventListener('click',function(){NTOF='';NALLM=false;renderNotes();});
   var _tg=el('nFixTg'); if(_tg)_tg.addEventListener('click',function(){NFIXOPEN=!NFIXOPEN;try{localStorage.setItem('pnkas-fixopen',NFIXOPEN?'1':'0');}catch(_){}renderNotes();});
   var _ax=el('nAddFix'); if(_ax)_ax.addEventListener('click',function(){NFORM={topic:FIXT};NSHOW=false;renderNotes();var f=el('fEmp');if(f)f.focus();});
