@@ -3187,48 +3187,45 @@ function nFilesLink(id){ var L=window.PK?PK.byNote(id):[]; if(!L.length)return n
 /* ---- אקסל של הערות השכר (29.10.2026): מה שמוצג בטבלה + הערות קבועות, ולכל הערה קישור למסמכים ---- */
 function nXlsxBlob(sheets){
   /* 29.10.2026 (איילת): עיצוב — פס כותרת לכל סוג הערה, ₪, שורות סגורות באפור, קישורים בתוך הקובץ ({t,loc}) ומחוצה לו ({t,u}) */
+  var X='<alignment horizontal="right" vertical="top" wrapText="1" readingOrder="2"/>', XN='<alignment horizontal="right" vertical="top" readingOrder="2"/>', XC='<alignment horizontal="right" vertical="center" readingOrder="2"/>';
+  function xf(num,font,fill,border,al){ return '<xf numFmtId="'+num+'" fontId="'+font+'" fillId="'+fill+'" borderId="'+border+'" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">'+(al||'')+'</xf>'; }
+  var XF=[ xf(0,0,0,0), xf(0,2,0,0), xf(0,1,2,1,'<alignment horizontal="right" vertical="center" wrapText="1" readingOrder="2"/>'),
+    xf(49,0,0,1,X), xf(164,0,0,1,XN), xf(0,3,0,1,X), xf(49,7,6,2,XC), xf(49,4,0,1,X), xf(49,6,0,1,X), xf(0,6,0,0,XC), xf(49,8,0,1,X), xf(164,6,0,1,XN),
+    /* 12–18: אותו דבר בשורה מוצללת */ xf(49,0,5,1,X), xf(164,0,5,1,XN), xf(0,3,5,1,X), xf(49,4,5,1,X), xf(49,6,5,1,X), xf(49,8,5,1,X), xf(164,6,5,1,XN),
+    /* 19 סכום בפס הנושא · 20–21 שורת סה״כ */ xf(164,7,6,2,XC), xf(49,9,7,2,XC), xf(164,9,7,2,XC) ];
   var styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
     '<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0 &quot;₪&quot;"/></numFmts>'+
-    '<fonts count="7"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>'+
+    '<fonts count="10"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>'+
     '<font><b/><sz val="15"/><color rgb="FF1E2A38"/><name val="Arial"/></font><font><u/><sz val="10"/><color rgb="FF1F5FBF"/><name val="Arial"/></font>'+
     '<font><b/><sz val="10"/><color rgb="FF1E2A38"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FF1E2A38"/><name val="Arial"/></font>'+
-    '<font><sz val="9"/><color rgb="FF7B838D"/><name val="Arial"/></font></fonts>'+
-    '<fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'+
-    '<fill><patternFill patternType="solid"><fgColor rgb="FF3C4C5C"/><bgColor indexed="64"/></patternFill></fill>'+
-    '<fill><patternFill patternType="solid"><fgColor rgb="FFE6EDF5"/><bgColor indexed="64"/></patternFill></fill>'+
-    '<fill><patternFill patternType="solid"><fgColor rgb="FFFFF3DC"/><bgColor indexed="64"/></patternFill></fill></fills>'+
-    '<borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFE3E7EB"/></left><right style="thin"><color rgb="FFE3E7EB"/></right><top style="thin"><color rgb="FFE3E7EB"/></top><bottom style="thin"><color rgb="FFE3E7EB"/></bottom></border>'+
-    '<border><left/><right/><top style="medium"><color rgb="FF8FA3B8"/></top><bottom style="thin"><color rgb="FFC9D4DF"/></bottom><diagonal/></border></borders>'+
-    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="12">'+
-    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
-    '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
-    '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" wrapText="1" readingOrder="2"/></xf>'+
-    '<xf numFmtId="49" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top" wrapText="1" readingOrder="2"/></xf>'+
-    '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top" readingOrder="2"/></xf>'+
-    '<xf numFmtId="0" fontId="3" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top" wrapText="1" readingOrder="2"/></xf>'+
-    '<xf numFmtId="49" fontId="5" fillId="3" borderId="2" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" readingOrder="2"/></xf>'+
-    '<xf numFmtId="49" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top" wrapText="1" readingOrder="2"/></xf>'+
-    '<xf numFmtId="49" fontId="6" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top" wrapText="1" readingOrder="2"/></xf>'+
-    '<xf numFmtId="0" fontId="6" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="right" vertical="center" readingOrder="2"/></xf>'+
-    '<xf numFmtId="0" fontId="3" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top" wrapText="1" readingOrder="2"/></xf>'+
-    '<xf numFmtId="164" fontId="6" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top" readingOrder="2"/></xf>'+
+    '<font><sz val="9"/><color rgb="FF7B838D"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FF7A5200"/><name val="Arial"/></font>'+
+    '<font><b/><sz val="9"/><color rgb="FFB26B00"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FF1E6B3A"/><name val="Arial"/></font></fonts>'+
+    '<fills count="8"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'+
+    ['FF1F4E79','FFE6EDF5','FFFFF3DC','FFF5F8FB','FFFDF1D8','FFEEF5EF'].map(function(c){ return '<fill><patternFill patternType="solid"><fgColor rgb="'+c+'"/><bgColor indexed="64"/></patternFill></fill>'; }).join('')+'</fills>'+
+    '<borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color rgb="FFE3E8EE"/></bottom><diagonal/></border>'+
+    '<border><left/><right/><top style="thin"><color rgb="FFE8D3A6"/></top><bottom style="thin"><color rgb="FFE8D3A6"/></bottom><diagonal/></border></borders>'+
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="'+XF.length+'">'+XF.join('')+
     '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  var ZM={3:12,4:13,5:14,7:15,8:16,10:17,11:18};
   var files=[], ct='', wbs='', wbr='';
   sheets.forEach(function(S,si){
-    var R=[], links=[], merges=[], rn=0, nc=S.head.length, last=_colName(nc);
-    /* st: 3 טקסט · 7 מודגש (עובד) · 8 אפור (סגורה) · 10 «עוד הערות» */
-    function c(col,row,st,v){ var ref=_colName(col)+row;
-      if(v&&typeof v==='object'){ if(v.loc)links.push({ref:ref,loc:v.loc}); else links.push({ref:ref,u:v.u});
-        return '<c r="'+ref+'" s="'+(st===10?10:5)+'" t="inlineStr"><is><t xml:space="preserve">'+_xe(v.t)+'</t></is></c>'; }
-      if(typeof v==='number'&&isFinite(v))return '<c r="'+ref+'" s="'+(st===8?11:4)+'"><v>'+v+'</v></c>';
-      if(v===''||v==null)return '<c r="'+ref+'" s="'+st+'"/>';
-      return '<c r="'+ref+'" s="'+st+'" t="inlineStr"><is><t xml:space="preserve">'+_xe(v)+'</t></is></c>'; }
+    var R=[], links=[], merges=[], rn=0, nc=S.head.length, last=_colName(nc), z=false;
+    /* st: 3 טקסט · 7 מודגש (עובד) · 8 אפור (סגורה) · 10 סימון «עוד הערה» */
+    function c(col,row,st,v){ var ref=_colName(col)+row, S2;
+      if(v&&typeof v==='object'){ if(v.loc)links.push({ref:ref,loc:v.loc}); else links.push({ref:ref,u:v.u}); S2=z?14:5;
+        return '<c r="'+ref+'" s="'+S2+'" t="inlineStr"><is><t xml:space="preserve">'+_xe(v.t)+'</t></is></c>'; }
+      if(typeof v==='number'&&isFinite(v)){ S2=(st===19||st===21)?st:(st===8?11:4); if(z&&ZM[S2])S2=ZM[S2]; return '<c r="'+ref+'" s="'+S2+'"><v>'+v+'</v></c>'; }
+      S2=(z&&ZM[st])?ZM[st]:st;
+      if(v===''||v==null)return '<c r="'+ref+'" s="'+S2+'"/>';
+      return '<c r="'+ref+'" s="'+S2+'" t="inlineStr"><is><t xml:space="preserve">'+_xe(v)+'</t></is></c>'; }
     R.push('<row r="1" ht="24" customHeight="1">'+c(1,1,1,S.title)+'</row>'); R.push('<row r="2" ht="16" customHeight="1">'+c(1,2,9,S.sub)+'</row>');
-    R.push('<row r="3" ht="20" customHeight="1">'+S.head.map(function(h,i){return c(i+1,3,2,h);}).join('')+'</row>'); rn=3;
+    R.push('<row r="3" ht="22" customHeight="1">'+S.head.map(function(h,i){return c(i+1,3,2,h);}).join('')+'</row>'); rn=3;
     S.rows.forEach(function(r){ rn++;
-      if(r&&r.group!=null){ var g=''; for(var i=1;i<=nc;i++)g+=c(i,rn,6,i===1?r.group:''); R.push('<row r="'+rn+'" ht="21" customHeight="1">'+g+'</row>'); if(nc>1)merges.push('A'+rn+':'+last+rn); return; }
+      if(r&&(r.group!=null||r.total)){ var ac=r.sumCol||0, bs=r.total?20:6, ns=r.total?21:19, g=''; z=false;
+        for(var i=1;i<=nc;i++)g+=c(i,rn,i===ac?ns:bs,i===1?(r.group!=null?r.group:r.text):(i===ac&&r.sum?r.sum:''));
+        R.push('<row r="'+rn+'" ht="22" customHeight="1">'+g+'</row>'); var me=ac?ac-1:nc; if(me>1)merges.push('A'+rn+':'+_colName(me)+rn); return; }
       var cells=Array.isArray(r)?r:r.cells, sts=(r&&r.st)||[];
-      R.push('<row r="'+rn+'">'+cells.map(function(v,i){return c(i+1,rn,sts[i]||(r&&r.off?8:3),v);}).join('')+'</row>'); });
+      R.push('<row r="'+rn+'">'+cells.map(function(v,i){return c(i+1,rn,sts[i]||(r&&r.off?8:3),v);}).join('')+'</row>'); if(S.zebra)z=!z; });
     var sh='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'+
       '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'+
       '<sheetViews><sheetView rightToLeft="1" workbookViewId="0"'+(si?'':' tabSelected="1"')+'><pane ySplit="3" topLeftCell="A4" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'+
@@ -3378,32 +3375,35 @@ function nxDoXls(){
   function srt(a,b){ return String(a.emp||'').localeCompare(String(b.emp||''),'he')||((a.y*12+a.m)-(b.y*12+b.m))||String(a.topic||'').localeCompare(String(b.topic||''),'he'); }
   function val(n,k){ if(k==='topic')return String(n.topic||'').trim()||'כללי'; return nxCell(n,k); }
   function build(){
-    var S1='לפי עובד', S2='לפי סוג הערה';
-    var byEmp={}, order=[]; rows.slice().sort(srt).forEach(function(n){ var k=String(n.emp||'').trim()||'כללי'; if(!byEmp[k]){ byEmp[k]=[]; order.push(k); } byEmp[k].push(n); });
-    order.sort(function(a,b){ return (a==='כללי')-(b==='כללי')||a.localeCompare(b,'he'); });
-    var r1=[], rn=3, empRow={};
-    order.forEach(function(k){ var L=byEmp[k], d=L.reduce(function(s,n){ return s+(files[n.id]||[]).length; },0), sum=L.reduce(function(s,n){ var v=+n.amount; return s+(isNaN(v)?0:v); },0);
-      rn++; empRow[k]=rn; r1.push({group:'👤  '+k+(L[0].dept?'   ·   '+L[0].dept:'')+'   ·   '+L.length+(L.length===1?' הערה':' הערות')+(d?'   ·   📎 '+d+(d===1?' מסמך':' מסמכים'):'')+(sum?'   ·   '+sum.toLocaleString('he-IL')+' ₪':'')});
-      L.forEach(function(n){ rn++; var off=(n.status||'open')!=='open';
-        r1.push({cells:NC.map(function(x){ return val(n,x[0]); }).concat(docCells(n)),st:NC.map(function(x){ return x[0]==='topic'&&!off?7:0; }),off:off}); }); });
-    var tot=rows.reduce(function(s,n){ var v=+n.amount; return s+(isNaN(v)?0:v); },0), nd=rows.reduce(function(s,n){ return s+(files[n.id]||[]).length; },0);
-    var sub=nxSub(rows)+' · '+order.length+' עובדים'+(nd?' · '+nd+' מסמכים':'')+(tot?' · סה״כ '+tot.toLocaleString('he-IL')+' ₪':'')+
-      (nd&&url&&Object.keys(url).length?(zip?' · המסמכים בתיקייה «מסמכים» שליד הקובץ':' · לחיצה על מסמך פותחת אותו (הקישור בתוקף 30 יום)'):'');
-    var sh=[{name:S1,title:'הערות שכר — '+c.rest,sub:sub,head:NC.map(function(x){return x[1];}).concat(DH.map(function(x){return x[0];})),
-      widths:NC.map(function(x){return x[2];}).concat(DH.map(function(x){return x[1];})),rows:r1,noFilter:true}];
-    /* לפי סוג */
-    var TC=[['emp','עובד',20],['dept','מחלקה',12]].concat(NC.filter(function(x){return x[0]!=='topic';}));
+    /* 30.10.2026 (איילת, בסגנון דוח התשלומים של שונטל): טבלה אחת — פס לכל סוג הערה (שם · מספר · סכום), מתחתיו שורה לכל הערה,
+       ובעמודה «עוד הערות» — רק שיודעים שיש לעובד עוד הערה ומאיזה סוג (בלי קפיצות). */
+    var byEmp={}; rows.forEach(function(n){ var k=String(n.emp||'').trim(); if(k)(byEmp[k]=byEmp[k]||[]).push(n); });
+    var many=Object.keys(byEmp).some(function(k){ return byEmp[k].length>1; });
+    var EC=[['emp','עובד',20],['dept','מחלקה',12]], more=many?[['more','עוד הערות לעובד',20]]:[];
+    var MC=NC.filter(function(x){ return x[0]!=='topic'&&x[0]!=='amount'; }), hasAmt=on.amount;
+    var COLS=EC.concat(more,MC), head=COLS.map(function(x){return x[1];}).concat(DH.map(function(x){return x[0];})), widths=COLS.map(function(x){return x[2];}).concat(DH.map(function(x){return x[1];}));
+    if(hasAmt){ head.push('סכום'); widths.push(12); }
+    var ac=hasAmt?head.length:0;
+    function moreTxt(n){ var L=byEmp[String(n.emp||'').trim()]; if(!L||L.length<2)return '';
+      var o=L.filter(function(x){ return x!==n; }).map(function(x){ return val(x,'topic'); });
+      return '+'+o.length+' · '+o.filter(function(t,i){ return o.indexOf(t)===i; }).join(', '); }
+    function line(n){ var off=(n.status||'open')!=='open';
+      var cells=COLS.map(function(x){ return x[0]==='more'?moreTxt(n):val(n,x[0]); }).concat(docCells(n)), st=COLS.map(function(x){ return x[0]==='emp'&&!off?7:(x[0]==='more'?10:0); });
+      if(hasAmt){ var a=nxCell(n,'amount'); cells.push(a); st.push(0); }
+      return {cells:cells,st:st,off:off}; }
     var byT={}, tOrd=[]; rows.forEach(function(n){ var t=val(n,'topic'); if(!byT[t]){ byT[t]=[]; tOrd.push(t); } byT[t].push(n); });
     tOrd.sort(function(a,b){ return (a==='כללי')-(b==='כללי')||a.localeCompare(b,'he'); });
-    var r2=[]; tOrd.forEach(function(t){ var L=byT[t].sort(srt); r2.push({group:'■  '+t+'   ·   '+L.length+(L.length===1?' הערה':' הערות')});
-      L.forEach(function(n){ var off=(n.status||'open')!=='open', k=String(n.emp||'').trim()||'כללי';
-        r2.push({cells:TC.map(function(x){ return x[0]==='emp'?{t:k,loc:"'"+S1+"'!A"+empRow[k]}:val(n,x[0]); }).concat(docCells(n)),st:TC.map(function(){ return 0; }),off:off}); }); });
-    sh.push({name:S2,title:'הערות שכר לפי סוג — '+c.rest,sub:tOrd.length+' סוגים · לחיצה על שם העובד מעבירה לכל ההערות שלו בלשונית «'+S1+'»',
-      head:TC.map(function(x){return x[1];}).concat(DH.map(function(x){return x[0];})),widths:TC.map(function(x){return x[2];}).concat(DH.map(function(x){return x[1];})),rows:r2,noFilter:true});
-    if(FX.length){ var FC=[['emp','עובד',20],['dept','מחלקה',12],['detail','הערה / פירוט',48],['amount','סכום',10]];
-      sh.push({name:'הערות קבועות',title:'הערות קבועות — '+c.rest+' · בתוקף ב'+nlabel(c.y,c.m),sub:FX.length+' הערות',
-        head:FC.map(function(x){return x[1];}).concat(DH.map(function(x){return x[0];})),widths:FC.map(function(x){return x[2];}).concat(DH.map(function(x){return x[1];})),
-        rows:FX.slice().sort(srt).map(function(n){ return {cells:FC.map(function(x){ return nxCell(n,x[0]); }).concat(docCells(n)),st:FC.map(function(x){ return x[0]==='emp'?7:0; })}; })}); }
+    var out=[], tot=0;
+    tOrd.forEach(function(t){ var L=byT[t].sort(srt), sum=L.reduce(function(s,n){ var v=+n.amount; return s+(isNaN(v)?0:v); },0); tot+=sum;
+      out.push({group:'•  '+t+'   ('+L.length+')',sum:hasAmt&&sum?sum:'',sumCol:ac}); L.forEach(function(n){ out.push(line(n)); }); });
+    if(hasAmt&&tot)out.push({total:true,text:'סה״כ הכל',sum:tot,sumCol:ac});
+    var nd=rows.reduce(function(s,n){ return s+(files[n.id]||[]).length; },0);
+    var sub=nxSub(rows)+(nd?' · '+nd+' מסמכים — '+(Object.keys(url).length?(zip?'בתיקייה «מסמכים» שליד הקובץ':'לחיצה פותחת (הקישור בתוקף 30 יום)'):'שמות בלבד'):'');
+    var sh=[{name:'הערות שכר',title:'הערות שכר — '+c.rest,sub:sub,head:head,widths:widths,rows:out,zebra:true,noFilter:true}];
+    if(FX.length){ var FC=[['emp','עובד',20],['dept','מחלקה',12],['detail','הערה / פירוט',48]];
+      sh.push({name:'הערות קבועות',title:'הערות קבועות — '+c.rest+' · בתוקף ב'+nlabel(c.y,c.m),sub:FX.length+' הערות',zebra:true,
+        head:FC.map(function(x){return x[1];}).concat(DH.map(function(x){return x[0];}),hasAmt?['סכום']:[]),widths:FC.map(function(x){return x[2];}).concat(DH.map(function(x){return x[1];}),hasAmt?[12]:[]),
+        rows:FX.slice().sort(srt).map(function(n){ return {cells:FC.map(function(x){ return nxCell(n,x[0]); }).concat(docCells(n),hasAmt?[nxCell(n,'amount')]:[]),st:FC.map(function(x){ return x[0]==='emp'?7:0; })}; })}); }
     return nXlsxBlob(sh);
   }
   var jobs=[]; if(withDocs&&maxD)all.forEach(function(n){ (files[n.id]||[]).forEach(function(f){ jobs.push({f:f,n:n}); }); });
