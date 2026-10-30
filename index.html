@@ -475,6 +475,9 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:po
 .nfrow:hover{background:var(--soft,#f3f5f7)}
 .nfrow .fn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nfrow em{font-style:normal;color:#8a929b;font-size:11.5px}
 .nfrow button{font:inherit;font-size:12px;border:1px solid var(--line,#dfe3e8);background:#fff;border-radius:7px;padding:3px 9px;cursor:pointer}
+.mkbox{border:1px solid #f0d9a6;background:#fff8ea;border-radius:10px;padding:8px 10px;margin:4px 0 10px}.mkbox .cap{display:block;font-size:12px;font-weight:700;color:#8a5a00;margin-bottom:4px}
+.mkrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 0;font-size:13.5px;flex-wrap:wrap}.mkrow .btn{font-size:12px;padding:3px 9px}
+.mkby{font-size:11.5px;color:#7b838d;margin-inline-start:6px}
 .rpcols{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:4px 10px}
 .rpcols label{display:flex;align-items:center;gap:7px;font-size:13px;padding:5px 8px;border-radius:7px;cursor:pointer}
 .rpcols label:hover{background:var(--soft,#f3f5f7)}
@@ -1553,6 +1556,13 @@ function GAS(){return (typeof google!=='undefined')&&google.script&&google.scrip
 var JUSTSAVED=0;
 function mk(id){if(!MARKS[id])MARKS[id]={};return MARKS[id];}
 function touch(id){mk(id).u=new Date().toISOString().slice(0,10);DIRTY=true;PEND[id]=1;}
+/* 30.10.2026 (איילת): כל סימון קובע (עזב/פעיל/טופל/שיפט) — נשאל «בטוחה?», ונשמר מי ומתי, כדי שיהיה ברור בכרטיס ואפשר לתקן */
+function whoNow(){ return (window.PK&&PK.me&&PK.me.name)||WHO||''; }
+function stamp(m,key){ m.by=m.by||{}; m.by[key]={who:whoNow(),at:new Date().toISOString().slice(0,10)}; }
+var DONE_HE={f101:'חסר טופס 101',left:'לברר אם עזב',docs:'חסרים מסמכים',age:'נדחה עד גיל',pens:'פנסיה'};
+/* לבדיקות האוטומטיות בלבד — קריאה והחזרה של סימון עובד */
+window.__pkMarks={get:function(i){return MARKS[i]?JSON.parse(JSON.stringify(MARKS[i])):null;},put:function(i,o){ if(o)MARKS[i]=o; else delete MARKS[i]; PEND[i]=1; DIRTY=true; save(); render(); }};
+var SHIFT_HE={'':'מחתים/ה בשיפט',none:'לא אמור/ה להחתים בשיפט (תקין)',missing:'חסר/ה בשיפט — טעות לטיפול'};
 /* 26.10.2026: הכפתור «סמן/בטל לא פעיל» בטבלת העובדים קורא לפונקציה הזו מבחוץ — קודם היא לא הייתה זמינה והכפתור לא עבד */
 window.toggleInactiveById=function(eid){eid=+eid;var m=mk(eid);m.status=(m.status==='לא פעיל'?'':'לא פעיל');touch(eid);save();render();};
 function nMarks(){return Object.keys(MARKS).filter(function(k){var m=MARKS[k];
@@ -2337,6 +2347,15 @@ function open(id){
         }
         return out+'<p class="doclegend">לחיצה מחליפה: נדרש ← התקבל ← ריק · <b>📎 = קיים קובץ, לחיצה פותחת אותו</b></p>';
       })())+
+    (function(){ var by=m.by||{}, rows=[];
+      function who(k){ var b=by[k]; return b?' <span class="mkby">'+esc(b.who||'')+(b.at?' · '+esc(fmtD(b.at)):'')+'</span>':''; }
+      if(m.status)rows.push('<div class="mkrow"><span>סטטוס: <b>'+esc(m.status)+'</b>'+who('status')+'</span><button class="btn ghost" type="button" data-mkundo="status">↩ לתקן — לפי הנתונים</button></div>');
+      Object.keys(m.done||{}).forEach(function(k){ if(m.done[k])rows.push('<div class="mkrow"><span>טופל: <b>'+esc(DONE_HE[k]||k)+'</b>'+who('done_'+k)+'</span><button class="btn ghost" type="button" data-mkundo="done_'+esc(k)+'">↩ לבטל «טופל»</button></div>'); });
+      return rows.length?'<div class="mkbox"><span class="cap">סימונים שגוברים על הנתונים</span>'+rows.join('')+'</div>':''; })()+
+    '<div class="fieldrow wide"><label for="mShift">שיפט</label><select id="mShift">'+
+      ['','none','missing'].map(function(v){return '<option value="'+v+'"'+((m.shift||'')===v?' selected':'')+'>'+SHIFT_HE[v]+'</option>';}).join('')+'</select>'+
+      (m.shift==='none'?'<input type="text" id="mShiftWhy" placeholder="למה? (בעלים, עובד חוץ…)" value="'+esc(m.shift_why||'')+'" aria-label="סיבה">':'')+
+      ((m.by||{}).shift?'<span class="mkby">'+esc(m.by.shift.who||'')+' · '+esc(fmtD(m.by.shift.at))+'</span>':'')+'</div>'+
     '<div class="fieldrow wide"><label for="mNote">הערה</label><textarea id="mNote" placeholder="הערה חופשית…">'+esc(m.note||'')+'</textarea></div>'+
     '<details class="more"><summary>עוד הגדרות</summary>'+
       '<div class="fieldrow wide"><label>סוג העסקה</label><div class="docgrid" style="flex:1 1 100%">'+
@@ -2397,8 +2416,21 @@ function wire(id){
       var file=fs.shift(); if(file.size>25*1048576){bad++;next();return;}
       PK.upload(file,{rest:(e2.rest==='זרים'?(e2.orig_rest||'אסא'):e2.rest),emp_id:id,kind:'doc',dtype:tp}).then(function(){done++;st.textContent='הועלו '+done+'…';},function(){bad++;}).then(next); })(); });
   on('m101','change',function(){apply(function(m){m.f101=el('m101').value;});});
-  on('mStatus','change',function(){apply(function(m){m.status=el('mStatus').value;});});   on('btnToggleActive','click',function(){apply(function(m){m.status=(m.status==='לא פעיל'?'':'לא פעיל');});});
+  on('mStatus','change',function(){var v=el('mStatus').value, cur=(MARKS[id]||{}).status||'';
+    if(!confirm(v?'לשנות את הסטטוס ל«'+v+'»?\n\nהסימון גובר על התלושים והנוכחות.':'להחזיר את הסטטוס ל«לפי הנתונים» (לבטל את הסימון)?')){ el('mStatus').value=cur; return; }
+    apply(function(m){m.status=v; stamp(m,'status');});});   on('btnToggleActive','click',function(){var cur=(MARKS[id]||{}).status; if(!confirm(cur==='לא פעיל'?'להחזיר לפעיל?':'לסמן כלא פעיל?'))return; apply(function(m){m.status=(m.status==='לא פעיל'?'':'לא פעיל'); stamp(m,'status');});});
   on('mDept','change',function(){apply(function(m){m.dept=el('mDept').value;});});
+  on('mShift','change',function(){var v=el('mShift').value, cur=(MARKS[id]||{}).shift||'', why='';
+    if(v==='none'){ why=prompt('למה הוא/היא לא אמור/ה להחתים בשיפט? (למשל: בעלים, עובד חוץ, גלובלי)',(MARKS[id]||{}).shift_why||''); if(why==null||!why.trim()){ el('mShift').value=cur; if(why!=null)alert('צריך לכתוב סיבה קצרה'); return; } }
+    else if(!confirm('לסמן: '+SHIFT_HE[v]+'?')){ el('mShift').value=cur; return; }
+    apply(function(m){m.shift=v; m.shift_why=v==='none'?why.trim():''; stamp(m,'shift');});});
+  on('mShiftWhy','change',function(){var v=el('mShiftWhy').value.trim(); if(!v){ alert('צריך לכתוב סיבה קצרה'); el('mShiftWhy').value=(MARKS[id]||{}).shift_why||''; return; } apply(function(m){m.shift_why=v; stamp(m,'shift');});});
+  var _mkb=el('dbody'); if(_mkb&&!_mkb.__mkundo){ _mkb.__mkundo=1; _mkb.addEventListener('click',function(ev){ var b=ev.target.closest('button[data-mkundo]'); if(!b)return;
+    var k=b.dataset.mkundo, eid=+(_mkb.dataset.eid||0); if(!eid)return;
+    if(!confirm(k==='status'?'לבטל את סימון הסטטוס ולחזור ל«לפי הנתונים»?':'לבטל את «טופל» ('+(DONE_HE[k.slice(5)]||'')+')? השורה תחזור לרשימה.'))return;
+    var m=mk(eid); if(k==='status'){ m.status=''; if(m.done)delete m.done.left; } else if(m.done){ delete m.done[k.slice(5)]; }
+    if(m.by)delete m.by[k]; touch(eid); JUSTSAVED=Date.now(); save(); render(); open(eid); }); }
+  if(_mkb)_mkb.dataset.eid=id;
   on('mLast','change',function(){apply(function(m){m.left_last=el('mLast').value.trim();});});
   on('mBirth','change',function(){apply(function(m){m.birth=el('mBirth').value;});});
   on('mGender','change',function(){apply(function(m){m.gender=el('mGender').value;});});
@@ -2450,16 +2482,22 @@ document.getElementById('todoView').addEventListener('click',function(ev){
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(okc,function(){prompt('העתיקי:',txt);}); else prompt('העתיקי:',txt);
     ev.stopPropagation(); return;}
   var sb=ev.target.closest('button[data-setstatus]');
-  if(sb){var sid=+sb.dataset.setstatus,sv=sb.dataset.val,prev0=MARKS[sid]?JSON.stringify(MARKS[sid]):null,ms=mk(sid);
-    ms.status=sv; if(sv==='עזב'){ms.done=ms.done||{};ms.done.left=true;}
+  if(sb){var sid=+sb.dataset.setstatus,sv=sb.dataset.val,prev0=MARKS[sid]?JSON.stringify(MARKS[sid]):null;
+    var en0=(E.filter(function(x){return x.id===sid;})[0]||{}).name||'';
+    ev.stopPropagation();
+    if(!confirm('לסמן את '+en0+' כ'+(sv==='עזב'?'«עזב/ה»':'«ממשיך/ה לעבוד»')+'?\n\nהסימון גובר על התלושים והנוכחות. אפשר לתקן אחר כך בכרטיס העובד.'))return;
+    var ms=mk(sid); ms.status=sv; stamp(ms,'status'); if(sv==='עזב'){ms.done=ms.done||{};ms.done.left=true;}
     touch(sid);save();render();ev.stopPropagation();
     var en=(E.filter(function(x){return x.id===sid;})[0]||{}).name||'';
     toast('סומן: '+esc(en)+' — '+(sv==='עזב'?'עזב/ה':'ממשיך/ה לעבוד'),function(){ if(prev0)MARKS[sid]=JSON.parse(prev0); else delete MARKS[sid]; PEND[sid]=1; DIRTY=true; save(); render(); });
     return;}
   var db=ev.target.closest('button[data-done]');
-  if(db){var id=+db.dataset.done,kind=db.dataset.kind,prev=MARKS[id]?JSON.stringify(MARKS[id]):null,m=mk(id);
-    m.done=m.done||{};
-    m.done[kind==='חסר טופס 101'?'f101':(kind==='לברר אם עזב'?'left':(kind==='חסרים מסמכים'?'docs':(kind==='נדחה עד גיל'?'age':'pens')))]=true;
+  if(db){var id=+db.dataset.done,kind=db.dataset.kind,prev=MARKS[id]?JSON.stringify(MARKS[id]):null;
+    var nm0=(E.filter(function(x){return x.id===id;})[0]||{}).name||'';
+    ev.stopPropagation();
+    if(!confirm('לסמן «טופל» אצל '+nm0+' — '+kind+'?\n\nהשורה תרד מהרשימה. אפשר לבטל אחר כך בכרטיס העובד.'))return;
+    var m=mk(id), dk=kind==='חסר טופס 101'?'f101':(kind==='לברר אם עזב'?'left':(kind==='חסרים מסמכים'?'docs':(kind==='נדחה עד גיל'?'age':'pens')));
+    m.done=m.done||{}; m.done[dk]=true; stamp(m,'done_'+dk);
     touch(id);save();render();ev.stopPropagation();
     var nm=(E.filter(function(x){return x.id===id;})[0]||{}).name||'';
     toast('✓ '+esc(nm)+' — סומן «טופל»',function(){ if(prev)MARKS[id]=JSON.parse(prev); else delete MARKS[id]; PEND[id]=1; DIRTY=true; save(); render(); });
