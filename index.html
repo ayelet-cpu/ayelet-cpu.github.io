@@ -1789,6 +1789,16 @@ function renderTodo(){
     });
     h+='</div></section>';
   });
+  /* 30.10.2026: מי שסומן «חסר בשיפט — טעות» — רשימה נפרדת עד שמתקנים */
+  var SM=A.filter(function(e){ return (MARKS[e.id]||{}).shift==='missing'; });
+  if(SM.length){ any=true;
+    h+='<section class="tlsec sev-warn"><header><span class="tlcnt">'+SM.length+'</span><h2>צריך לפתוח שיפט</h2>'+
+       '<button class="tlq" type="button" data-help aria-label="הסבר" title="הסבר">?</button></header>'+
+       '<p class="tlhelp" hidden>עובדים שסומנו בכרטיס «חסר/ה בשיפט — טעות לטיפול». אחרי שנפתחה להם רשומה בשיפט — ללחוץ «נפתח בשיפט».</p><div class="tlrows">'+
+       SM.map(function(e){ var b=((MARKS[e.id]||{}).by||{}).shift;
+         return '<div class="tlrow" data-id="'+e.id+'" tabindex="0"><div class="tln"><b>'+esc(e.name)+'</b><em>'+esc(e.dept)+(e.start?' · התחיל/ה '+esc(fmtD(e.start)):'')+'</em></div>'+
+           '<div class="tlf"><b>חסר/ה בשיפט</b>'+(b?'<span class="dnote">סומן ע״י '+esc(b.who||'')+' · '+esc(fmtD(b.at))+'</span>':'')+'</div>'+
+           '<div class="tla"><button class="tlb done" data-shiftok="'+e.id+'" type="button">✓ נפתח בשיפט</button></div></div>'; }).join('')+'</div></section>'; }
   if(!any)h+='<section class="tlsec sev-done"><header><h2>אין מה לטפל ✓</h2></header><p class="tlhelp">כל הנושאים סגורים במסעדה הזו.</p></section>';
   box.innerHTML=h+'</div>';
 }
@@ -2491,6 +2501,9 @@ document.getElementById('todoView').addEventListener('click',function(ev){
     var en=(E.filter(function(x){return x.id===sid;})[0]||{}).name||'';
     toast('סומן: '+esc(en)+' — '+(sv==='עזב'?'עזב/ה':'ממשיך/ה לעבוד'),function(){ if(prev0)MARKS[sid]=JSON.parse(prev0); else delete MARKS[sid]; PEND[sid]=1; DIRTY=true; save(); render(); });
     return;}
+  var so=ev.target.closest('button[data-shiftok]');
+  if(so){ ev.stopPropagation(); var si=+so.dataset.shiftok, sn=(E.filter(function(x){return x.id===si;})[0]||{}).name||'';
+    if(!confirm('לסמן ש'+sn+' כבר נפתח/ה בשיפט?'))return; var mm=mk(si); mm.shift=''; mm.shift_why=''; stamp(mm,'shift'); touch(si); save(); render(); toast('✓ '+esc(sn)+' — נפתח בשיפט'); return; }
   var db=ev.target.closest('button[data-done]');
   if(db){var id=+db.dataset.done,kind=db.dataset.kind,prev=MARKS[id]?JSON.stringify(MARKS[id]):null;
     var nm0=(E.filter(function(x){return x.id===id;})[0]||{}).name||'';
