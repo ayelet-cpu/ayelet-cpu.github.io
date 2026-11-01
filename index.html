@@ -1271,7 +1271,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 var SB='https://mjhywoiwdvuxymuyhhdc.supabase.co';
 var KEY='sb_publishable_c7Y5hKxAqpzIFhhbuhNS2g_u55YKB90';
 var SK='pinkas-cloud-session', UK='pinkas-cloud-user';
-var USERS=[{k:'ayelet',n:'איילת'},{k:'tali',n:'טלי'},{k:'yuval',n:'יובל'}];
+var USERS=[{k:'ayelet',n:'איילת'},{k:'tali',n:'טלי'},{k:'yuval',n:'יובל'},{k:'amit',n:'עמית'}];
 var RC={'אסא':'asa',"צ'אקולי":'chakoli','צאקולי':'chakoli','זרים':'asa'};
 var $=function(i){return document.getElementById(i);};
 function store(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(_){}}
@@ -3131,7 +3131,7 @@ var NFIXOPEN=true; try{NFIXOPEN=localStorage.getItem('pnkas-fixopen')!=='0';}cat
 var AYRE=/הערה\s*ל\s*איילת|(^|[\s("'])איילת\s*[-–:,]/;
 /* 29.10.2026 (איילת): «מופנית ל» — חשבת השכר (ברירת מחדל) או אחת המנהלות. הערה שמופנית לאדם מחכה לתשובה שלו,
    ורק אז נכנסת להודעה לחשבת השכר (עם ההחלטה). הערות ישנות: לפי הטקסט («הערה לאיילת…») או to_ay. */
-var NTO=['חשבת השכר','איילת','טלי','יובל'], NTO0=NTO[0];
+var NTO=['חשבת השכר','איילת','טלי','יובל','עמית'], NTO0=NTO[0];
 function nTo(n){ if(!n)return NTO0; if(n.to)return n.to; if(n.to_ay===true)return 'איילת'; if(n.to_ay===false)return NTO0; return AYRE.test(String(n.detail||''))?'איילת':NTO0; }
 function nToAy(n){ return nTo(n)!==NTO0; }   /* מופנית לאדם (לא לחשבת השכר) */
 function nAyWait(n){ return !nPriv(n)&&nToAy(n)&&!n.ay_ans&&(n.status||'open')!=='done'; }
@@ -3834,7 +3834,7 @@ function nSysNotes(rest,y,m){
   return out;
 }
 /* לחשבת השכר: בלי הפנייה לאיילת, ועם ההחלטה של איילת אם יש */
-function nDetailOut(n){ var d=String(n.detail||''); if(nToAy(n))d=d.replace(/^\s*(הערה\s*ל\s*)?(איילת|טלי|יובל)\s*[-–:,]\s*/,''); return d+(n.ay_ans?' (החלטה: '+n.ay_ans+')':''); }
+function nDetailOut(n){ var d=String(n.detail||''); if(nToAy(n))d=d.replace(/^\s*(הערה\s*ל\s*)?(איילת|טלי|יובל|עמית)\s*[-–:,]\s*/,''); return d+(n.ay_ans?' (החלטה: '+n.ay_ans+')':''); }
 function nSendText(rest,y,m,all){
   var mgr=all.filter(function(n){return (n.status||'open')!=='done'&&!nAyWait(n)&&!nPriv(n);});
   var lines=['הערות שכר '+rest+' — '+nlabel(y,m),'(הופק '+new Date().toLocaleDateString('he-IL')+')',''];
