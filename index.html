@@ -2213,9 +2213,9 @@ function notesByMonth(e){
 }
 function allEmpFiles(e){
   var L=(e.cfiles||[]).slice(), seen={};
-  L.forEach(function(f){seen[f.id]=1;});
+  L.forEach(function(f){seen[f.id]=1;if(f.path)seen[f.path]=1;});
   Object.keys(NOTES).map(function(k){return NOTES[k];}).filter(function(n){return n&&(n.eid===e.id||(n.emp===e.name&&(n.rest===e.rest||n.rest===e.orig_rest)));})
-    .forEach(function(n){ (window.PK?PK.byNote(n.id):[]).forEach(function(f){ if(!seen[f.id]){seen[f.id]=1;L.push(f);} }); });
+    .forEach(function(n){ (window.PK?PK.byNote(n.id):[]).forEach(function(f){ if(!seen[f.id]&&!(f.path&&seen[f.path])){seen[f.id]=1;if(f.path)seen[f.path]=1;L.push(f);} }); });
   return L.sort(function(a,b){return String((b.meta||{}).date||b.created_at).localeCompare(String((a.meta||{}).date||a.created_at));});
 }
 function docsBox(e){
@@ -3187,6 +3187,7 @@ function renderNotes(){
     '<button class="btn" id="nSend" type="button" aria-pressed="'+(NSHOW?'true':'false')+'">📤 לשליחה לחשבת שכר</button>'+
     '<button class="btn" id="nXlsx" type="button" title="בחירת עמודות ומה ייכלל — אקסל">⬇ אקסל</button>'+
     '<button class="btn" id="nPdf" type="button" title="בחירת עמודות ומה ייכלל — מסך מסודר להדפסה / שמירה כ-PDF">PDF</button>'+
+    '<button class="btn" id="nLink" type="button" title="מצרף לכל הערה את המסמך המתאים מכרטיס העובד — אותו עובד, אותו סוג מסמך, אותו חודש שכר. לפני שמקשרים מוצגת רשימה לאישור">🔗 קישור מסמכים</button>'+
     (function(){ var c=nFilesFor(rest,y,m).length; return c?'<button class="btn" id="nFiles" type="button" title="המסמכים של ההערות שמוצגות (+ הערות קבועות) — להוריד הכול, כמה או אחד">📎 '+c+' קבצים — הורדה</button>':''; })()+
     '<span class="count">'+(NALLM||NTOF||NTOPIC||NQ?rows.length+' מוצגות · ':'')+all.length+' הערות ב'+esc(nlabel(y,m))+' · '+open+' פתוחות</span></div>';
   if(NFORM)h+=nFormHtml(rest,y,m);
@@ -3926,6 +3927,27 @@ function nFilesWire(rest){
       PK.upload(file,{rest:rest,emp_id:e?e.id:null,note_id:nidv,kind:'note',dtype:tp}).then(function(){done++;st.textContent='הועלו '+done+'…';draw();},function(err){bad++;try{console.warn('pinkas upload',err);}catch(_){}}).then(next); })();
   });
 }
+/* 1.11.2026 איילת: «תקשר אותם אוטומטית כשאלחץ על כפתור — לפי חודש השכר הנכון».
+   לכל הערה בחודש המוצג: מסמך מכרטיס העובד (אותו עובד) מאותו סוג (101 / קוביות-פנסיה / שחרור / תיאום מס / מחלה / מילואים / בנק / חוזה / ת"ז / ויזה / תושבות)
+   ומאותו חודש שכר (תיקיית החודש, או החודש שבשם הקובץ). רק מה שעוד לא מצורף. מציגים רשימה ומקשרים רק אחרי אישור — הקובץ עצמו לא מועתק. */
+var NLG=[['101'],['קוביות','פנסי','קרן','הפניקס','מיטב','מגדל','מנורה','אלטשולר','הראל'],['שחרור'],['תיאום'],['מחלה'],['מילואים','3010'],['ניהול חשבון','חשבון בנק'],['הסכם','חוזה'],['תעודת זהות','ת"ז','ספח'],['ויזה','דרכון','אשרה'],['תושבות']];
+function nlGroups(t){ t=String(t||''); var o={}; NLG.forEach(function(g,i){ if(g.some(function(w){ return t.indexOf(w)>=0; })) o[i]=1; }); return o; }
+function nlDocYM(f,y){ var mt=f.meta||{}, mm=String(mt.month||''), r=/^(\d{4})-(\d{2})/.exec(mm); if(r) return {y:+r[1],m:+r[2]};
+  var i=HE.indexOf(mm.trim()); if(i>=0) return {y:y,m:i+1}; r=/^(\d{4})-(\d{2})/.exec(String(mt.date||'')); return r?{y:+r[1],m:+r[2]}:null; }
+function nLinkDocs(rest,y,m){
+  var notes=nlist(y,m,rest), L=[], have={};
+  (window.PK?PK.files():[]).forEach(function(f){ if(f.note_id&&!f.deleted_at) have[f.note_id+'|'+f.path]=1; });
+  notes.forEach(function(n){ var eid=+n.eid; if(!eid) return; var g=nlGroups((n.topic||'')+' '+(n.detail||'')); if(!Object.keys(g).length) return;
+    PK.byEmp(eid).forEach(function(f){ if(f.kind==='note'||have[n.id+'|'+f.path]) return; var ym=nlDocYM(f,y); if(!ym||ym.y!==y||ym.m!==m) return;
+      var fg=nlGroups((f.dtype||'')+' '+(f.name||'')); if(!Object.keys(fg).some(function(k){ return g[k]; })) return;
+      have[n.id+'|'+f.path]=1; L.push({n:n,f:f}); }); });
+  if(!L.length){ alert('לא נמצאו מסמכים לקשר ב'+nlabel(y,m)+'.\n\nמקשרים רק מסמך שכבר נמצא בענן בכרטיס של אותו עובד, מאותו סוג ומאותו חודש שכר.\nמסמכים מתיקיות החודש (למשל «ספטמבר») עולים לענן בעדכון היומי מהמחשב.'); return; }
+  if(!confirm('לקשר '+L.length+' מסמכים להערות של '+nlabel(y,m)+'?\n\n'+L.map(function(x){ return '• '+(x.n.emp||'')+' — '+(x.n.topic||'')+' ← '+(x.f.name||''); }).join('\n'))) return;
+  var rows=L.map(function(x){ return {rest:x.f.rest,emp_id:+x.n.eid,note_id:x.n.id,kind:'note',dtype:x.f.dtype||null,name:x.f.name,path:x.f.path,mime:x.f.mime||null,bytes:x.f.bytes||null,source:'קישור ממסמכי העובד',meta:{link_of:x.f.id}}; });
+  json('/rest/v1/pinkas_files',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(rows)})
+    .then(function(r){ (r||[]).forEach(function(x){ FILES.push(x); }); renderNotes(); alert('✓ קושרו '+(r||[]).length+' מסמכים'); },function(e){ alert('הקישור נכשל: '+(e&&e.message||e)); });
+}
+try{ window.nLinkDocs=nLinkDocs; }catch(_){}
 function renderNotesQuiet(){ /* מעדכן את מונה הקבצים בטבלה בלי לסגור את הטופס */ try{hero();}catch(_){} }
 function nWire(rest,y,m){
   var box=document.getElementById('notesView');
@@ -3943,6 +3965,7 @@ function nWire(rest,y,m){
   el('nAllM').addEventListener('change',function(){NALLM=this.checked;NFORM=null;renderNotes();});
   el('nXlsx').addEventListener('click',function(){ nxOpen('xls',rest,y,m); });
   el('nPdf').addEventListener('click',function(){ nxOpen('pdf',rest,y,m); });
+  el('nLink').addEventListener('click',function(){ nLinkDocs(rest,y,m); });
   if(el('nFiles'))el('nFiles').addEventListener('click',function(){ nfOpen(rest,y,m); });
   var _cf=el('nClrF'); if(_cf)_cf.addEventListener('click',function(){NTOF='';NALLM=false;renderNotes();});
   var _tg=el('nFixTg'); if(_tg)_tg.addEventListener('click',function(){NFIXOPEN=!NFIXOPEN;try{localStorage.setItem('pnkas-fixopen',NFIXOPEN?'1':'0');}catch(_){}renderNotes();});
