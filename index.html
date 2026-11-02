@@ -3633,6 +3633,35 @@ function _pdfLib(){
   return new Promise(function(res,rej){ var sc=document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
     sc.onload=function(){ res(window.PDFLib); }; sc.onerror=function(){ rej(new Error('אין חיבור לאינטרנט לטעינת רכיב ה-PDF')); }; document.head.appendChild(sc); });
 }
+/* 2.11.2026 איילת: «תתקן שלא יקרה שוב ביצוא דוחות» — ב-PDF המאוחד לחשבת אישור הקרן של בר שם טוב יצא 3 עמודים לבנים
+   (pdf-lib העתיק את העמודים, אבל התוכן שלהם לא נקרא). עכשיו: מעתיקים, מציירים כל עמוד שהועתק ומשווים למקור (pdf.js);
+   עמוד שיצא ריק/שבור — נכנס כתמונה של העמוד המקורי. אם pdf.js לא נטען — מעתיקים כמו קודם. */
+var _PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+function _pdfJs(){ if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);
+  return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=_PDFJS+'pdf.min.js';
+    s.onload=function(){ window.pdfjsLib.GlobalWorkerOptions.workerSrc=_PDFJS+'pdf.worker.min.js'; res(window.pdfjsLib); };
+    s.onerror=function(){ rej(new Error('pdf.js')); }; document.head.appendChild(s); }); }
+function _pdfInk(pdf,i,scale){ return pdf.getPage(i).then(function(pg){ var vp=pg.getViewport({scale:scale}), v1=pg.getViewport({scale:1}), c=document.createElement('canvas');
+  c.width=Math.ceil(vp.width); c.height=Math.ceil(vp.height); var cx=c.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,c.width,c.height);
+  return pg.render({canvasContext:cx,viewport:vp}).promise.then(function(){ var d=cx.getImageData(0,0,c.width,c.height).data, n=0;
+    for(var k=0;k<d.length;k+=16)if(d[k]<200||d[k+1]<200||d[k+2]<200)n++; return {n:n,c:c,w:v1.width,h:v1.height}; }); }); }
+function _pdfCopySafe(P,doc,u8){
+  return P.PDFDocument.load(u8,{ignoreEncryption:true}).then(function(src){
+    var idx=src.getPageIndices();
+    function plain(){ return doc.copyPages(src,idx).then(function(pp){ pp.forEach(function(p){ doc.addPage(p); }); return pp.length; }); }
+    return P.PDFDocument.create().then(function(tmp){ return tmp.copyPages(src,idx).then(function(pp){ pp.forEach(function(p){ tmp.addPage(p); }); return tmp.save({useObjectStreams:false}); }); })
+      .then(function(copied){ return _pdfJs().then(function(J){ return Promise.all([J.getDocument({data:u8.slice()}).promise, J.getDocument({data:copied}).promise]); }); })
+      .then(function(two){ var o=two[0], c=two[1];
+        return idx.reduce(function(pr,i){ return pr.then(function(){
+          return Promise.all([_pdfInk(o,i+1,0.5), _pdfInk(c,i+1,0.5).catch(function(){ return {n:-1}; })]).then(function(r){
+            function keep(){ return doc.copyPages(src,[i]).then(function(pg){ doc.addPage(pg[0]); }); }
+            if(!r[0].n||(r[1].n>=0&&r[1].n>=r[0].n*0.8)) return keep();
+            return _pdfInk(o,i+1,2).then(function(big){ if(big.n<r[0].n) return keep(); /* גם הציור של המקור לא הצליח — לא מכניסים תמונה ריקה */
+              return doc.embedJpg(big.c.toDataURL('image/jpeg',0.85)).then(function(img){
+              doc.addPage([big.w,big.h]).drawImage(img,{x:0,y:0,width:big.w,height:big.h}); }); }); }); }); },Promise.resolve()).then(function(){ return idx.length; }); },
+        function(){ return plain(); });
+  });
+}
 function _ext(n){ var m=/\.([A-Za-z0-9]{1,8})$/.exec(n||''); return m?m[1].toLowerCase():'bin'; }
 function _safeName(s){ return String(s||'').replace(/[\\\/:*?"<>|\r\n\t]+/g,' ').replace(/\s+/g,' ').trim().slice(0,80); }
 function _dlBlob(blob,fn){ var url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download=fn; a.style.display='none'; document.body.appendChild(a); a.click();
@@ -3666,8 +3695,7 @@ function nFilesDownload(rest,y,m,mode,btn,list){
         var f=x.it.f, ext=_ext(f.name), mime=String(f.mime||'').toLowerCase();
         if(!x.u8){ skipped.push(f.name+' (לא נטען)'); return; }
         if(ext==='pdf'||mime==='application/pdf'){
-          return P.PDFDocument.load(x.u8,{ignoreEncryption:true}).then(function(src){ return doc.copyPages(src,src.getPageIndices()); })
-            .then(function(pages){ pages.forEach(function(pg){ doc.addPage(pg); }); },function(){ skipped.push(f.name+' (PDF נעול/פגום)'); });
+          return _pdfCopySafe(P,doc,x.u8).then(null,function(){ skipped.push(f.name+' (PDF נעול/פגום)'); });
         }
         var isJpg=/^(jpe?g)$/.test(ext)||mime==='image/jpeg', isPng=ext==='png'||mime==='image/png';
         if(isJpg||isPng){
@@ -3705,8 +3733,7 @@ function _pdfAppend(P,doc,u8,f,skipped){
   var ext=_ext(f.name), mime=String(f.mime||'').toLowerCase();
   if(!u8){ skipped.push(f.name+' (לא נטען)'); return Promise.resolve(0); }
   if(ext==='pdf'||mime==='application/pdf')
-    return P.PDFDocument.load(u8,{ignoreEncryption:true}).then(function(src){ return doc.copyPages(src,src.getPageIndices()); })
-      .then(function(pages){ pages.forEach(function(pg){ doc.addPage(pg); }); return pages.length; },function(){ skipped.push(f.name+' (PDF נעול/פגום)'); return 0; });
+    return _pdfCopySafe(P,doc,u8).then(null,function(){ skipped.push(f.name+' (PDF נעול/פגום)'); return 0; });
   var isJpg=/^(jpe?g)$/.test(ext)||mime==='image/jpeg', isPng=ext==='png'||mime==='image/png';
   if(isJpg||isPng)
     return (isJpg?doc.embedJpg(u8):doc.embedPng(u8)).then(function(img){
