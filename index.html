@@ -1771,6 +1771,8 @@ function needDocs(e){ /* מסמכי הפנסיה הרלוונטיים לעובד
   return PENS_DOCS.filter(function(t){return !(t==='אישור קרן פנסיה פעילה'&&(e.pension==='אין'||e.pension==='אין פנסיה פעילה'));}); }
 function askText(e){ return 'היי '+e.name.split(' ')[0]+', כדי להשלים את התיק שלך חסרים לנו:\n'+
   e.missing.map(function(t){var r=reasonFor(e,t);return '• '+t+(r?' — '+r:'');}).join('\n')+'\nאפשר לשלוח בוואטסאפ או במייל. תודה!'; }
+/* הערת פנסיה (לא «טופל») לעובד בחודש השכר הנוכחי */
+function pensNoteOf(e){ return Object.keys(NOTES).some(function(k){var n=NOTES[k]; return n&&n.y===NDEF.y&&n.m===NDEF.m&&(n.status||'open')!=='done'&&+(n.eid||0)===e.id&&/פנסי|קוביות|קרן/.test((n.topic||'')+' '+(n.detail||''));}); }
 function renderTodo(){
   var A=V(), box=document.getElementById('todoView'), h='<div class="tl">', any=false;
   ACTS.forEach(function(a){
@@ -1791,6 +1793,7 @@ function renderTodo(){
         ? '<button class="tlb left" data-setstatus="'+e.id+'" data-val="עזב" type="button">עזב/ה</button>'+
           '<button class="tlb act" data-setstatus="'+e.id+'" data-val="פעיל" type="button">ממשיך/ה לעבוד</button>'
         : (e.missing.length?'<button class="tlb" data-ask="'+e.id+'" type="button" title="מעתיק הודעה מוכנה לוואטסאפ">📋 בקשת מסמכים</button>':'')+
+          (pensSec?(pensNoteOf(e)?'<span class="dnote">📝 יש הערה ב'+esc(nlabel(NDEF.y,NDEF.m))+'</span>':'<button class="tlb" data-pnote="'+e.id+'" type="button" title="מוסיף הערת «פנסיה» לחשבת השכר בשכר '+esc(nlabel(NDEF.y,NDEF.m))+' — רק אם לוחצים">📝 הערה לחשבת</button>'):'')+
           '<button class="tlb done" data-done="'+e.id+'" data-kind="'+esc(a.k)+'" type="button">✓ טופל</button>';
       h+='<div class="tlrow" data-id="'+e.id+'" tabindex="0">'+
         '<div class="tln"><b>'+esc(e.name)+'</b>'+(e.foreign?'<span class="pill p-acc">זר</span>':'')+(e.global?'<span class="pill p-acc">גלובלי</span>':'')+(e.newhire?'<span class="pill p-acc">חדש/ה</span>':'')+
@@ -2512,6 +2515,11 @@ document.getElementById('todoView').addEventListener('click',function(ev){
     var en=(E.filter(function(x){return x.id===sid;})[0]||{}).name||'';
     toast('סומן: '+esc(en)+' — '+(sv==='עזב'?'עזב/ה':'ממשיך/ה לעבוד'),function(){ if(prev0)MARKS[sid]=JSON.parse(prev0); else delete MARKS[sid]; PEND[sid]=1; DIRTY=true; save(); render(); });
     return;}
+  var pb=ev.target.closest('button[data-pnote]');
+  if(pb){ ev.stopPropagation(); var pe=eff(E.filter(function(x){return x.id===+pb.dataset.pnote;})[0]); if(!pe)return;
+    var det=nPensLine(pe); if(!confirm('להוסיף הערה לחשבת השכר (שכר '+nlabel(NDEF.y,NDEF.m)+'):\n\n'+pe.name+' — '+det))return;
+    var rs=pe.orig_rest||pe.rest, nn={id:nid(),rest:rs,y:NDEF.y,m:NDEF.m,by:WHO||'',at:today(),upd:today(),status:'open',emp:pe.name,dept:pe.dept||'',eid:pe.id,topic:'פנסיה',amount:'',doc:'',to:NTO0,detail:det};
+    NOTES[nn.id]=nn; NPEND[nn.id]=1; nsave(); render(); toast('📝 נוספה הערת פנסיה ל'+esc(pe.name)); return; }
   var so=ev.target.closest('button[data-shiftok]');
   if(so){ ev.stopPropagation(); var si=+so.dataset.shiftok, sn=(E.filter(function(x){return x.id===si;})[0]||{}).name||'';
     if(!confirm('לסמן ש'+sn+' כבר נפתח/ה בשיפט?'))return; var mm=mk(si); mm.shift=''; mm.shift_why=''; stamp(mm,'shift'); touch(si); save(); render(); toast('✓ '+esc(sn)+' — נפתח בשיפט'); return; }
@@ -3099,7 +3107,7 @@ var NDEF=(function(){var d=new Date(),y=d.getFullYear(),m=d.getMonth()+1;
 var NSEL=(function(){try{var s=JSON.parse(localStorage.getItem('pnkas-nsel')||'null'); if(s&&s.y>2000&&s.m>=1&&s.m<=12)return {y:s.y,m:s.m};}catch(_){} return {y:NDEF.y,m:NDEF.m};})();
 function nSetMonth(y,m){ while(m<1){m+=12;y--;} while(m>12){m-=12;y++;} NSEL={y:y,m:m}; try{localStorage.setItem('pnkas-nsel',JSON.stringify(NSEL));}catch(_){} NFORM=null; renderNotes(); }
 var NRES=null, NFORM=null, NSHOW=false, NQ='', NTOPIC='', NBOUND=false;
-var NOPT={fixed:true}, NPENS=false;
+var NOPT={fixed:true};
 function nres(){return NRES||(REST==='זרים'?'אסא':REST);}
 function nid(){return 'n'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function nlabel(y,m){return HE[m-1]+' '+y;}
@@ -3196,7 +3204,6 @@ function renderNotes(){
     '<input type="search" id="nQ" placeholder="חיפוש בהערות…" value="'+esc(NQ)+'" aria-label="חיפוש">'+
     '<button class="btn primary" id="nAdd" type="button">➕ הערה חדשה</button>'+
     '<button class="btn" id="nSend" type="button" aria-pressed="'+(NSHOW?'true':'false')+'">📤 לשליחה לחשבת שכר</button>'+
-    '<button class="btn" id="nPens" type="button" aria-pressed="'+(NPENS?'true':'false')+'" title="הצעות: מי שהגיע זמנו לפנסיה או עדכן שיש לו פנסיה פעילה — בוחרים ומוסיפים הערה">🏦 פתיחת פנסיה</button>'+
     '<button class="btn" id="nXlsx" type="button" title="בחירת עמודות ומה ייכלל — אקסל">⬇ אקסל</button>'+
     '<button class="btn" id="nPdf" type="button" title="בחירת עמודות ומה ייכלל — מסך מסודר להדפסה / שמירה כ-PDF">PDF</button>'+
     '<button class="btn primary" id="nDocUp" type="button" title="מסמך בלי הערה (מחלה, מילואים, טפסים) — עובד, סוג, חודש וקובץ">📄 העלאת מסמך</button>'+
@@ -3205,10 +3212,6 @@ function renderNotes(){
     '<span class="count">'+(NALLM||NTOF||NTOPIC||NQ?rows.length+' מוצגות · ':'')+all.length+' הערות ב'+esc(nlabel(y,m))+' · '+open+' פתוחות</span></div>';
   if(NFORM)h+=nFormHtml(rest,y,m);
   if(NSHOW)h+=nSendHtml(rest,y,m,all);
-  if(NPENS)h+=nPensHtml(rest,y,m);
-  /* 2.11.2026 איילת: בלי חלון שקופץ לבד ובלי רשימות ארוכות — רק שורה קטנה, ולחיצה פותחת את ההצעות */
-  else if(!NALLM){ var _pc=nPensCands(rest,y,m).filter(function(x){return !x.has;}).length;
-    if(_pc)h+='<div class="aystrip"><b>🏦 הצעה:</b><span>'+_pc+' עובדים שאולי צריך לפתוח להם פנסיה</span><button class="btn" type="button" id="nPensBan">לצפייה ובחירה</button></div>'; }
   if(ayw.length){ var byTo={}; ayw.forEach(function(n){var t=nTo(n);byTo[t]=(byTo[t]||0)+1;});
     h+='<div class="aystrip"><b>📣 מחכות לתשובה:</b>'+Object.keys(byTo).map(function(t){return '<button class="btn" type="button" data-wto="'+esc(t)+'" aria-pressed="'+(NTOF===t&&NALLM?'true':'false')+'">'+esc(t)+' — '+byTo[t]+'</button>';}).join('')+
       '<span>לא נשלחות לחשבת השכר עד שעונים</span>'+((NTOF||NALLM)?'<button class="btn" type="button" id="nClrF">חזרה לחודש</button>':'')+'</div>'; }
@@ -3858,50 +3861,12 @@ function nFormHtml(rest,y,m){
   return h;
 }
 /* 2.11.2026 איילת: «לא להוסיף לבד הערות». המערכת לא מכניסה יותר שורות משלה להודעה לחשבת (פנסיה / עובדים חדשים / 101).
-   במקום זה — «🏦 פתיחת פנסיה»: רשימה של מי שהגיע זמנו / באיחור / עדכנו שיש לו פנסיה פעילה, ואיילת/טלי בוחרות למי להוסיף הערה. */
-function nPensCands(rest,y,m){
-  var T=y*12+m, out=[];
-  /* הערת פנסיה מהחודש («לפתוח» / «לא לפתוח») — העובד מוצג עם ההערה ולא ניתן לסמן; עדכון קרן/קוביות מהחודש או מהקודם — «עדכנו» */
-  var pensNote={}, newsNote={};
-  Object.keys(NOTES).forEach(function(k){var n=NOTES[k]; if(!n||n.rest!==rest||nPriv(n)||nIsFixed(n)||(n.status||'open')==='done')return;
-    var d=T-(n.y*12+n.m); if(d<0||d>1)return;
-    var t=(n.topic||'')+' '+(n.detail||''); if(!/פנסי|קוביות|קרן/.test(t))return;
-    var e=nEmpOf(n); if(!e)return;
-    if(/לפתוח/.test(t)&&d===0)pensNote[e.id]=n.detail||n.topic;
-    else if(/קרן פעילה|קוביות/.test(t))newsNote[e.id]=n.detail||n.topic;});
-  E.filter(function(e){return e.rest===rest||e.orig_rest===rest;}).map(eff).forEach(function(e){
-    if(!e.active||e.ext||e.foreign||e.pens_open)return;
-    var mk=MARKS[e.id]||{}; if(mk.done&&mk.done.pens)return;
-    var pn=0; if(e.pmonth){var q=e.pmonth.split('-');pn=(+q[0])*12+(+q[1]);}
-    var hasFund=e.dtypes.indexOf('אישור קרן פנסיה פעילה')>=0;
-    var g=(pn&&pn===T)?'now':((pn&&pn<T)?'late':((e.pension==='פעילה'||hasFund||newsNote[e.id])?'act':''));
-    if(!g)return;
-    out.push({e:e,g:g,has:pensNote[e.id]||'',upd:newsNote[e.id]||''});});
-  return out;
-}
+   במקום זה — בלשונית «לטיפול», בשורות הפנסיה: «📝 הערה לחשבת» — הערה נוצרת רק בלחיצה (nPensLine = הנוסח). */
 function nPensLine(e){
   function ok(t){return e.dtypes.indexOf(t)>=0?'✓':'✗';}
   var basis=e.pension==='פעילה'?'פנסיה קודמת פעילה (שכר 4)':((e.pension==='אין פנסיה פעילה'||e.pension==='אין')?'אין פנסיה קודמת (שכר 7)':'פנסיה קודמת לא ידועה (שכר 7)');
   return 'לפתוח פנסיה — תחילת עבודה '+(e.start?e.start.split('-').reverse().join('.'):'?')+' · '+basis+(e.pmonth_he?' · מועד הפתיחה '+e.pmonth_he:'')+
     ' · טופס קוביות '+ok('טופס קוביות')+(e.pension==='פעילה'?' · אישור קרן '+ok('אישור קרן פנסיה פעילה'):'');
-}
-function nPensHtml(rest,y,m){
-  var L=nPensCands(rest,y,m), G=[['now','הגיע הזמן — לפתוח ב'+nlabel(y,m)],['late','באיחור — היה צריך להיפתח קודם'],['act','עדכנו שיש פנסיה פעילה']];
-  var h='<div class="nsend" id="nPensBox"><h3>🏦 פתיחת פנסיה — '+esc(rest)+' · '+esc(nlabel(y,m))+'</h3>'+
-    '<p class="hint" style="margin:0 0 8px">מסמנים את מי שצריך, ו«הוספת הערות» יוצרת לכל אחד הערת «פנסיה» רגילה לחשבת השכר (אפשר לערוך או למחוק אחר כך). שום דבר לא נוסף לבד. מי שכבר יש לו הערת פנסיה החודש — מוצג עם ההערה שלו.</p>';
-  var md='';
-  if(!L.length)return h+'<p class="hint">אין כרגע עובדים שצריך לפתוח להם פנסיה.</p>'+md+'<div class="nfoot"><button class="btn" id="nPensX" type="button">סגירה</button></div></div>';
-  G.forEach(function(g){var R=L.filter(function(x){return x.g===g[0];}); if(!R.length)return;
-    h+='<h4 style="margin:10px 0 4px;font-size:13px">'+esc(g[1])+' ('+R.length+')</h4><ul style="list-style:none;margin:0;padding:0">';
-    R.forEach(function(x){var e=x.e;
-      h+='<li style="padding:5px 0;border-bottom:1px solid var(--line,#e6e6e6)"><label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer">'+
-        '<input type="checkbox" data-pens="'+esc(e.id)+'"'+(x.has?' disabled':'')+'>'+
-        '<span><b>'+esc(e.name)+'</b> ('+esc(e.dept||'')+') — '+esc(nPensLine(e).replace(/^לפתוח פנסיה — /,''))+
-        (x.upd?'<br><em style="color:var(--muted,#666)">עדכון: '+esc(x.upd)+'</em>':'')+
-        (x.has?'<br><em style="color:var(--warn,#a60)">כבר יש הערה החודש: '+esc(x.has)+'</em>':'')+'</span></label></li>';});
-    h+='</ul>';});
-  return h+md+'<div class="nfoot"><button class="btn primary" id="nPensAdd" type="button">➕ הוספת הערות לנבחרים</button>'+
-    '<button class="btn" id="nPensX" type="button">סגירה</button></div></div>';
 }
 /* לחשבת השכר: בלי הפנייה לאיילת, ועם ההחלטה של איילת אם יש */
 function nDetailOut(n){ var d=String(n.detail||''); if(nToAy(n))d=d.replace(/^\s*(הערה\s*ל\s*)?(איילת|טלי|יובל|עמית|אשר)\s*[-–:,]\s*/,''); return d+(n.ay_ans?' (החלטה: '+n.ay_ans+')':''); }
@@ -4065,20 +4030,7 @@ function nWire(rest,y,m){
   el('nTopicF').addEventListener('change',function(){NTOPIC=this.value;renderNotes();});
   el('nQ').addEventListener('input',function(){NQ=this.value.trim();var v=this.value;renderNotes();var q=el('nQ');q.focus();q.setSelectionRange(v.length,v.length);});
   el('nAdd').addEventListener('click',function(){NFORM={};NSHOW=false;renderNotes();var f=el('fEmp');if(f)f.focus();});
-  el('nSend').addEventListener('click',function(){NSHOW=!NSHOW;NPENS=false;NFORM=null;renderNotes();});
-  el('nPens').addEventListener('click',function(){NPENS=!NPENS;NSHOW=false;NFORM=null;renderNotes();});
-  var _pb=el('nPensBan'); if(_pb)_pb.addEventListener('click',function(){NPENS=true;NSHOW=false;NFORM=null;renderNotes();});
-  if(NPENS){
-    el('nPensX').addEventListener('click',function(){NPENS=false;renderNotes();});
-    var _pa=el('nPensAdd'); if(_pa)_pa.addEventListener('click',function(){
-      var ids=[].map.call(document.querySelectorAll('input[data-pens]:checked'),function(c){return c.getAttribute('data-pens');});
-      if(!ids.length){alert('לא סומן אף עובד.');return;}
-      var k=0;
-      ids.forEach(function(id){var e0=E.filter(function(x){return String(x.id)===id;})[0]; if(!e0)return; var e=eff(e0);
-        var n={id:nid(),rest:rest,y:y,m:m,by:WHO||'',at:today(),upd:today(),status:'open',emp:e.name,dept:e.dept||'',eid:e.id,topic:'פנסיה',amount:'',doc:'',to:NTO0,detail:nPensLine(e)};
-        NOTES[n.id]=n; NPEND[n.id]=1; k++;});
-      NPENS=false; nsave(); renderNotes(); hero(); alert('✓ נוספו '+k+' הערות פנסיה');});
-  }
+  el('nSend').addEventListener('click',function(){NSHOW=!NSHOW;NFORM=null;renderNotes();});
   el('nToF').addEventListener('change',function(){NTOF=this.value;renderNotes();});
   el('nAllM').addEventListener('change',function(){NALLM=this.checked;NFORM=null;renderNotes();});
   el('nXlsx').addEventListener('click',function(){ nxOpen('xls',rest,y,m); });
