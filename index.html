@@ -3842,6 +3842,8 @@ function nFormHtml(rest,y,m){
       '<input type="file" id="fFileIn" multiple hidden><span class="fstat" id="fFileStat"></span></div></div>'+
     (n.doc?'<label class="full">קישור למסמך (מהגרסה הקודמת)<input type="url" id="fDoc" value="'+esc(n.doc||'')+'"></label>':'<input type="hidden" id="fDoc" value="">')+
     '<label>מי מעדכן/ת<input type="text" id="fWho" placeholder="השם שלך" value="'+esc(isNew?WHO:(n.by||WHO))+'"></label>'+
+    /* 2.11.2026 איילת: להעביר הערה לחודש שכר אחר */
+    (isNew||fx?'':'<label>חודש שכר<select id="fMon">'+nMonths().concat(nMonths().some(function(o){return o.y===n.y&&o.m===n.m;})?[]:[{y:n.y,m:n.m}]).map(function(o){return '<option value="'+o.y+'-'+o.m+'"'+(o.y===n.y&&o.m===n.m?' selected':'')+'>'+esc(nlabel(o.y,o.m))+'</option>';}).join('')+'</select></label>')+
     (isNew||fx?'':'<label>סטטוס<select id="fStatus">'+Object.keys(NST).map(function(k){return '<option value="'+k+'"'+((n.status||'open')===k?' selected':'')+'>'+NST[k]+'</option>';}).join('')+'</select></label>')+
     '</div><div class="nfoot">'+
     '<button class="btn primary" id="fSave" type="button">שמירה</button>'+
@@ -3977,13 +3979,15 @@ var NDOC_TYPES=['אישור מחלה','אישור מילואים','טופס 101'
 function nMonthDocs(rest,y,m){ var rc=PK.rc(rest); return (window.PK?PK.files():[]).filter(function(f){ if(f.deleted_at||f.rest!==rc) return false; var ym=nlDocYM(f,y); return ym&&ym.y===y&&ym.m===m; }); }
 function nMissing(rest,y,m){ return nlist(y,m,rest).filter(function(n){ if((n.status||'open')!=='open'||n.doc) return false; var t=(n.topic||'')+' '+(n.detail||'');
     if(/אין צורך|לא צריך|לפתוח (קרן )?פנסיה|לא לפתוח/.test(t)) return false;
-    return Object.keys(nlGroups(t)).length&&!(window.PK&&PK.byNote(n.id).length); }); }
+    /* 2.11.2026 איילת: יש בהערה פרטי חשבון בנק — זה מספיק, לא מבקשים אישור ניהול חשבון */
+    var g=nlGroups(t); if(n.topic==='פרטי חשבון בנק'||/\d{3,}/.test(n.detail||'')) delete g[6];
+    return Object.keys(g).length&&!(window.PK&&PK.byNote(n.id).length); }); }
 function nDocsHtml(rest,y,m){
   var D0=nMonthDocs(rest,y,m), M=nMissing(rest,y,m), h='';
   /* טפסים מבטר צ'יינס (תיקיית «טפסי עובדים») — החשבת לוקחת אותם בעצמה: בנפרד, מקופל */
   var isBC=function(f){ return /^טפסי עובדים\//.test(String(f.source||'')); }, BC=D0.filter(isBC), D=D0.filter(function(f){ return !isBC(f); });
   if(M.length) h+='<details class="ndocbox miss" open><summary>⚠️ חסר מסמך — '+M.length+' הערות שמדברות על מסמך ואין להן מסמך</summary><div class="ndlist">'+
-    M.map(function(n){ return '<div class="ndrow"><b>'+esc(n.emp||'')+'</b><span class="ntopic">'+esc(n.topic||'')+'</span><span class="sub">'+esc(n.detail||'')+'</span><span style="flex:1"></span><button type="button" class="btn" data-ndup="'+esc(n.id)+'">📄 העלאה</button></div>'; }).join('')+'</div></details>';
+    M.map(function(n){ return '<div class="ndrow"><b>'+esc(n.emp||'')+'</b><span class="ntopic">'+esc(n.topic||'')+'</span><span class="sub">'+esc(n.detail||'')+'</span><span style="flex:1"></span><button type="button" class="btn" data-ndup="'+esc(n.id)+'">📄 העלאה</button><button type="button" class="btn ghost" data-nedit="'+esc(n.id)+'" title="עריכת ההערה">✏️ עריכה</button><button class="ibtn del" data-del="'+esc(n.id)+'" type="button" title="מחיקת ההערה">🗑</button></div>'; }).join('')+'</div></details>';
   var byT={}; D.forEach(function(f){ var t=f.dtype||'מסמך'; (byT[t]=byT[t]||[]).push(f); });
   h+='<details class="ndocbox"><summary>📎 מסמכים ל'+esc(nlabel(y,m))+' — '+D.length+'</summary><div class="ndlist">'+
     (D.length?Object.keys(byT).sort().map(function(t){ return '<div class="ndgrp">'+esc(t)+' ('+byT[t].length+')</div>'+byT[t].map(function(f){ var e=E.filter(function(x){ return x.id===f.emp_id; })[0], nn=f.note_id&&NOTES[f.note_id];
@@ -4056,6 +4060,7 @@ function nWire(rest,y,m){
       n.emp=el('fEmp').value.trim(); n.dept=el('fDeptN').value.trim(); n.topic=el('fTopic').value;
       n.amount=el('fAmt').value?+el('fAmt').value:''; n.detail=el('fDetail').value.trim(); n.doc=el('fDoc').value.trim();
       if(!isNew&&el('fStatus'))n.status=el('fStatus').value;
+      var mvv=el('fMon')?el('fMon').value.split('-'):null; if(!isNew&&mvv&&+mvv[0]>2000){n.y=+mvv[0];n.m=+mvv[1];}
       if(nIsFixed(n)){ var uv=(el('fUntil').value||'').split('-'); if(uv.length===2&&+uv[0]>2000)n.until={y:+uv[0],m:+uv[1]}; else delete n.until; }
       n.to=el('fTo').value; delete n.to_ay;
       if(el('fPriv').checked&&!(n.priv||PK.email())){alert('לא הצלחתי לזהות מי מחוברת — ההערה לא נשמרה. צאי והיכנסי שוב.');return;}
@@ -4112,6 +4117,8 @@ function nWire(rest,y,m){
       delete NOTES[dl.dataset.del];NPEND[dl.dataset.del]=1;nsave();renderNotes();hero();return;}
     var em=ev.target.closest('a[data-emp]');
     if(em){ev.preventDefault();open(+em.dataset.emp);return;}
+    var ned=ev.target.closest('button[data-nedit]');
+    if(ned){NFORM=NOTES[ned.dataset.nedit]||null;NSHOW=false;renderNotes();window.scrollTo({top:0,behavior:'smooth'});return;}
     var trn=ev.target.closest('tr[data-nid]');
     if(trn){NFORM=NOTES[trn.dataset.nid]||null;NSHOW=false;renderNotes();window.scrollTo({top:0,behavior:'smooth'});return;}
   });
