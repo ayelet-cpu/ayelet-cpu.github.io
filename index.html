@@ -3830,7 +3830,8 @@ function nFormHtml(rest,y,m){
   if(isNew&&NFORM&&!NFORM._nid)NFORM._nid=nid();
   var emps=nEmps(rest), depts=nDepts(rest);
   var fx=nIsFixed(n), toAy=nToAy(n), toV=nTo(n);
-  var h='<div class="nform" id="nFormBox"><h3>'+(isNew?(fx?'הערה קבועה חדשה — '+esc(rest)+' · החל מ'+esc(nlabel(y,m)):'הערה חדשה — '+esc(rest)+' · '+esc(nlabel(y,m))):(fx?'עריכת הערה קבועה (בתוקף מ'+esc(nlabel(n.y,n.m))+')':'עריכת הערה'))+'</h3><div class="ngrid">'+
+  /* 2.11.2026 איילת: «אי אפשר לסגור בקלות את החלון» — ✕ בראש הטופס, ו-Esc סוגר */
+  var h='<div class="nform" id="nFormBox"><button type="button" id="fX" title="סגירה (Esc)" aria-label="סגירה" style="float:left;border:0;background:none;font-size:22px;line-height:1;cursor:pointer;color:var(--muted,#667);padding:0 4px">✕</button><h3>'+(isNew?(fx?'הערה קבועה חדשה — '+esc(rest)+' · החל מ'+esc(nlabel(y,m)):'הערה חדשה — '+esc(rest)+' · '+esc(nlabel(y,m))):(fx?'עריכת הערה קבועה (בתוקף מ'+esc(nlabel(n.y,n.m))+')':'עריכת הערה'))+'</h3><div class="ngrid">'+
     '<label>עובד/ת<input type="text" id="fEmp" list="empList" autocomplete="off" placeholder="שם העובד" value="'+esc(n.emp||'')+'">'+
       '<datalist id="empList">'+emps.map(function(e){return '<option value="'+esc(e.name)+'">'+esc(e.dept)+(e.state!=='פעיל'?' · לא פעיל':'')+'</option>';}).join('')+'</datalist></label>'+
     '<label>מחלקה<input type="text" id="fDeptN" list="deptList" autocomplete="off" value="'+esc(n.dept||'')+'">'+
@@ -4072,6 +4073,7 @@ function nWire(rest,y,m){
       if(isNew&&prevId&&NOTES[prevId]){var po=NOTES[prevId]; po.until=nPrevM(y,m); po.upd=today(); NPEND[prevId]=1;}
       NOTES[n.id]=n; NPEND[n.id]=1; NFORM=null; nsave(); renderNotes(); hero();});
     el('fCancel').addEventListener('click',function(){NFORM=null;renderNotes();});
+    el('fX').addEventListener('click',function(){NFORM=null;renderNotes();});
     var fd=el('fDel'); if(fd)fd.addEventListener('click',function(){if(!confirm('למחוק את ההערה?'))return;delete NOTES[NFORM.id];NPEND[NFORM.id]=1;NFORM=null;nsave();renderNotes();hero();});
     var fdt=el('fDetail'); if(fdt)fdt.addEventListener('keydown',function(ev){if((ev.ctrlKey||ev.metaKey)&&ev.key==='Enter')el('fSave').click();});
   }
@@ -4091,6 +4093,7 @@ function nWire(rest,y,m){
       nsave();renderNotes();hero();});
   }
   if(NBOUND)return; NBOUND=true;
+  document.addEventListener('keydown',function(ev){ if(ev.key==='Escape'&&NFORM&&document.getElementById('nFormBox')){ NFORM=null; renderNotes(); } });
   box.addEventListener('click',function(ev){
     var st=ev.target.closest('.pill[data-st]');
     if(st){var n=NOTES[st.dataset.st]; if(!n)return; var s=n.status||'open'; n.status=(s==='open'?'sent':(s==='sent'?'done':'open')); n.upd=today();NPEND[n.id]=1;nsave();renderNotes();hero();return;}
