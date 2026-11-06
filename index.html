@@ -649,6 +649,10 @@ aside.drawer.on{transform:translate(-50%,-50%) scale(1);opacity:1}
   :root:not([data-theme="light"])[data-rest="nero"]{--accent:#7DB3E6;--accent-soft:#1B2E42;--accent-ink:#A9CDF0}}
 :root[data-theme="dark"][data-rest="hel"]{--accent:#E08AAA;--accent-soft:#3E2230;--accent-ink:#F0B5CB}
 :root[data-theme="dark"][data-rest="nero"]{--accent:#7DB3E6;--accent-soft:#1B2E42;--accent-ink:#A9CDF0}
+/* ===== פאסטל (6.11.2026) — רק איילת (גם לא טלי) ===== */
+:root[data-rest="pas"]{--accent:#7A5A1E;--accent-soft:#F6EEDC;--accent-ink:#5C4214}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"])[data-rest="pas"]{--accent:#E0BE7A;--accent-soft:#3A2F1A;--accent-ink:#F0D9A8}}
+:root[data-theme="dark"][data-rest="pas"]{--accent:#E0BE7A;--accent-soft:#3A2F1A;--accent-ink:#F0D9A8}
 
 /* ===== טקסט גדול יותר בכל המערכת ===== */
 body{font-size:16px;line-height:1.6}
@@ -1013,6 +1017,7 @@ section.act .allgood,.act table{font-size:14.5px}
       <button type="button" data-rest="צ'אקולי" aria-pressed="false">צ'אקולי<span class="n" id="n-cha"></span></button>
       <button type="button" data-rest="הלנה" data-full="1" aria-pressed="false" style="display:none">הלנה<span class="n" id="n-hel"></span></button>
       <button type="button" data-rest="נרו ביץ'" data-full="1" aria-pressed="false" style="display:none">נרו ביץ'<span class="n" id="n-nero"></span></button>
+      <button type="button" data-rest="פאסטל" data-own="1" aria-pressed="false" style="display:none">פאסטל<span class="n" id="n-pas"></span></button>
 
     </div>
   </div>
@@ -1307,7 +1312,7 @@ var SB='https://mjhywoiwdvuxymuyhhdc.supabase.co';
 var KEY='sb_publishable_c7Y5hKxAqpzIFhhbuhNS2g_u55YKB90';
 var SK='pinkas-cloud-session', UK='pinkas-cloud-user';
 var USERS=[{k:'ayelet',n:'איילת'},{k:'tali',n:'טלי'},{k:'yuval',n:'יובל'},{k:'amit',n:'עמית'},{k:'asher',n:'אשר'}];
-var RC={'אסא':'asa',"צ'אקולי":'chakoli','צאקולי':'chakoli','זרים':'asa','הלנה':'helena',"נרו ביץ'":'nero'};
+var RC={'אסא':'asa',"צ'אקולי":'chakoli','צאקולי':'chakoli','זרים':'asa','הלנה':'helena',"נרו ביץ'":'nero','פאסטל':'pastel'};
 var $=function(i){return document.getElementById(i);};
 function store(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(_){}}
 function load(k){try{return localStorage.getItem(k);}catch(_){return null;}}
@@ -1515,7 +1520,7 @@ function boot(){
   return json('/rest/v1/rpc/pinkas_me',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(function(me){
     if(!me){ store(SK,null); S=null; throw new Error('למשתמש הזה אין הרשאה לבקרת השכר'); }
     PK.me=me;
-    var rs=me.scope==='all'?['asa','chakoli','helena','nero']:[me.scope]; /* הלנה ונרו ביץ' — רק למי שרואה הכול (איילת, טלי) */
+    var rs=me.scope==='all'?['asa','chakoli','helena','nero'].concat(me.owner?['pastel']:[]):[me.scope]; /* פאסטל — רק איילת (me.owner) */ /* הלנה ונרו ביץ' — רק למי שרואה הכול (איילת, טלי) */
     return Promise.all([Promise.all(rs.map(function(r){ return json('/storage/v1/object/authenticated/pinkas/'+r+'/app.json').catch(function(e){ if(e.status===400||e.status===404)return null; throw e; }); })),
                         PK.newList(rs)])
       .then(function(x){ var D=mergePayloads(x[0]); if(!D.employees.length) throw new Error('נתוני העובדים עוד לא הועלו לענן');
@@ -1526,6 +1531,7 @@ function boot(){
     if(PK.me.scope==='chakoli')window.__FORCE_REST__='cha';
     else if(PK.me.scope==='asa')window.__FORCE_REST__='asa';
     if(PK.me.scope==='all')document.querySelectorAll('#restbar button[data-full]').forEach(function(b){b.style.display='';});
+    if(PK.me.owner)document.querySelectorAll('#restbar button[data-own]').forEach(function(b){b.style.display='';});
     try{ localStorage.setItem('pnkas-who',PK.me.name); }catch(_){}
     $('gate').hidden=true; booted=true;
     window.__pinkasMain();
@@ -1574,7 +1580,7 @@ var MARKS={}, DIRTY=false;
 var DB=null, PEND={}, SYNC='local', SYNCED=false;
 try{var raw=localStorage.getItem(KEY); if(raw)MARKS=JSON.parse(raw)||{};}catch(e){MARKS={};}
 try{DIRTY=localStorage.getItem(DKEY)==='1';}catch(e){}
-try{var r0=localStorage.getItem('pnkas-rest'); if(r0==='אסא'||r0==="צ'אקולי"||((r0==='הלנה'||r0==="נרו ביץ'")&&!window.__FORCE_REST__))REST=r0;}catch(e){}
+try{var r0=localStorage.getItem('pnkas-rest'); if(r0==='אסא'||r0==="צ'אקולי"||((r0==='הלנה'||r0==="נרו ביץ'"||r0==='פאסטל')&&!window.__FORCE_REST__))REST=r0;}catch(e){}
 
 function save(){try{localStorage.setItem(KEY,JSON.stringify(MARKS));localStorage.setItem(DKEY,DIRTY?'1':'0');}catch(e){}flush();savebar();}
 function hasAny(m){return m&&Object.keys(m).some(function(f){return f!=='u'&&m[f]!==''&&m[f]!==false&&m[f]!=null&&!(Array.isArray(m[f])&&!m[f].length)&&!(m[f]&&typeof m[f]==='object'&&!Array.isArray(m[f])&&!Object.keys(m[f]).length);});}
@@ -2254,13 +2260,14 @@ function hero(){
   document.getElementById('n-cha').textContent=E.filter(function(e){return e.rest==="צ'אקולי"&&!eff(e).ext;}).length;
   document.getElementById('n-hel').textContent=E.filter(function(e){return e.rest==='הלנה'&&!eff(e).ext;}).length||'';
   document.getElementById('n-nero').textContent=E.filter(function(e){return e.rest==="נרו ביץ'"&&!eff(e).ext;}).length||'';
+  {var _np=document.getElementById('n-pas'); if(_np)_np.textContent=E.filter(function(e){return e.rest==='פאסטל'&&!eff(e).ext;}).length||'';}
   var _nf=document.getElementById('n-frn'); if(_nf)_nf.textContent=E.filter(function(e){return eff(e).foreign&&!eff(e).ext;}).length;
 }
 var SCOPED_USERS={}; /* בענן: ההרשאה למסעדה נקבעת לפי המשתמש (pinkas_me) */ var USER_SCOPE=(typeof window!=='undefined'&&window.__FORCE_REST__)?({cha:"צ'אקולי",asa:"אסא",frn:"זרים"}[window.__FORCE_REST__]||window.__FORCE_REST__):null;function _scopeFor(x){if(!x)return null;var k=String(x).trim().toLowerCase();if(SCOPED_USERS[k])return SCOPED_USERS[k];for(var u in SCOPED_USERS){if(k.indexOf(u.split('@')[0])>=0)return SCOPED_USERS[u];}return null;}function applyUserScope(x){var s=_scopeFor(x);if(!s)return;USER_SCOPE=s;try{document.querySelectorAll('button[data-rest]').forEach(function(b){if(b.dataset.rest!==s)b.style.display='none';});}catch(e){}try{setRest(s);}catch(e){try{REST=s;render();}catch(_){}}}try{if(typeof google!=='undefined'&&google.script&&google.script.run){google.script.run.withSuccessHandler(function(w){try{applyUserScope(w);}catch(e){}}).withFailureHandler(function(){}).whoAmI();}}catch(e){}setTimeout(function(){try{applyUserScope(WHO);}catch(e){}},1800);function setRest(r){
   if(USER_SCOPE){r=USER_SCOPE;} REST=r; NRES=null; try{localStorage.setItem('pnkas-rest',r);}catch(e){}
-  document.documentElement.setAttribute('data-rest',r==='אסא'?'asa':(r==='זרים'?'frn':(r==='הלנה'?'hel':(r==="נרו ביץ'"?'nero':'cha'))));
+  document.documentElement.setAttribute('data-rest',r==='אסא'?'asa':(r==='זרים'?'frn':(r==='הלנה'?'hel':(r==="נרו ביץ'"?'nero':(r==='פאסטל'?'pas':'cha')))));
   document.querySelectorAll('#restbar button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.rest===r);if(USER_SCOPE){b.style.display=(b.dataset.rest===USER_SCOPE?'':'none');}});
-  document.getElementById('stamp').textContent=(r==='אסא'?'אלמוגי עדן אחזקות':(r==='זרים'?"עובדים זרים — אסא ופינצ'וס":(r==='הלנה'?'הלנה':(r==="נרו ביץ'"?"נרו ביץ'":"פינצ'וס דולפינריום"))))+
+  document.getElementById('stamp').textContent=(r==='אסא'?'אלמוגי עדן אחזקות':(r==='זרים'?"עובדים זרים — אסא ופינצ'וס":(r==='הלנה'?'הלנה':(r==="נרו ביץ'"?"נרו ביץ'":(r==='פאסטל'?'מעדנה מוזיאון — פאסטל':"פינצ'וס דולפינריום")))))+
     ' · תלושי '+SLIP_N+' · נוכחות '+ATT_FULL;
   var A=E.filter(function(e){return e.rest===r;}),ds={};
   A.forEach(function(e){ds[eff(e).dept]=1;});
@@ -2676,7 +2683,7 @@ var RPPRE={
 var RPST={scope:'act',cols:RPPRE.hr.slice()};
 try{var _s=localStorage.getItem('pnkas-rep'); if(_s){var j=JSON.parse(_s); if(j&&j.cols&&j.cols.length){RPST=j;}}}catch(e){}
 function rpSave(){try{localStorage.setItem('pnkas-rep',JSON.stringify(RPST));}catch(e){}}
-function rpShort(s){return String(s||'').replace(/\s*[-–]\s*(אסא|צ'אקולי|צאקולי|הלנה|נרו ביץ')\s*$/,'').trim();}
+function rpShort(s){return String(s||'').replace(/\s*[-–]\s*(אסא|צ'אקולי|צאקולי|הלנה|נרו ביץ'|פאסטל)\s*$/,'').trim();}
 function repRows(){
   var all=E.map(eff).filter(function(e){return e.rest===REST;});
   if(RPST.scope==='act')all=all.filter(function(e){return e.active;});
@@ -2755,7 +2762,7 @@ document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&!rpDlg.hi
 var neDlg=document.getElementById('neDlg'), NE_EDIT=null;
 var NE_F=['name','tz','birth','gender','start','s101','pension','dept','role','rate','phone','email','addr'];
 function neEl(k){return document.getElementById('ne_'+k);}
-function neRests(){ var s=PK.me&&PK.me.scope; return s==='asa'?['אסא']:(s==='chakoli'?["צ'אקולי"]:['אסא',"צ'אקולי",'הלנה',"נרו ביץ'"]); }
+function neRests(){ var s=PK.me&&PK.me.scope; return s==='asa'?['אסא']:(s==='chakoli'?["צ'אקולי"]:['אסא',"צ'אקולי",'הלנה',"נרו ביץ'"].concat(PK.me&&PK.me.owner?['פאסטל']:[])); }
 function neDepts(){ var r=neEl('rest').value, ds={};
   E.forEach(function(e){ if((e.rest===r||e.orig_rest===r)&&eff(e).dept)ds[eff(e).dept]=1; });
   document.getElementById('ne_depts').innerHTML=Object.keys(ds).sort(function(a,b){return a.localeCompare(b,'he');}).map(function(d){return '<option value="'+esc(d)+'">';}).join(''); }
