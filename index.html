@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>בקרת שכר — אסא וצ'אקולי</title>
+<title>פנקס עובדים — אסא וצ'אקולי</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=Heebo:wght@400;500;700;800&display=swap">
@@ -996,7 +996,7 @@ section.act .allgood,.act table{font-size:14.5px}
 <header class="top">
   <div class="topin">
     <div class="brand">
-      <h1>בקרת שכר</h1>
+      <h1>פנקס עובדים</h1>
       <span class="stamp" id="stamp"></span>
       <button class="themebtn" id="themeToggle" type="button">מצב כהה</button>
     </div>
@@ -1280,7 +1280,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <div class="gate" id="gate">
   <div class="gcard" role="dialog" aria-labelledby="gTitle">
-    <h1 id="gTitle">בקרת שכר</h1>
+    <h1 id="gTitle">פנקס עובדים</h1>
     <p class="gsub">אסא · צ׳אקולי</p>
     <div class="gwho" id="gWho" role="group" aria-label="מי נכנסת?"></div>
     <input type="password" id="gPw" placeholder="סיסמה" autocomplete="current-password" aria-label="סיסמה">
@@ -2709,7 +2709,7 @@ function rpRowCls(e){return e.ext?'ext':(!e.active?'off':(!e.pens_open&&e.due===
 
 /* ----- dialog ----- */
 var rpDlg=document.getElementById('rpDlg'),rpScrim=document.getElementById('rpScrim'),RPMODE='xls';
-function rpDefName(){return 'בקרת שכר — '+REST+' '+new Date().toISOString().slice(0,10);}
+function rpDefName(){return 'פנקס עובדים — '+REST+' '+new Date().toISOString().slice(0,10);}
 function rpRender(){
   var box=document.getElementById('rpCols'),s={};RPST.cols.forEach(function(k){s[k]=1;});
   box.innerHTML=REPCOLS.map(function(c){
@@ -2884,7 +2884,7 @@ function rpDoPdf(){
    '.tb{position:sticky;top:0;background:#fff;padding-bottom:12px;margin-bottom:4px}'+
    'button{font:inherit;font-size:13px;padding:8px 18px;border-radius:8px;border:1px solid #14181d;background:#14181d;color:#fff;cursor:pointer}'+
    '@media print{.tb{display:none}body{padding:0}tr{break-inside:avoid}thead{display:table-header-group}tr.grp{break-after:avoid}}';
-  var inner='<div class="hd"><div><h1>בקרת שכר — '+ec(REST)+'</h1>'+
+  var inner='<div class="hd"><div><h1>פנקס עובדים — '+ec(REST)+'</h1>'+
       '<div class="meta">'+rows.length+' עובדים'+(RPST.scope==='act'?' פעילים':(RPST.scope==='off'?' לא פעילים':''))+' · '+C.length+' עמודות</div></div>'+
       '<div class="rt">הופק '+today+'</div></div>'+
     '<div class="kpis">'+K.map(function(k){return '<div class="kpi '+k[2]+'"><b>'+k[1]+'</b><span>'+ec(k[0])+'</span></div>';}).join('')+'</div>'+
@@ -2998,7 +2998,7 @@ function rpXlsxBlob(){
     if(val===''||val==null) return '<c r="'+_colName(col)+row+'" s="'+st+'"/>';
     return '<c r="'+_colName(col)+row+'" s="'+st+'" t="inlineStr"><is><t xml:space="preserve">'+_xe(val)+'</t></is></c>';
   }
-  rn=1; R.push('<row r="1" ht="24" customHeight="1">'+cell(1,1,1,'בקרת שכר — '+REST)+'</row>');
+  rn=1; R.push('<row r="1" ht="24" customHeight="1">'+cell(1,1,1,'פנקס עובדים — '+REST)+'</row>');
   rn=2; R.push('<row r="2" ht="15">'+cell(1,2,2,'הופק '+today+' · '+rows.length+' עובדים'+
     (RPST.scope==='act'?' פעילים':(RPST.scope==='off'?' לא פעילים':''))+' · '+C.length+' עמודות')+'</row>');
   rn=3; R.push('<row r="3"/>');
