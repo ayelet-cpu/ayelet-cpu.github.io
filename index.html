@@ -1758,7 +1758,7 @@ function pPens(e){
   /* 7.11.2026 (איילת: «בפאסטל שיהיה רשום בדיוק למי יש פנסיה בתלוש, למי אין פנסיה בתלוש ולמי אין») — פאסטל, הלנה, נרו ביץ' */
   if(e.rest==='פאסטל'||e.rest==='הלנה'||e.rest==="נרו ביץ'"){
     if(e.pens_open)return '<span class="pill p-ok">יש פנסיה בתלוש</span>';
-    if(!e.slip)return '<span class="pill p-idle">אין תלוש</span>';
+    if(!e.slip)return '<span class="pill p-idle">אין תלוש</span>'+(e.pens_note?'<div class="sub">'+esc(String(e.pens_note).replace(/^בטופס פרטי פנסיה: /,'בטופס: ').replace(/ \(לא אומת[^)]*\)/,' · לא אומת'))+'</div>':'');
     var st=e.due==='עבר'?['p-crit','באיחור']:(e.due==='עכשיו'?['p-warn','לפתוח עכשיו']:(e.pmonth_he?['p-idle','עד '+e.pmonth_he]:['p-idle','']));
     return '<span class="pill '+st[0]+'">אין פנסיה בתלוש</span>'+(st[1]?'<div class="sub">'+esc(st[1])+'</div>':'');
   }
