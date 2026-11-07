@@ -1688,7 +1688,9 @@ function eff(e){
   /* --- מצב כל מסמך: '' לא רלוונטי · 'need' נדרש · 'got' התקבל --- */
   var lead=99;
   if(o.pmonth){var pm=o.pmonth.split('-');lead=((+pm[0])*12+(+pm[1]))-NOWM;}
-  o.needs_pens_docs = o.active && !o.ext && !o.foreign && !o.pens_open && lead<=2;
+  /* הלנה ונרו ביץ' — אין תלושים בפנקס (איילת 7.11): לא מציגים פנסיה / «לברר אם עזב» ב«לטיפול» */
+  o.noslip=(o.rest==='הלנה'||o.rest==="נרו ביץ'");
+  o.needs_pens_docs = o.active && !o.ext && !o.foreign && !o.pens_open && !o.noslip && lead<=2;
   o.ds={}; o.dsauto={};
   if(o.needs_pens_docs)PENS_DOCS.forEach(function(t){if(t==='אישור קרן פנסיה פעילה'&&o.pension!=='פעילה')return;  /* מבקשים אישור קרן רק ממי שסימן שיש לו פנסיה פעילה */o.ds[t]='need';o.dsauto[t]=1;});
   if(o.s101!=='יש'&&o.active&&!o.ext){o.ds['טופס 101']='need';o.dsauto['טופס 101']=1;}
@@ -1710,6 +1712,7 @@ function eff(e){
   else if(o.state==='פעיל'){
     if(o.s101!=='יש'&&!done.f101){o.todo='חסר טופס 101';
       o.why='לא התקבל טופס 101';}
+    else if(o.noslip){/* בלי תלושים — לא פנסיה ולא «לברר אם עזב» */}
     else if(!o.slip&&!o.worked_sept&&o.status!=='עזב'&&!done.left&&(function(){var s=String(o.start||'');if(!s)return false;var q=s.split('-');return ((+q[0])*12+(+q[1]))<=NOWM-2;})()){o.todo='לברר אם עזב';o.why='אין תלוש '+SLIP_HE+' ולא עבד ב'+ATT_HE+' — לברר לפני שפותחים פנסיה';}
     else if(o.foreign&&!o.pens_open){o.todo='';o.why='עובד זר — לא נדרשת פתיחת פנסיה';}
     else if(!o.pens_open&&o.due==='עבר'&&!done.pens){o.todo='פנסיה באיחור';o.why='היה אמור להיפתח ב'+o.pmonth_he;}
@@ -1719,7 +1722,7 @@ function eff(e){
       o.why='מגיע לגיל '+o.age_thr+' ב-'+o.age_gate+' — הפתיחה נדחתה ל'+o.pmonth_he;}
     else if(o.missing.filter(function(t){return t!=='טופס 101';}).length&&!done.docs){
       o.todo='חסרים מסמכים';o.why='חסר: '+o.missing.filter(function(t){return t!=='טופס 101';}).join(' · ');}
-  } else if(o.status!=='עזב'&&!done.left){o.todo='לברר אם עזב';o.why='אין תלוש '+SLIP_HE+' ולא החתים ב'+ATT_HE;}
+  } else if(!o.noslip&&o.status!=='עזב'&&!done.left){o.todo='לברר אם עזב';o.why='אין תלוש '+SLIP_HE+' ולא החתים ב'+ATT_HE;}
   o.marked=Object.keys(m).some(function(f){
     if(f==='u')return false;
     if(f==='done'||f==='dstate')return Object.keys(m[f]||{}).length>0;
