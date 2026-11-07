@@ -1632,8 +1632,8 @@ function eff(e){
   if(m.gender)o.gender=m.gender;   /* מין מהסימון גובר (F=20, אחרת 21) */
   o.global=(m.global===false)?false:!!m.global;
   o.intern=(m.intern===false)?false:!!m.intern;
-  o.invoice=(m.invoice===false)?false:!!m.invoice;
-  o.agency=(m.agency===false)?false:!!m.agency;
+  o.invoice=(m.invoice===false)?false:(!!m.invoice||!!e.invoice);
+  o.agency=(m.agency===false)?false:(!!m.agency||!!e.agency);  /* גם מהקובץ (הלנה/נרו — כוח אדם) */
   o.ext=o.invoice||o.agency;   /* עובד חוץ — לא על התלושים שלנו */
   o.extlbl=o.invoice?'עובד בחשבונית':(o.agency?'עובד חברת כוח אדם':'');
   if(m.pension==='זר'){o.foreign=true;o.pension='אין פנסיה פעילה';}
