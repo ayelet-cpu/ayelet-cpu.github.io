@@ -2095,7 +2095,7 @@ function fmtM(m){ var q=String(m||'').split('-'); return q.length===2?(q[1]+'/'+
 function zarBox(e){ return zarBoxIt(zarItem(e.id)); }
 function zarBoxIt(it){ if(!it)return ''; var d=it.data||{}, M=d.months||{}, ks=Object.keys(M).sort();
   var b=[]; if(d.name_en)b.push('<b>'+esc(d.name_en)+'</b>'); if(d.country)b.push('ארץ: '+esc(d.country)); if(d.passport)b.push('דרכון: '+esc(d.passport));
-  if(d.birth)b.push('שנת לידה: '+esc(d.birth)); if(d.visa_no)b.push('אשרה: '+esc(d.visa_no)); if(d.visa_until)b.push('אשרה עד '+esc(fmtD(d.visa_until)));
+  if(d.birth)b.push((/^\d{4}-\d{2}-\d{2}$/.test(d.birth)?'תאריך לידה: '+esc(fmtD(d.birth)):'שנת לידה: '+esc(d.birth))); if(d.arrived)b.push('הגיע/ה לישראל: '+esc(d.arrived)); if(d.visa_no)b.push('אשרה: '+esc(d.visa_no)); if(d.visa_until)b.push('אשרה עד '+esc(fmtD(d.visa_until)));
   if(d.ins_until)b.push('ביטוח רפואי עד '+esc(fmtD(d.ins_until))+(d.ins_by?' ('+esc(d.ins_by)+')':'')); if(d.status&&d.status!=='פעיל')b.push('<span class="pill p-warn">'+esc(d.status)+'</span>');
   var h='<div class="zarbox">'+b.join(' · ')+(d.note?'<div class="sub">'+esc(d.note)+'</div>':'');
   if(ks.length){ h+='<details><summary>פיקדון — שכר לחישוב, '+ks.length+' חודשים (מ-'+esc(fmtM(d.depFrom||ks[0]))+') · אחרון '+esc(fmtM(ks[ks.length-1]))+': '+Number(M[ks[ks.length-1]]).toLocaleString('he-IL')+' ₪</summary>'+
@@ -2173,7 +2173,7 @@ function renderMil(){
     '<p class="pnote">כל אישור מילואים (טופס 3010, אישור שירות בזמן חירום, מכתב מביטוח לאומי) — מהמייל, מהוואטסאפ ומבקרת השכר. '+open+' עוד לא סומנו «טופל». המסמכים נפתחים בלחיצה.</p></header>'+
     (mk.length?'<div class="zarbox" style="margin:10px 14px"><b>לפי חודש — מה שולם לעובדים בתלושים ומה נכנס לבנק מביטוח לאומי</b>'+
       '<table><tr><th>חודש</th><th>שולם בתלושים (מילואים)</th><th>נכנס לבנק מביטוח לאומי</th></tr>'+mk.map(function(m){ return '<tr><td>'+esc(fmtM(m))+'</td><td>'+fmtN(byM[m].s)+'</td><td>'+fmtN(byM[m].b)+'</td></tr>'; }).join('')+'</table>'+
-      '<div class="sub">ביטוח לאומי — סכום כללי לחשבון החברה, לא לפי עובד (ויכול לכלול גם תשלומים אחרים של ביטוח לאומי). התלושים — 8/2026 עד 10/2026.</div>'+
+      '<div class="sub">ביטוח לאומי — סכום כללי לחשבון החברה, לא לפי עובד (ויכול לכלול גם תשלומים אחרים של ביטוח לאומי). התלושים — 1/2025 עד 10/2026 (אסא מ-9/2025, צ׳אקולי מ-10/2025 — מה שיש במחשב). הבנק — כל מה שיש בשונטל (אסא מ-1/2026, שאר המסעדות מ-8/2026).</div>'+
       (BTL.length?'<details><summary>כל הכניסות מביטוח לאומי</summary>'+BTL.map(function(x){ return (x.data.btl||[]).map(function(t){ return esc(fmtD(t.d))+' — '+fmtN(t.amount); }).join('<br>'); }).join('<br>')+'</details>':'')+
     '</div>':'')+'<div class="plist">';
   if(!keys.length)h+='<div class="frow"><span class="hint">אין רשומות מילואים ב'+esc(REST)+'.</span></div>';
@@ -2187,7 +2187,7 @@ function renderMil(){
       h+='<div class="milrow'+(d.done?' done':'')+'">'+
         '<span class="mild">'+esc(d.srcDate||'')+'</span>'+
         '<span class="milf"><b>'+esc(d.form||'אישור מילואים')+'</b>'+(d.period?'<br><span class="sub">תקופה: '+esc(d.period)+(d.days?' · '+esc(d.days)+' ימים':'')+'</span>':(d.days?'<br><span class="sub">'+esc(d.days)+' ימים</span>':''))+'</span>'+
-        '<span class="milp">'+(d.slip?'<span class="pill p-idle">בתלוש: '+esc(d.slip)+'</span> ':'')+(d.bank?'<span class="pill p-idle">בנק: '+esc(d.bank)+'</span>':'')+
+        '<span class="milp">'+(d.total?'<b>סה״כ בתלושים: '+Math.round(d.total).toLocaleString('he-IL')+' ₪</b><br>':'')+(d.slip?'<span class="pill p-idle">בתלוש: '+esc(d.slip)+'</span> ':'')+(d.bank?'<span class="pill p-idle">בנק: '+esc(d.bank)+'</span>':'')+
           (d.note?'<div class="sub">'+esc(d.note)+'</div>':'')+'<div class="sub">מקור: '+esc(d.src||'')+(d.link?' · <a href="'+esc(d.link)+'" target="_blank" rel="noopener">המייל</a>':'')+'</div>'+
           (F.length?'<div>'+fileLinks(F,'data-mopenf')+'</div>':'')+'</span>'+
         '<label class="mildone"><input type="checkbox" data-mdone="'+esc(x.id)+'"'+(d.done?' checked':'')+'> טופל</label>'+
