@@ -448,6 +448,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:po
 .ayans{margin-top:6px;padding:6px 8px;border-radius:7px;background:var(--ok-bg);color:var(--ink);font-size:12.5px;white-space:pre-wrap}
 .ngrid .chk{flex-direction:row;align-items:center;gap:6px;font-weight:700;cursor:pointer}
 .ngrid .chk input{width:auto}
+.corrbox{margin-bottom:14px}.corrhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 .ntopic{display:inline-block;font-size:11.5px;font-weight:700;color:var(--accent-ink);background:var(--accent-soft);border-radius:6px;padding:2px 7px;white-space:nowrap}
 .nempty{padding:28px;text-align:center;color:var(--muted);font-style:italic}
 @media (max-width:640px){.ntab td.det{min-width:160px}}
@@ -3322,6 +3323,37 @@ var TOPICS=['עובדים חדשים','העלאות שכר','תוספות שכר
   'בירור תלוש שכר והשלמה','מתפטרים ומפוטרים- גמר חשבון','מתפטרים ומפוטרים- ללא גמר חשבון','מילואים','מחלה',
   'ניצול ימי חופש','מסמכים','פרטי חשבון בנק','תיאום מס','פנסיה','עובדי קבוצה שעבדו בעסק אחר','כללי'];
 var NST={open:'פתוח',sent:'נשלח',done:'טופל'};
+/* 9.11.2026 איילת: «תיקוני שכר» — רק אסא וצ'אקולי. הערה רגילה בנושא «תיקוני שכר» + «לאיזה חודש התיקון» (fix_for);
+   «🔧 תיקוני שכר» מציג רק אותם (מכל החודשים) להעתקה ולהדפסה. «טופל» = «תוקן בתלוש ✓» — רק כשמסמנים ידנית. */
+var CORRT='תיקוני שכר', NCORR=false, NCORRALL=false;
+function nCorrRest(r){ return r==='אסא'||r==="צ'אקולי"; }
+function nTopics(r){ return nCorrRest(r)?TOPICS.slice(0,1).concat([CORRT],TOPICS.slice(1)):TOPICS; }
+function nIsCorr(n){ return !!n&&n.topic===CORRT; }
+function nCorrFor(n){ return n&&n.fix_for&&n.fix_for.y?nlabel(n.fix_for.y,n.fix_for.m):''; }
+function nCorrList(rest,all){ return Object.keys(NOTES).map(function(k){return NOTES[k];}).filter(function(n){return n&&n.rest===rest&&nIsCorr(n)&&!nPriv(n)&&(all||(n.status||'open')!=='done');})
+  .sort(function(a,b){ var fa=a.fix_for?a.fix_for.y*12+a.fix_for.m:a.y*12+a.m, fb=b.fix_for?b.fix_for.y*12+b.fix_for.m:b.y*12+b.m;
+    return ((a.status==='done')-(b.status==='done'))||(fa-fb)||String(a.emp||'').localeCompare(String(b.emp||''),'he'); }); }
+function nCorrText(rest,L){ var out=['תיקוני שכר — '+rest,'(הופק '+new Date().toLocaleDateString('he-IL')+')',''];
+  if(!L.length)out.push('— אין תיקוני שכר פתוחים —');
+  L.forEach(function(n){ out.push('• '+(n.emp||'—')+(n.dept?' ('+n.dept+')':'')+(nCorrFor(n)?' — תיקון ל'+nCorrFor(n):'')+': '+String(n.detail||'')+(n.amount?' — '+fmtAmt(n.amount):'')+(n.status==='done'?' ✓ תוקן בתלוש':'')); });
+  return out.join('\n'); }
+function nCorrHtml(rest){ var L=nCorrList(rest,NCORRALL), nOpen=nCorrList(rest,false).length;
+  var h='<div class="corrbox"><div class="corrhead"><b>🔧 תיקוני שכר — '+esc(rest)+'</b> <span class="sub">'+nOpen+' פתוחים · מכל החודשים</span>'+
+    '<label class="nchk"><input type="checkbox" id="nCorrAll"'+(NCORRALL?' checked':'')+'> גם מה שתוקן</label>'+
+    '<button class="btn" type="button" id="nCorrCopy">📋 העתקה</button><button class="btn" type="button" id="nCorrPrint">🖨 הדפסה</button>'+
+    '<button class="btn primary" type="button" id="nCorrAdd">➕ תיקון חדש</button><button class="btn ghost" type="button" id="nCorrX">חזרה לכל ההערות</button></div>'+
+    '<div class="tablecard"><div class="scroll"><table class="ntab"><thead><tr><th>#</th><th>עובד</th><th>מחלקה</th><th>תיקון לחודש</th><th>נרשם בחודש</th><th>פירוט</th><th>סכום</th><th>תוקן בתלוש</th></tr></thead><tbody>';
+  if(!L.length)h+='<tr><td colspan="8" class="nempty">אין תיקוני שכר פתוחים 👍</td></tr>';
+  L.forEach(function(n,i){ var dn=n.status==='done';
+    h+='<tr data-nid="'+esc(n.id)+'" style="cursor:pointer'+(dn?';opacity:.6':'')+'" title="לחצי לעריכה"><td class="sub n">'+(i+1)+'</td><td class="nm">'+esc(n.emp||'—')+'</td><td>'+esc(n.dept||'')+'</td>'+
+      '<td><b>'+esc(nCorrFor(n)||'—')+'</b></td><td class="sub">'+esc(nlabel(n.y,n.m))+'</td><td class="det">'+esc(n.detail||'')+'</td><td class="amt">'+esc(fmtAmt(n.amount))+'</td>'+
+      '<td><button type="button" class="btn'+(dn?'':' ghost')+'" data-corrdone="'+esc(n.id)+'">'+(dn?'✓ תוקן — ביטול':'סמני שתוקן')+'</button></td></tr>'; });
+  return h+'</tbody></table></div></div></div>'; }
+function nCorrPrint(rest){ var L=nCorrList(rest,NCORRALL), w=window.open('','_blank'); if(!w){alert('הדפדפן חסם חלון — צריך לאפשר חלונות קופצים לדף הזה.');return;}
+  var rows=L.map(function(n,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(n.emp||'')+'</td><td>'+esc(n.dept||'')+'</td><td><b>'+esc(nCorrFor(n))+'</b></td><td>'+esc(n.detail||'')+'</td><td>'+esc(fmtAmt(n.amount))+'</td><td>'+(n.status==='done'?'✓':'')+'</td></tr>';}).join('');
+  w.document.write('<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>תיקוני שכר '+esc(rest)+'</title><style>body{font-family:Rubik,Arial,sans-serif;margin:24px;color:#222}h2{margin:0 0 4px}p{margin:0 0 14px;color:#666;font-size:13px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #bbb;padding:6px 8px;text-align:right;vertical-align:top}th{background:#eee}</style></head><body>'+
+    '<h2>תיקוני שכר — '+esc(rest)+'</h2><p>הופק '+new Date().toLocaleDateString('he-IL')+' · '+L.length+' שורות</p><table><thead><tr><th>#</th><th>עובד</th><th>מחלקה</th><th>תיקון לחודש</th><th>פירוט</th><th>סכום</th><th>תוקן</th></tr></thead><tbody>'+(rows||'<tr><td colspan="7">אין תיקונים פתוחים</td></tr>')+'</tbody></table></body></html>');
+  w.document.close(); setTimeout(function(){try{w.focus();w.print();}catch(_){}},300); }
 var NDEF=(function(){var d=new Date(),y=d.getFullYear(),m=d.getMonth()+1;
   if(d.getDate()<=10){m--; if(m<1){m=12;y--;}} return {y:y,m:m};})();
 /* 26.10.2026: החודש שנבחר נשמר במכשיר עד שבוחרים אחר (או «לחודש הנוכחי») */
@@ -3419,11 +3451,12 @@ function renderNotes(){
     '<button type="button" class="btn ghost" id="nNext" title="חודש הבא">הבא ←</button>'+
     ((NSEL.y!==NDEF.y||NSEL.m!==NDEF.m)?'<button type="button" class="btn ghost" id="nNow">לחודש הנוכחי ('+esc(nlabel(NDEF.y,NDEF.m))+')</button>':'')+'</span>'+
     '<select id="nRest" aria-label="מסעדה">'+neRests().map(function(r){return '<option value="'+esc(r)+'"'+(r===rest?' selected':'')+'>'+esc(r)+'</option>';}).join('')+'</select>'+
-    '<select id="nTopicF" aria-label="נושא"><option value="">כל הנושאים</option>'+TOPICS.map(function(t){return '<option value="'+esc(t)+'"'+(t===NTOPIC?' selected':'')+'>'+esc(t)+'</option>';}).join('')+'</select>'+
+    '<select id="nTopicF" aria-label="נושא"><option value="">כל הנושאים</option>'+nTopics(rest).map(function(t){return '<option value="'+esc(t)+'"'+(t===NTOPIC?' selected':'')+'>'+esc(t)+'</option>';}).join('')+'</select>'+
     '<select id="nToF" aria-label="מופנית ל"><option value="">מופנית ל: כולם</option>'+NTO.map(function(t){return '<option value="'+esc(t)+'"'+(t===NTOF?' selected':'')+'>מופנית ל'+esc(t)+'</option>';}).join('')+'<option value="__priv"'+(NTOF==='__priv'?' selected':'')+'>🔒 רק שלי (פרטיות)</option></select>'+
     '<label class="nchk"><input type="checkbox" id="nAllM"'+(NALLM?' checked':'')+'> מכל החודשים</label>'+
     '<input type="search" id="nQ" placeholder="חיפוש בהערות…" value="'+esc(NQ)+'" aria-label="חיפוש">'+
     '<button class="btn primary" id="nAdd" type="button">➕ הערה חדשה</button>'+
+    (nCorrRest(rest)?'<button class="btn" id="nCorr" type="button" aria-pressed="'+(NCORR?'true':'false')+'" title="רק תיקוני השכר, מכל החודשים — להעתקה ולהדפסה">🔧 תיקוני שכר'+(function(){var c=nCorrList(rest,false).length;return c?' ('+c+' פתוחים)':'';})()+'</button>':'')+
     '<button class="btn" id="nSend" type="button" aria-pressed="'+(NSHOW?'true':'false')+'">📤 לשליחה לחשבת שכר</button>'+
     '<button class="btn" id="nXlsx" type="button" title="בחירת עמודות ומה ייכלל — אקסל">⬇ אקסל</button>'+
     '<button class="btn" id="nPdf" type="button" title="בחירת עמודות ומה ייכלל — מסך מסודר להדפסה / שמירה כ-PDF">PDF</button>'+
@@ -3432,6 +3465,7 @@ function renderNotes(){
     (function(){ var c=nFilesFor(rest,y,m).length; return c?'<button class="btn" id="nFiles" type="button" title="המסמכים של ההערות שמוצגות (+ הערות קבועות) — להוריד הכול, כמה או אחד">📎 '+c+' קבצים — הורדה</button>':''; })()+
     '<span class="count">'+(NALLM||NTOF||NTOPIC||NQ?rows.length+' מוצגות · ':'')+all.length+' הערות ב'+esc(nlabel(y,m))+' · '+open+' פתוחות</span></div>';
   if(NFORM)h+=nFormHtml(rest,y,m);
+  if(NCORR&&nCorrRest(rest)){ box.innerHTML=h+nCorrHtml(rest); var _fb0=document.getElementById('nFormBox'); if(_fb0)_fb0.__nf=NFORM; nWire(rest,y,m); return; }
   if(NSHOW)h+=nSendHtml(rest,y,m,all);
   if(ayw.length){ var byTo={}; ayw.forEach(function(n){var t=nTo(n);byTo[t]=(byTo[t]||0)+1;});
     h+='<div class="aystrip"><b>📣 מחכות לתשובה:</b>'+Object.keys(byTo).map(function(t){return '<button class="btn" type="button" data-wto="'+esc(t)+'" aria-pressed="'+(NTOF===t&&NALLM?'true':'false')+'">'+esc(t)+' — '+byTo[t]+'</button>';}).join('')+
@@ -3452,7 +3486,7 @@ function renderNotes(){
       '<td>'+esc(n.dept||(e?e.dept:''))+'</td>'+
       '<td><span class="ntopic">'+esc(n.topic||'כללי')+'</span></td>'+
       '<td>'+(nPriv(n)?'<span class="aytag priv">🔒 רק שלי</span>':nToAy(n)?(n.ay_ans?'<span class="aytag ok">'+esc(nTo(n))+' ✓ ענתה</span>':'<span class="aytag">📣 '+esc(nTo(n))+'</span>'):'<span class="sub">חשבת השכר</span>')+'</td>'+
-      '<td class="det">'+esc(n.detail||'')+(n.ay_ans?'<div class="ayans"><b>'+esc(nTo(n))+':</b> '+esc(n.ay_ans)+'</div>':'')+'</td>'+
+      '<td class="det">'+(nIsCorr(n)&&nCorrFor(n)?'<span class="ntopic">🔧 תיקון ל'+esc(nCorrFor(n))+'</span> ':'')+esc(n.detail||'')+(n.ay_ans?'<div class="ayans"><b>'+esc(nTo(n))+':</b> '+esc(n.ay_ans)+'</div>':'')+'</td>'+
       '<td class="amt">'+esc(fmtAmt(n.amount))+'</td>'+
       '<td>'+(n.doc?'<a href="'+esc(n.doc)+'" target="_blank" rel="noopener">🔗 קישור</a> ':'')+(window.PK&&PK.byNote(n.id).length?'<button type="button" class="ftag flink" data-nfiles="'+esc(n.id)+'" title="פתיחת הקבצים">📎 '+PK.byNote(n.id).length+'</button>':'')+'</td>'+
       '<td>'+nStatusPill(n)+'</td>'+
@@ -4084,8 +4118,9 @@ function nFormHtml(rest,y,m){
       '<datalist id="empList">'+emps.map(function(e){return '<option value="'+esc(e.name)+'">'+esc(e.dept)+(e.state!=='פעיל'?' · לא פעיל':'')+'</option>';}).join('')+'</datalist></label>'+
     '<label>מחלקה<input type="text" id="fDeptN" list="deptList" autocomplete="off" value="'+esc(n.dept||'')+'">'+
       '<datalist id="deptList">'+depts.map(function(d){return '<option value="'+esc(d)+'">';}).join('')+'</datalist></label>'+
-    '<label>נושא<select id="fTopic">'+(n.topic&&TOPICS.indexOf(n.topic)<0?[n.topic]:[]).concat(TOPICS).map(function(t){return '<option value="'+esc(t)+'"'+((n.topic||'')===t?' selected':'')+'>'+esc(t)+'</option>';}).join('')+'</select></label>'+
+    '<label>נושא<select id="fTopic">'+(n.topic&&nTopics(rest).indexOf(n.topic)<0?[n.topic]:[]).concat(nTopics(rest)).map(function(t){return '<option value="'+esc(t)+'"'+((n.topic||'')===t?' selected':'')+'>'+esc(t)+'</option>';}).join('')+'</select></label>'+
     '<label>סכום (₪, אם יש)<input type="number" id="fAmt" inputmode="decimal" step="1" value="'+esc(n.amount||'')+'"></label>'+
+    '<label id="fForBox"'+(nIsCorr(n)?'':' hidden')+'>🔧 התיקון הוא לחודש<input type="month" id="fFor" value="'+(n.fix_for?n.fix_for.y+'-'+(n.fix_for.m<10?'0':'')+n.fix_for.m:'')+'"></label>'+
     '<label id="fUntilBox"'+(fx?'':' hidden')+'>הערה קבועה — עד חודש (לא חובה)<input type="month" id="fUntil" value="'+(n.until?n.until.y+'-'+(n.until.m<10?'0':'')+n.until.m:'')+'"></label>'+
     '<label class="full">הערה / פירוט<textarea id="fDetail" placeholder="מה לעדכן לחשבת השכר…">'+esc(n.detail||'')+'</textarea></label>'+
     '<label class="chk"><input type="checkbox" id="fPriv"'+(nPriv(n)||(isNew&&NTOF==='__priv')?' checked':'')+'> 🔒 רק אני רואה (פרטי — לא לחשבת השכר)</label>'+
@@ -4118,7 +4153,7 @@ function nPensLine(e){
     ' · טופס קוביות '+ok('טופס קוביות')+(e.pension==='פעילה'?' · אישור קרן '+ok('אישור קרן פנסיה פעילה'):'');
 }
 /* לחשבת השכר: בלי הפנייה לאיילת, ועם ההחלטה של איילת אם יש */
-function nDetailOut(n){ var d=String(n.detail||''); if(nToAy(n))d=d.replace(/^\s*(הערה\s*ל\s*)?(איילת|טלי|יובל|עמית|אשר)\s*[-–:,]\s*/,''); return d+(n.ay_ans?' (החלטה: '+n.ay_ans+')':''); }
+function nDetailOut(n){ var d=(nIsCorr(n)&&nCorrFor(n)?'תיקון ל'+nCorrFor(n)+': ':'')+String(n.detail||''); if(nToAy(n))d=d.replace(/^\s*(הערה\s*ל\s*)?(איילת|טלי|יובל|עמית|אשר)\s*[-–:,]\s*/,''); return d+(n.ay_ans?' (החלטה: '+n.ay_ans+')':''); }
 function nSendText(rest,y,m,all){
   var mgr=all.filter(function(n){return (n.status||'open')!=='done'&&!nAyWait(n)&&!nPriv(n);});
   var lines=['הערות שכר '+rest+' — '+nlabel(y,m),'(הופק '+new Date().toLocaleDateString('he-IL')+')',''];
@@ -4279,6 +4314,18 @@ function nWire(rest,y,m){
   el('nTopicF').addEventListener('change',function(){NTOPIC=this.value;renderNotes();});
   el('nQ').addEventListener('input',function(){NQ=this.value.trim();var v=this.value;renderNotes();var q=el('nQ');q.focus();q.setSelectionRange(v.length,v.length);});
   el('nAdd').addEventListener('click',function(){NFORM={};NSHOW=false;renderNotes();var f=el('fEmp');if(f)f.focus();});
+  var _nc=el('nCorr'); if(_nc)_nc.addEventListener('click',function(){NCORR=!NCORR;NSHOW=false;NFORM=null;renderNotes();});
+  if(NCORR&&el('nCorrX')){
+    el('nCorrX').addEventListener('click',function(){NCORR=false;NFORM=null;renderNotes();});
+    el('nCorrAll').addEventListener('change',function(){NCORRALL=this.checked;renderNotes();});
+    el('nCorrAdd').addEventListener('click',function(){NFORM={topic:CORRT};renderNotes();var f=el('fEmp');if(f)f.focus();});
+    el('nCorrPrint').addEventListener('click',function(){nCorrPrint(rest);});
+    el('nCorrCopy').addEventListener('click',function(){var t=nCorrText(rest,nCorrList(rest,NCORRALL)),b=this;
+      (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){b.textContent='✓ הועתק';setTimeout(function(){b.textContent='📋 העתקה';},1500);},function(){prompt('להעתקה:',t);});});
+    [].forEach.call(box.querySelectorAll('[data-corrdone]'),function(b){b.addEventListener('click',function(ev){ev.stopPropagation(); var n=NOTES[b.getAttribute('data-corrdone')]; if(!n)return;
+      n.status=n.status==='done'?'open':'done'; n.upd=today(); NPEND[n.id]=1; nsave(); renderNotes(); hero();});});
+    [].forEach.call(box.querySelectorAll('.corrbox tr[data-nid]'),function(tr){tr.addEventListener('click',function(){var n=NOTES[tr.getAttribute('data-nid')]; if(!n)return; NFORM=n; renderNotes();});});
+  }
   el('nSend').addEventListener('click',function(){NSHOW=!NSHOW;NFORM=null;renderNotes();});
   el('nToF').addEventListener('change',function(){NTOF=this.value;renderNotes();});
   el('nAllM').addEventListener('change',function(){NALLM=this.checked;NFORM=null;renderNotes();});
@@ -4293,7 +4340,7 @@ function nWire(rest,y,m){
   var _cf=el('nClrF'); if(_cf)_cf.addEventListener('click',function(){NTOF='';NALLM=false;renderNotes();});
   var _tg=el('nFixTg'); if(_tg)_tg.addEventListener('click',function(){NFIXOPEN=!NFIXOPEN;try{localStorage.setItem('pnkas-fixopen',NFIXOPEN?'1':'0');}catch(_){}renderNotes();});
   var _ax=el('nAddFix'); if(_ax)_ax.addEventListener('click',function(){NFORM={topic:FIXT};NSHOW=false;renderNotes();var f=el('fEmp');if(f)f.focus();});
-  var _tp=el('fTopic'); if(_tp)_tp.addEventListener('change',function(){var b=el('fUntilBox'); if(b)b.hidden=this.value!==FIXT;});
+  var _tp=el('fTopic'); if(_tp)_tp.addEventListener('change',function(){var b=el('fUntilBox'); if(b)b.hidden=this.value!==FIXT; var c=el('fForBox'); if(c)c.hidden=this.value!==CORRT;});
   var _ta=el('fTo'); if(_ta){ var _tt=false;
     _ta.addEventListener('change',function(){_tt=true; var p=this.value!==NTO0; el('fAyBox').hidden=!p; el('fToHint').hidden=!p; el('fAyLbl').textContent='תשובה ('+this.value+')';});
     var _fd=el('fDetail'); if(_fd)_fd.addEventListener('input',function(){ if(!_tt&&_ta.value===NTO0&&AYRE.test(this.value)){_ta.value='איילת';el('fAyBox').hidden=false;el('fToHint').hidden=false;el('fAyLbl').textContent='תשובה (איילת)';} }); }
@@ -4308,6 +4355,7 @@ function nWire(rest,y,m){
       n.amount=el('fAmt').value?+el('fAmt').value:''; n.detail=el('fDetail').value.trim(); n.doc=el('fDoc').value.trim();
       if(!isNew&&el('fStatus'))n.status=el('fStatus').value;
       var mvv=el('fMon')?el('fMon').value.split('-'):null; if(!isNew&&mvv&&+mvv[0]>2000){n.y=+mvv[0];n.m=+mvv[1];}
+      if(nIsCorr(n)){ var fv=(el('fFor').value||'').split('-'); if(fv.length===2&&+fv[0]>2000)n.fix_for={y:+fv[0],m:+fv[1]}; else delete n.fix_for; } else delete n.fix_for;
       if(nIsFixed(n)){ var uv=(el('fUntil').value||'').split('-'); if(uv.length===2&&+uv[0]>2000)n.until={y:+uv[0],m:+uv[1]}; else delete n.until; }
       n.to=el('fTo').value; delete n.to_ay;
       if(el('fPriv').checked&&!(n.priv||PK.email())){alert('לא הצלחתי לזהות מי מחוברת — ההערה לא נשמרה. צאי והיכנסי שוב.');return;}
