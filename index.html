@@ -2083,7 +2083,8 @@ function docRow(e,note,late){
    «ממש חשוב שתקפוץ הערה» — בכל כניסה ללשונית: אשרה שנגמרת תוך 7 ימים או שכבר נגמרה. */
 var FRN_SHOWN=false;
 function frnOn(e){ return e.foreign&&!e.ext&&e.status!=='עזב'&&e.status!=='לא פעיל'; }
-function visaDays(e){ var v=(MARKS[e.id]||{}).visa_until; if(!v)return null; var t=new Date(v+'T00:00:00'), n=new Date(); n.setHours(0,0,0,0); return Math.round((t-n)/864e5); }
+function visaUntil(e){ var v=(MARKS[e.id]||{}).visa_until; if(!v){ var it=(typeof zarItem==='function')?zarItem(e.id):null; v=it&&it.data&&it.data.visa_until; } return v||''; }
+function visaDays(e){ var v=visaUntil(e); if(!v)return null; var t=new Date(v+'T00:00:00'), n=new Date(); n.setHours(0,0,0,0); return Math.round((t-n)/864e5); }
 function visaPill(d){ if(d===null)return '<span class="vpill none">לא הוזן תוקף</span>';
   if(d<0)return '<span class="vpill bad">⛔ פג לפני '+(-d)+' ימים</span>'; if(d===0)return '<span class="vpill bad">⛔ פג היום</span>';
   if(d<=7)return '<span class="vpill bad">⚠️ נגמר בעוד '+d+' ימים</span>'; if(d<=30)return '<span class="vpill soon">בעוד '+d+' ימים</span>';
@@ -2131,7 +2132,7 @@ function renderFrn(){
   h+='</div></section>'+zarRestBox()+'</div>';
   box.innerHTML=h;
   if(urgent.length&&!FRN_SHOWN){ FRN_SHOWN=true;
-    setTimeout(function(){ alert('⚠️ אשרה שנגמרת תוך שבוע:\n\n'+urgent.map(function(e){ var dd=visaDays(e); return '• '+e.name+' — '+(dd<0?'פגה לפני '+(-dd)+' ימים':dd===0?'פגה היום':'נגמרת בעוד '+dd+' ימים')+' ('+fmtD(MARKS[e.id].visa_until)+')'; }).join('\n')); },50); }
+    setTimeout(function(){ alert('⚠️ אשרה שנגמרת תוך שבוע:\n\n'+urgent.map(function(e){ var dd=visaDays(e); return '• '+e.name+' — '+(dd<0?'פגה לפני '+(-dd)+' ימים':dd===0?'פגה היום':'נגמרת בעוד '+dd+' ימים')+' ('+fmtD(visaUntil(e))+')'; }).join('\n')); },50); }
   FRN_SHOWN=true;
 }
 document.getElementById('frnView').addEventListener('change',function(ev){
@@ -4373,7 +4374,27 @@ function nWire(rest,y,m){
 })();
 
 /* ---------- shared store ---------- */
+/* 9.11.2026 (איילת: «שבוע לפני שאשרה מסתיימת — חלון קופץ בדף כשנכנסים») — בכל כניסה לפנקס, בכל המסעדות שהמשתמש רואה */
+var VISA_POP_DONE=false;
+function visaAlertAll(){
+  if(VISA_POP_DONE||document.getElementById('visaPop'))return;
+  var L=[];
+  E.forEach(function(e0){ var e=eff(e0); if(!frnOn(e))return; var d=visaDays(e); if(d!==null&&d<=7)L.push({n:e.name,r:e.rest,d:d,v:visaUntil(e)}); });
+  (window.PK?PK.items():[]).forEach(function(x){ var d0=x.data||{}; if(x.kind!=='zar'||x.eid||x.deleted||!d0.visa_until||d0.status==='עזב')return;
+    var t=new Date(d0.visa_until+'T00:00:00'), n=new Date(); n.setHours(0,0,0,0); var d=Math.round((t-n)/864e5);
+    if(d<=7)L.push({n:x.emp||d0.name_en,r:({asa:'אסא',chakoli:"צ'אקולי",pastel:'פאסטל',helena:'הלנה',nero:"נרו ביץ'",ariela:'אריאלה וטופול'})[x.rest]||x.rest,d:d,v:d0.visa_until}); });
+  if(!L.length)return;
+  VISA_POP_DONE=true;   /* פעם אחת בכל כניסה */
+  L.sort(function(a,b){return a.d-b.d;});
+  var ov=document.createElement('div'); ov.className='inboxov'; ov.id='visaPop'; ov.setAttribute('role','alertdialog');
+  ov.innerHTML='<div class="inboxbox" style="border:3px solid #C0392B"><h2 style="margin:0 0 8px;color:#C0392B">⚠️ אשרת עבודה נגמרת</h2><ul>'+
+    L.map(function(x){ return '<li><b>'+esc(x.n)+'</b> ('+esc(x.r)+') — '+(x.d<0?'פגה לפני '+(-x.d)+' ימים':x.d===0?'פגה היום':'נגמרת בעוד '+x.d+' ימים')+' · '+esc(fmtD(x.v))+'</li>'; }).join('')+
+    '</ul><p style="margin:8px 0 0">צריך לחדש את האשרה, ולעדכן את התאריך בלשונית «עובדים זרים».</p><button type="button" class="gbtn" data-vpx style="margin-top:10px">הבנתי</button></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(ev){ if(ev.target===ov||ev.target.closest('[data-vpx]'))ov.remove(); });
+}
 function connect(){
+  setTimeout(function(){ try{ visaAlertAll(); }catch(_){} },1500);   /* גם אם הסנכרון איטי */
   if(!GAS()){SYNC='off';savebar();return;}
   SYNC='local';savebar();
   pull(true); npull(true);
@@ -4389,6 +4410,7 @@ function pull(first){
     .withSuccessHandler(function(txt){
       var remote={}; try{remote=JSON.parse(txt)||{};}catch(e){}
       SYNC='live';
+      if(first)setTimeout(function(){ try{ visaAlertAll(); }catch(_){} },400);
       if(first&&!SYNCED){
         SYNCED=true;
         Object.keys(MARKS).forEach(function(k){if(!remote[k]&&hasAny(MARKS[k]))PEND[k]=1;});
