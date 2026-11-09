@@ -448,6 +448,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:po
 .ayans{margin-top:6px;padding:6px 8px;border-radius:7px;background:var(--ok-bg);color:var(--ink);font-size:12.5px;white-space:pre-wrap}
 .ngrid .chk{flex-direction:row;align-items:center;gap:6px;font-weight:700;cursor:pointer}
 .ngrid .chk input{width:auto}
+.nform [hidden]{display:none!important}
 .corrbox{margin-bottom:14px}.corrhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 .ntopic{display:inline-block;font-size:11.5px;font-weight:700;color:var(--accent-ink);background:var(--accent-soft);border-radius:6px;padding:2px 7px;white-space:nowrap}
 .nempty{padding:28px;text-align:center;color:var(--muted);font-style:italic}
@@ -3456,6 +3457,7 @@ function renderNotes(){
     '<label class="nchk"><input type="checkbox" id="nAllM"'+(NALLM?' checked':'')+'> מכל החודשים</label>'+
     '<input type="search" id="nQ" placeholder="חיפוש בהערות…" value="'+esc(NQ)+'" aria-label="חיפוש">'+
     '<button class="btn primary" id="nAdd" type="button">➕ הערה חדשה</button>'+
+    (nCorrRest(rest)?'<button class="btn primary" id="nAddCorr" type="button" title="הערה חדשה בנושא «תיקוני שכר» — בלי לבחור נושא">➕ תיקון שכר</button>':'')+
     (nCorrRest(rest)?'<button class="btn" id="nCorr" type="button" aria-pressed="'+(NCORR?'true':'false')+'" title="רק תיקוני השכר, מכל החודשים — להעתקה ולהדפסה">🔧 תיקוני שכר'+(function(){var c=nCorrList(rest,false).length;return c?' ('+c+' פתוחים)':'';})()+'</button>':'')+
     '<button class="btn" id="nSend" type="button" aria-pressed="'+(NSHOW?'true':'false')+'">📤 לשליחה לחשבת שכר</button>'+
     '<button class="btn" id="nXlsx" type="button" title="בחירת עמודות ומה ייכלל — אקסל">⬇ אקסל</button>'+
@@ -4314,6 +4316,7 @@ function nWire(rest,y,m){
   el('nTopicF').addEventListener('change',function(){NTOPIC=this.value;renderNotes();});
   el('nQ').addEventListener('input',function(){NQ=this.value.trim();var v=this.value;renderNotes();var q=el('nQ');q.focus();q.setSelectionRange(v.length,v.length);});
   el('nAdd').addEventListener('click',function(){NFORM={};NSHOW=false;renderNotes();var f=el('fEmp');if(f)f.focus();});
+  var _nac=el('nAddCorr'); if(_nac)_nac.addEventListener('click',function(){NFORM={topic:CORRT};NSHOW=false;renderNotes();var f=el('fEmp');if(f)f.focus();});
   var _nc=el('nCorr'); if(_nc)_nc.addEventListener('click',function(){NCORR=!NCORR;NSHOW=false;NFORM=null;renderNotes();});
   if(NCORR&&el('nCorrX')){
     el('nCorrX').addEventListener('click',function(){NCORR=false;NFORM=null;renderNotes();});
