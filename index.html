@@ -2157,15 +2157,25 @@ var MIL_RX=/מילואים|3010|חירום|ביטוח לאומי.*תגמול|ת�
 function empName(id){ var e=E.filter(function(x){return x.id===id;})[0]; return e?e.name:''; }
 function fileLinks(L,attr){ return L.map(function(f){ return '<a '+attr+'="'+esc(f.id)+'" title="'+esc(f.name||'')+'">📄 '+esc(f.dtype||f.name||'מסמך')+'</a>'; }).join(' '); }
 function renderMil(){
-  var box=document.getElementById('milView'), rc=PK.rc(REST), L=milItems(), G={}, used={};
+  var box=document.getElementById('milView'), rc=PK.rc(REST), L0=milItems(), G={}, used={};
+  /* 9.11.2026 (איילת): «מה שולם לעובדים בתלושים» + «מה נכנס לבנק מביטוח לאומי — סכום כללי» */
+  var BTL=L0.filter(function(x){return (x.data||{}).btl;}), L=L0.filter(function(x){return !(x.data||{}).btl;});
+  var byM={}; L.forEach(function(x){ var sl=(x.data||{}).slips||{}; Object.keys(sl).forEach(function(m){ (byM[m]=byM[m]||{s:0,b:0}).s+=+sl[m]||0; }); });
+  BTL.forEach(function(x){ (x.data.btl||[]).forEach(function(t){ var m=String(t.d||'').slice(0,7); if(m)(byM[m]=byM[m]||{s:0,b:0}).b+=+t.amount||0; }); });
+  var fmtN=function(n){ return n?Math.round(n).toLocaleString('he-IL')+' ₪':'—'; }, mk=Object.keys(byM).sort().reverse();
   L.forEach(function(x){ var k=x.eid?('e'+x.eid):('n'+(x.emp||'?')); (G[k]=G[k]||[]).push(x); itemFiles(x).forEach(function(f){used[f.id]=1;}); });
   /* מסמכי מילואים שאין להם רשומה — גם הם מוצגים (שלא יתפספס אף מסמך) */
   var loose=(window.PK?PK.files():[]).filter(function(f){ return f.rest===rc&&!used[f.id]&&MIL_RX.test(String(f.dtype||'')+' '+String(f.name||'')); });
   loose.forEach(function(f){ var k=f.emp_id?('e'+f.emp_id):('n'+(((f.meta||{}).emp_name)||'?')); (G[k]=G[k]||[]).push({_file:f}); });
   var keys=Object.keys(G).sort(function(a,b){ function last(k){ return G[k].map(function(x){return x._file?String((x._file.meta||{}).mail_date||x._file.created_at||''):String((x.data||{}).iso||'');}).sort().pop()||''; } return last(b).localeCompare(last(a)); });
-  var open=L.filter(function(x){return !(x.data||{}).done;}).length;
+  var open=L.filter(function(x){var d=x.data||{};return !d.done&&!d.slips;}).length;
   var h='<div class="pwrap"><section class="psec"><header><span class="pcnt">'+keys.length+'</span><h2>מילואים — '+esc(REST)+'</h2>'+
-    '<p class="pnote">כל אישור מילואים (טופס 3010, אישור שירות בזמן חירום, מכתב מביטוח לאומי) — מהמייל, מהוואטסאפ ומבקרת השכר. '+open+' עוד לא סומנו «טופל». המסמכים נפתחים בלחיצה.</p></header><div class="plist">';
+    '<p class="pnote">כל אישור מילואים (טופס 3010, אישור שירות בזמן חירום, מכתב מביטוח לאומי) — מהמייל, מהוואטסאפ ומבקרת השכר. '+open+' עוד לא סומנו «טופל». המסמכים נפתחים בלחיצה.</p></header>'+
+    (mk.length?'<div class="zarbox" style="margin:10px 14px"><b>לפי חודש — מה שולם לעובדים בתלושים ומה נכנס לבנק מביטוח לאומי</b>'+
+      '<table><tr><th>חודש</th><th>שולם בתלושים (מילואים)</th><th>נכנס לבנק מביטוח לאומי</th></tr>'+mk.map(function(m){ return '<tr><td>'+esc(fmtM(m))+'</td><td>'+fmtN(byM[m].s)+'</td><td>'+fmtN(byM[m].b)+'</td></tr>'; }).join('')+'</table>'+
+      '<div class="sub">ביטוח לאומי — סכום כללי לחשבון החברה, לא לפי עובד (ויכול לכלול גם תשלומים אחרים של ביטוח לאומי). התלושים — 8/2026 עד 10/2026.</div>'+
+      (BTL.length?'<details><summary>כל הכניסות מביטוח לאומי</summary>'+BTL.map(function(x){ return (x.data.btl||[]).map(function(t){ return esc(fmtD(t.d))+' — '+fmtN(t.amount); }).join('<br>'); }).join('<br>')+'</details>':'')+
+    '</div>':'')+'<div class="plist">';
   if(!keys.length)h+='<div class="frow"><span class="hint">אין רשומות מילואים ב'+esc(REST)+'.</span></div>';
   keys.forEach(function(k){ var X=G[k], x0=X[0], eid=x0._file?x0._file.emp_id:x0.eid;
     var nm=eid?empName(eid):(x0._file?((x0._file.meta||{}).emp_name||''):(x0.emp||''));
@@ -2371,7 +2381,7 @@ function hero(){
   document.getElementById('c-todo').textContent=todo.length;
   document.getElementById('c-all').textContent=ALL.filter(function(e){return e.state==='פעיל'&&!e.foreign;}).length;
   document.getElementById('c-frn').textContent=A.filter(frnOn).length||'';
-  document.getElementById('c-mil').textContent=milItems().filter(function(x){return !(x.data||{}).done;}).length||'';
+  document.getElementById('c-mil').textContent=milItems().filter(function(x){var d=x.data||{};return !d.done&&!d.btl&&!d.slips;}).length||'';
   document.getElementById('c-pens').textContent=A.filter(function(e){
     if(!e.active||e.ext||e.foreign||e.pens_open||!e.pmonth)return false;
     var q=e.pmonth.split('-'); return ((+q[0])*12+(+q[1]))<=NOWM+1;}).length;
