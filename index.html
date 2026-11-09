@@ -4125,7 +4125,7 @@ function nFormHtml(rest,y,m){
       '<datalist id="deptList">'+depts.map(function(d){return '<option value="'+esc(d)+'">';}).join('')+'</datalist></label>'+
     '<label>נושא<select id="fTopic">'+(n.topic&&nTopics(rest).indexOf(n.topic)<0?[n.topic]:[]).concat(nTopics(rest)).map(function(t){return '<option value="'+esc(t)+'"'+((n.topic||'')===t?' selected':'')+'>'+esc(t)+'</option>';}).join('')+'</select></label>'+
     '<label>סכום (₪, אם יש)<input type="number" id="fAmt" inputmode="decimal" step="1" value="'+esc(n.amount||'')+'"></label>'+
-    '<label id="fForBox"'+(nIsCorr(n)?'':' hidden')+'>🔧 התיקון הוא לחודש<input type="month" id="fFor" value="'+(n.fix_for?n.fix_for.y+'-'+(n.fix_for.m<10?'0':'')+n.fix_for.m:'')+'"></label>'+
+    '<label id="fForBox"'+(nIsCorr(n)?'':' hidden')+'>🔧 התיקון הוא לחודש<input type="month" id="fFor" value="'+(function(){var f=n.fix_for||(nIsCorr(n)?{y:n.y||y,m:n.m||m}:null); return f?f.y+'-'+(f.m<10?'0':'')+f.m:'';})()+'"></label>'+
     '<label id="fUntilBox"'+(fx?'':' hidden')+'>הערה קבועה — עד חודש (לא חובה)<input type="month" id="fUntil" value="'+(n.until?n.until.y+'-'+(n.until.m<10?'0':'')+n.until.m:'')+'"></label>'+
     '<label class="full">הערה / פירוט<textarea id="fDetail" placeholder="מה לעדכן לחשבת השכר…">'+esc(n.detail||'')+'</textarea></label>'+
     '<label class="chk"><input type="checkbox" id="fPriv"'+(nPriv(n)||(isNew&&NTOF==='__priv')?' checked':'')+'> 🔒 רק אני רואה (פרטי — לא לחשבת השכר)</label>'+
@@ -4345,10 +4345,10 @@ function nWire(rest,y,m){
   var _cf=el('nClrF'); if(_cf)_cf.addEventListener('click',function(){NTOF='';NALLM=false;renderNotes();});
   var _tg=el('nFixTg'); if(_tg)_tg.addEventListener('click',function(){NFIXOPEN=!NFIXOPEN;try{localStorage.setItem('pnkas-fixopen',NFIXOPEN?'1':'0');}catch(_){}renderNotes();});
   var _ax=el('nAddFix'); if(_ax)_ax.addEventListener('click',function(){NFORM={topic:FIXT};NSHOW=false;renderNotes();var f=el('fEmp');if(f)f.focus();});
-  var _tp=el('fTopic'); if(_tp)_tp.addEventListener('change',function(){var b=el('fUntilBox'); if(b)b.hidden=this.value!==FIXT; var c=el('fForBox'); if(c)c.hidden=this.value!==CORRT; var g=el('fCorrTg'); if(g)g.setAttribute('aria-pressed',this.value===CORRT?'true':'false');});
+  var _tp=el('fTopic'); if(_tp)_tp.addEventListener('change',function(){var b=el('fUntilBox'); if(b)b.hidden=this.value!==FIXT; var c=el('fForBox'); if(c)c.hidden=this.value!==CORRT; var ff0=el('fFor'); if(ff0&&this.value===CORRT&&!ff0.value){var yy=(NFORM&&NFORM.y)||y, mm=(NFORM&&NFORM.m)||m; ff0.value=yy+'-'+(mm<10?'0':'')+mm;} var g=el('fCorrTg'); if(g)g.setAttribute('aria-pressed',this.value===CORRT?'true':'false');});
   var _ctg=el('fCorrTg'); if(_ctg)_ctg.addEventListener('click',function(){ var t=el('fTopic'), on=t.value!==CORRT;
     if(on){ this._prev=t.value; t.value=CORRT; } else { t.value=(this._prev&&this._prev!==CORRT)?this._prev:TOPICS[0]; }
-    t.dispatchEvent(new Event('change')); if(on){var ff=el('fFor'); if(ff)ff.focus();} });
+    t.dispatchEvent(new Event('change')); });
   var _ta=el('fTo'); if(_ta){ var _tt=false;
     _ta.addEventListener('change',function(){_tt=true; var p=this.value!==NTO0; el('fAyBox').hidden=!p; el('fToHint').hidden=!p; el('fAyLbl').textContent='תשובה ('+this.value+')';});
     var _fd=el('fDetail'); if(_fd)_fd.addEventListener('input',function(){ if(!_tt&&_ta.value===NTO0&&AYRE.test(this.value)){_ta.value='איילת';el('fAyBox').hidden=false;el('fToHint').hidden=false;el('fAyLbl').textContent='תשובה (איילת)';} }); }
