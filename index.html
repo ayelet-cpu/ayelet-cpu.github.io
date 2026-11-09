@@ -193,6 +193,21 @@ footer{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
 .frow .fdocs a{color:var(--accent-ink);cursor:pointer;text-decoration:underline}
 .vpill{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;margin-top:4px}
 .vpill.bad{background:#FBE9E7;color:#A93226}.vpill.soon{background:#FCF3DC;color:#8A6508}.vpill.ok{background:#E3F1EA;color:#1F5A41}.vpill.none{background:var(--accent-soft);color:var(--sub)}
+.milgrp{border-bottom:1px solid var(--line-2);padding:10px 14px}
+.milhd{font-size:16px;margin-bottom:6px}
+.milrow{display:grid;grid-template-columns:90px minmax(200px,1.3fr) minmax(220px,2fr) auto;gap:6px 14px;align-items:start;padding:6px 0;border-top:1px dashed var(--line-2)}
+.milrow:first-of-type{border-top:0}
+.milrow.done{opacity:.6}
+.milrow a,.zarbox a{cursor:pointer;color:var(--accent-ink);text-decoration:underline;margin-inline-end:8px}
+.mild{font-size:13.5px;color:var(--muted)}
+.mildone{font-size:13.5px;white-space:nowrap}
+.zarbox{grid-column:1/-1;background:var(--surface-2);border-radius:10px;padding:8px 12px;font-size:14px}
+.zarbox table{border-collapse:collapse;font-size:13px;margin-top:6px}
+.zarbox td,.zarbox th{border:1px solid var(--line-2);padding:2px 8px;text-align:center}
+.inboxov{position:fixed;inset:0;background:rgba(20,15,35,.5);z-index:9800;display:flex;align-items:flex-start;justify-content:center;padding:40px 12px;overflow:auto}
+.inboxbox{background:var(--surface);color:var(--ink);border-radius:16px;max-width:720px;width:100%;padding:18px 20px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.inboxbox li{margin:6px 0}
+@media (max-width:760px){.milrow{grid-template-columns:1fr}}
 .frnalert{border:2px solid #C0392B;background:#FBE9E7;color:#7B241C;border-radius:14px;padding:12px 16px;font-size:14px}
 @media (max-width:760px){.frow{grid-template-columns:1fr}}
 .pstrip{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);
@@ -653,6 +668,10 @@ aside.drawer.on{transform:translate(-50%,-50%) scale(1);opacity:1}
 :root[data-rest="pas"]{--accent:#7A5A1E;--accent-soft:#F6EEDC;--accent-ink:#5C4214}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"])[data-rest="pas"]{--accent:#E0BE7A;--accent-soft:#3A2F1A;--accent-ink:#F0D9A8}}
 :root[data-theme="dark"][data-rest="pas"]{--accent:#E0BE7A;--accent-soft:#3A2F1A;--accent-ink:#F0D9A8}
+/* ===== אריאלה וטופול (9.11.2026) — רק איילת: עובדים זרים ומילואים ===== */
+:root[data-rest="ari"]{--accent:#2E7D6B;--accent-soft:#E2F2EE;--accent-ink:#1F5A4C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"])[data-rest="ari"]{--accent:#7CCBB8;--accent-soft:#183731;--accent-ink:#A8E0D2}}
+:root[data-theme="dark"][data-rest="ari"]{--accent:#7CCBB8;--accent-soft:#183731;--accent-ink:#A8E0D2}
 
 /* ===== טקסט גדול יותר בכל המערכת ===== */
 body{font-size:16px;line-height:1.6}
@@ -1018,6 +1037,7 @@ section.act .allgood,.act table{font-size:14.5px}
       <button type="button" data-rest="הלנה" data-full="1" aria-pressed="false" style="display:none">הלנה<span class="n" id="n-hel"></span></button>
       <button type="button" data-rest="נרו ביץ'" data-full="1" aria-pressed="false" style="display:none">נרו ביץ'<span class="n" id="n-nero"></span></button>
       <button type="button" data-rest="פאסטל" data-own="1" aria-pressed="false" style="display:none">פאסטל<span class="n" id="n-pas"></span></button>
+      <button type="button" data-rest="אריאלה וטופול" data-own="1" aria-pressed="false" style="display:none">אריאלה וטופול<span class="n" id="n-ari"></span></button>
 
     </div>
   </div>
@@ -1027,6 +1047,7 @@ section.act .allgood,.act table{font-size:14.5px}
       <button role="tab" data-tab="pens" aria-selected="false">פנסיה<span class="c" id="c-pens"></span></button>
       <button role="tab" data-tab="docs" aria-selected="false">טופס 101 ומסמכים<span class="c" id="c-docs"></span></button>
       <button role="tab" data-tab="frn" aria-selected="false">עובדים זרים<span class="c" id="c-frn"></span></button>
+      <button role="tab" data-tab="mil" aria-selected="false">מילואים<span class="c" id="c-mil"></span></button>
       <button role="tab" data-tab="notes" aria-selected="false">הערות שכר<span class="c" id="c-notes"></span></button>
       <button role="tab" data-tab="all" aria-selected="false">כל העובדים<span class="c" id="c-all"></span></button>
       <button role="tab" data-tab="off" aria-selected="false">לא פעילים<span class="c" id="c-off"></span></button>
@@ -1058,6 +1079,7 @@ section.act .allgood,.act table{font-size:14.5px}
   <div id="docsView" hidden></div>
 
   <div id="frnView" hidden></div>
+  <div id="milView" hidden></div>
 
   <div id="notesView" hidden></div>
 
@@ -1312,7 +1334,7 @@ var SB='https://mjhywoiwdvuxymuyhhdc.supabase.co';
 var KEY='sb_publishable_c7Y5hKxAqpzIFhhbuhNS2g_u55YKB90';
 var SK='pinkas-cloud-session', UK='pinkas-cloud-user';
 var USERS=[{k:'ayelet',n:'איילת'},{k:'tali',n:'טלי'},{k:'yuval',n:'יובל'},{k:'amit',n:'עמית'},{k:'asher',n:'אשר'}];
-var RC={'אסא':'asa',"צ'אקולי":'chakoli','צאקולי':'chakoli','זרים':'asa','הלנה':'helena',"נרו ביץ'":'nero','פאסטל':'pastel'};
+var RC={'אסא':'asa',"צ'אקולי":'chakoli','צאקולי':'chakoli','זרים':'asa','הלנה':'helena',"נרו ביץ'":'nero','פאסטל':'pastel','אריאלה וטופול':'ariela'};
 var $=function(i){return document.getElementById(i);};
 function store(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(_){}}
 function load(k){try{return localStorage.getItem(k);}catch(_){return null;}}
@@ -1342,7 +1364,7 @@ function json(path,opt){return api(path,opt).then(function(r){return r.status===
 setInterval(function(){ if(S&&(S.expires_at||0)-Date.now()/1000<900)refresh().catch(function(){}); },60000);
 
 /* ---------- קבצים ---------- */
-var FILES=[];
+var FILES=[], ITEMS=[];   /* ITEMS = עובדים זרים ומילואים (pinkas_items, 9.11.2026) */
 function extOf(n){var m=/\.([A-Za-z0-9]{1,8})$/.exec(n||'');return m?m[1].toLowerCase():'bin';}
 function uid(){return (crypto&&crypto.randomUUID)?crypto.randomUUID():('f'+Date.now().toString(36)+Math.random().toString(36).slice(2,10));}
 var PK={
@@ -1350,7 +1372,12 @@ var PK={
   byEmp:function(id){return FILES.filter(function(f){return f.emp_id===id&&!f.deleted_at;});},
   byNote:function(id){return FILES.filter(function(f){return f.note_id===id&&!f.deleted_at;});},
   bySource:function(src){return FILES.filter(function(f){return f.source===src&&!f.deleted_at;})[0]||null;},
-  reload:function(){return json('/rest/v1/pinkas_files?select=*&deleted_at=is.null&order=created_at.asc&limit=10000').then(function(r){FILES=r||[];return FILES;});},
+  reload:function(){return Promise.all([json('/rest/v1/pinkas_files?select=*&deleted_at=is.null&order=created_at.asc&limit=10000').then(function(r){FILES=r||[];return FILES;}),
+    json('/rest/v1/pinkas_items?select=*&deleted=eq.false&limit=5000').then(function(r){ITEMS=r||[];},function(){ITEMS=[];})]).then(function(){return FILES;});},
+  items:function(){return ITEMS;},
+  saveItem:function(it){ it.updated_at=new Date().toISOString(); it.updated_by=(PK.me&&PK.me.name)||'';
+    return json('/rest/v1/pinkas_items?on_conflict=id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({id:it.id,rest:it.rest,kind:it.kind,eid:it.eid==null?null:it.eid,emp:it.emp||null,data:it.data||{},deleted:!!it.deleted,updated_at:it.updated_at,updated_by:it.updated_by})}); },
   upload:function(file,o){ /* o: {rest(name), emp_id, note_id, kind, dtype} */
     var rest=RC[o.rest]||o.rest, folder=o.kind==='note'?('notes/'+String(o.note_id).replace(/[^\w-]/g,'')):('docs/'+(o.emp_id||'x'));
     var path=rest+'/'+folder+'/'+uid()+'.'+extOf(file.name);
@@ -1514,13 +1541,29 @@ function mergePayloads(list){
   });
   return out;
 }
+/* 9.11.2026 (איילת: «אם אתה לא יודע לאיזה מסעדה לשייך — תקפיץ רק לי הודעה בפתיחת הפנקס») —
+   מסמכים ורשומות של זרים/מילואים שלא ידוע לאיזו מסעדה הם שייכים (rest='inbox'). רק איילת רואה אותם (pinkas_can). */
+function inboxNotice(){ if(!PK.me||!PK.me.owner)return;
+  var I=ITEMS.filter(function(x){return x.rest==='inbox'&&!x.deleted;}), F=FILES.filter(function(f){return f.rest==='inbox'&&!f.deleted_at;});
+  if(!I.length&&!F.length)return;
+  var esc2=function(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];});};
+  var ov=document.createElement('div'); ov.className='inboxov'; ov.setAttribute('role','dialog');
+  ov.innerHTML='<div class="inboxbox"><h2 style="margin:0 0 6px">📥 לא ידוע לאיזו מסעדה לשייך</h2>'+
+    '<p style="margin:0 0 10px">מצאתי במייל ובוואטסאפ את אלה, ולא ידעתי לאיזו מסעדה הם שייכים. כתבי לקלוד למשל «X שייך לאסא» והוא ישייך.</p><ul>'+
+    I.map(function(x){ var d=x.data||{}; return '<li><b>'+esc2(x.emp||d.name_en||'')+'</b> — '+esc2(x.kind==='mil'?'מילואים':'עובד זר')+(d.form?': '+esc2(d.form):'')+(d.note?' · '+esc2(d.note):'')+(d.src?' <span style="color:#777">('+esc2(d.src)+')</span>':'')+'</li>'; }).join('')+
+    F.map(function(f){ var m=f.meta||{}; return '<li><a href="#" data-ibf="'+esc2(f.id)+'">📄 '+esc2(f.dtype||f.name)+'</a> — '+esc2(m.emp_name||'')+' <span style="color:#777">('+esc2(m.subject||'')+(m.mail_date?' · '+esc2(m.mail_date):'')+')</span></li>'; }).join('')+
+    '</ul><button type="button" class="gbtn" data-ibx style="margin-top:8px">סגירה</button></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(ev){ var a=ev.target.closest('[data-ibf]'); if(a){ ev.preventDefault(); var f=FILES.filter(function(x){return x.id===a.dataset.ibf;})[0]; if(f)PK.open(f); return; }
+    if(ev.target===ov||ev.target.closest('[data-ibx]'))ov.remove(); });
+}
 var booted=false;
 function boot(){
   msg('טוענת…');
   return json('/rest/v1/rpc/pinkas_me',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(function(me){
     if(!me){ store(SK,null); S=null; throw new Error('למשתמש הזה אין הרשאה לבקרת השכר'); }
     PK.me=me;
-    var rs=me.scope==='all'?['asa','chakoli','helena','nero'].concat(me.owner?['pastel']:[]):[me.scope]; /* פאסטל — רק איילת (me.owner) */ /* הלנה ונרו ביץ' — רק למי שרואה הכול (איילת, טלי) */
+    var rs=me.scope==='all'?['asa','chakoli','helena','nero'].concat(me.owner?['pastel','ariela']:[]):[me.scope]; /* פאסטל — רק איילת (me.owner) */ /* הלנה ונרו ביץ' — רק למי שרואה הכול (איילת, טלי) */
     return Promise.all([Promise.all(rs.map(function(r){ return json('/storage/v1/object/authenticated/pinkas/'+r+'/app.json').catch(function(e){ if(e.status===400||e.status===404)return null; throw e; }); })),
                         PK.newList(rs)])
       .then(function(x){ var D=mergePayloads(x[0]); if(!D.employees.length) throw new Error('נתוני העובדים עוד לא הועלו לענן');
@@ -1535,6 +1578,7 @@ function boot(){
     try{ localStorage.setItem('pnkas-who',PK.me.name); }catch(_){}
     $('gate').hidden=true; booted=true;
     window.__pinkasMain();
+    inboxNotice();
     var br=document.querySelector('.brand');
     if(br){ var c=document.createElement('span'); c.className='userchip';
       c.innerHTML='👤 '+PK.me.name+'<button type="button" id="uPw">שינוי סיסמה</button><button type="button" id="uOut">יציאה</button>';
@@ -1580,7 +1624,7 @@ var MARKS={}, DIRTY=false;
 var DB=null, PEND={}, SYNC='local', SYNCED=false;
 try{var raw=localStorage.getItem(KEY); if(raw)MARKS=JSON.parse(raw)||{};}catch(e){MARKS={};}
 try{DIRTY=localStorage.getItem(DKEY)==='1';}catch(e){}
-try{var r0=localStorage.getItem('pnkas-rest'); if(r0==='אסא'||r0==="צ'אקולי"||((r0==='הלנה'||r0==="נרו ביץ'"||r0==='פאסטל')&&!window.__FORCE_REST__))REST=r0;}catch(e){}
+try{var r0=localStorage.getItem('pnkas-rest'); if(r0==='אסא'||r0==="צ'אקולי"||((r0==='הלנה'||r0==="נרו ביץ'"||r0==='פאסטל'||r0==='אריאלה וטופול')&&!window.__FORCE_REST__))REST=r0;}catch(e){}
 
 function save(){try{localStorage.setItem(KEY,JSON.stringify(MARKS));localStorage.setItem(DKEY,DIRTY?'1':'0');}catch(e){}flush();savebar();}
 function hasAny(m){return m&&Object.keys(m).some(function(f){return f!=='u'&&m[f]!==''&&m[f]!==false&&m[f]!=null&&!(Array.isArray(m[f])&&!m[f].length)&&!(m[f]&&typeof m[f]==='object'&&!Array.isArray(m[f])&&!Object.keys(m[f]).length);});}
@@ -1689,7 +1733,7 @@ function eff(e){
   var lead=99;
   if(o.pmonth){var pm=o.pmonth.split('-');lead=((+pm[0])*12+(+pm[1]))-NOWM;}
   /* הלנה ונרו ביץ' — אין תלושים בפנקס (איילת 7.11): לא מציגים פנסיה / «לברר אם עזב» ב«לטיפול» */
-  o.noslip=(o.rest==='הלנה'||o.rest==="נרו ביץ'");
+  o.noslip=(o.rest==='הלנה'||o.rest==="נרו ביץ'"||o.rest==='אריאלה וטופול');
   o.needs_pens_docs = o.active && !o.ext && !o.foreign && !o.pens_open && !o.noslip && lead<=2;
   o.ds={}; o.dsauto={};
   if(o.needs_pens_docs)PENS_DOCS.forEach(function(t){if(t==='אישור קרן פנסיה פעילה'&&o.pension!=='פעילה')return;  /* מבקשים אישור קרן רק ממי שסימן שיש לו פנסיה פעילה */o.ds[t]='need';o.dsauto[t]=1;});
@@ -2044,6 +2088,27 @@ function visaPill(d){ if(d===null)return '<span class="vpill none">לא הוזן
   if(d<0)return '<span class="vpill bad">⛔ פג לפני '+(-d)+' ימים</span>'; if(d===0)return '<span class="vpill bad">⛔ פג היום</span>';
   if(d<=7)return '<span class="vpill bad">⚠️ נגמר בעוד '+d+' ימים</span>'; if(d<=30)return '<span class="vpill soon">בעוד '+d+' ימים</span>';
   return '<span class="vpill ok">בתוקף</span>'; }
+/* 9.11.2026: כל מה שהיה בבקרת השכר («עובדים זרים — פקדון») ומה שנמצא במייל ובוואטסאפ — בכרטיס הזר (pinkas_items kind='zar') */
+function zarItem(id){ return (window.PK?PK.items():[]).filter(function(x){return x.kind==='zar'&&x.eid===id&&!x.deleted;})[0]||null; }
+function fmtM(m){ var q=String(m||'').split('-'); return q.length===2?(q[1]+'/'+q[0].slice(2)):String(m||''); }
+function zarBox(e){ return zarBoxIt(zarItem(e.id)); }
+function zarBoxIt(it){ if(!it)return ''; var d=it.data||{}, M=d.months||{}, ks=Object.keys(M).sort();
+  var b=[]; if(d.name_en)b.push('<b>'+esc(d.name_en)+'</b>'); if(d.country)b.push('ארץ: '+esc(d.country)); if(d.passport)b.push('דרכון: '+esc(d.passport));
+  if(d.birth)b.push('שנת לידה: '+esc(d.birth)); if(d.visa_no)b.push('אשרה: '+esc(d.visa_no)); if(d.visa_until)b.push('אשרה עד '+esc(fmtD(d.visa_until)));
+  if(d.ins_until)b.push('ביטוח רפואי עד '+esc(fmtD(d.ins_until))+(d.ins_by?' ('+esc(d.ins_by)+')':'')); if(d.status&&d.status!=='פעיל')b.push('<span class="pill p-warn">'+esc(d.status)+'</span>');
+  var h='<div class="zarbox">'+b.join(' · ')+(d.note?'<div class="sub">'+esc(d.note)+'</div>':'');
+  if(ks.length){ h+='<details><summary>פיקדון — שכר לחישוב, '+ks.length+' חודשים (מ-'+esc(fmtM(d.depFrom||ks[0]))+') · אחרון '+esc(fmtM(ks[ks.length-1]))+': '+Number(M[ks[ks.length-1]]).toLocaleString('he-IL')+' ₪</summary>'+
+    '<table><tr><th>חודש</th><th>שכר לחישוב (₪)</th></tr>'+ks.slice().reverse().map(function(k){ return '<tr><td>'+esc(fmtM(k))+'</td><td>'+Number(M[k]).toLocaleString('he-IL')+'</td></tr>'; }).join('')+'</table></details>'; }
+  var F=itemFiles(it); if(F.length)h+='<div>'+fileLinks(F,'data-fopenf')+'</div>';
+  if(d.src)h+='<div class="sub">מקור: '+esc(d.src)+'</div>';
+  return h+'</div>'; }
+function zarRestBox(){ var rc=PK.rc(REST), L=(window.PK?PK.items():[]).filter(function(x){return x.kind==='zar'&&x.rest===rc&&!x.deleted&&!x.eid;}); if(!L.length)return '';
+  var h='<section class="psec"><header><h2>פיקדון ועובדים זרים שלא בפנקס — '+esc(REST)+'</h2></header><div class="plist">';
+  L.forEach(function(it){ var d=it.data||{};
+    if(d.deposits){ h+='<div class="frow"><div><b>הפקדות לפיקדון</b>'+(d.rate?'<br><span class="sub">שיעורים: פיצויים '+esc(d.rate.pitz)+'% · גמל '+esc(d.rate.gemel)+'%</span>':'')+'</div><div>'+
+      d.deposits.map(function(x){ return esc(fmtD(x.date))+' — '+Number(x.amount).toLocaleString('he-IL')+' ₪'+(x.note?' ('+esc(x.note)+')':''); }).join('<br>')+'</div></div>'; return; }
+    h+='<div class="frow"><div><b>'+esc(it.emp||d.name_en||'')+'</b> <span class="pill p-warn">לא בפנקס</span></div>'+zarBoxIt(it)+'<div>'+esc([d.status,d.note].filter(Boolean).join(' · '))+'</div></div>'; });
+  return h+'</div></section>'; }
 function renderFrn(){
   /* כל עובד זר שלא סומן «עזב»/«לא פעיל» — גם מי שעוד אין לו תלוש או נוכחות (התאילנדים שהגיעו ב-30.8) */
   var box=document.getElementById('frnView'), A=V().filter(frnOn);
@@ -2061,9 +2126,9 @@ function renderFrn(){
       '<div><label>פיקדון — סכום (₪)<input type="number" step="0.01" data-fdep="'+e.id+'" value="'+esc(mk0.dep_amt==null?'':mk0.dep_amt)+'"></label>'+
         '<label>נכון לחודש<input type="month" data-fdepm="'+e.id+'" value="'+esc(mk0.dep_month||'')+'"></label></div>'+
       '<div class="fdocs"><b>מסמכים ('+F.length+')</b>'+F.slice(0,6).map(function(f){ return '<a data-fopenf="'+esc(f.id)+'">'+esc(f.dtype||f.name)+'</a>'; }).join('')+(F.length>6?'<span class="sub">ועוד '+(F.length-6)+' — בכרטיס העובד</span>':'')+
-        '<button class="tlb" type="button" data-fup="'+e.id+'">📄 העלאת מסמך</button></div>'+
+        '<button class="tlb" type="button" data-fup="'+e.id+'">📄 העלאת מסמך</button></div>'+zarBox(e)+
     '</div>'; });
-  h+='</div></section></div>';
+  h+='</div></section>'+zarRestBox()+'</div>';
   box.innerHTML=h;
   if(urgent.length&&!FRN_SHOWN){ FRN_SHOWN=true;
     setTimeout(function(){ alert('⚠️ אשרה שנגמרת תוך שבוע:\n\n'+urgent.map(function(e){ var dd=visaDays(e); return '• '+e.name+' — '+(dd<0?'פגה לפני '+(-dd)+' ימים':dd===0?'פגה היום':'נגמרת בעוד '+dd+' ימים')+' ('+fmtD(MARKS[e.id].visa_until)+')'; }).join('\n')); },50); }
@@ -2081,6 +2146,52 @@ document.getElementById('frnView').addEventListener('click',function(ev){
   var a=ev.target.closest('[data-fopenf]'); if(a){ var f=(window.PK?PK.files():[]).filter(function(x){return x.id===a.dataset.fopenf;})[0]; if(f)PK.open(f); return; }
   var u=ev.target.closest('button[data-fup]'); if(u){ var e=E.filter(function(x){return x.id===+u.dataset.fup;})[0]; if(!e)return;
     nDocOpen(e.orig_rest||e.rest,NDEF.y,NDEF.m,{emp:e.name,type:'אשרת עבודה',after:function(){ FRN_SHOWN=true; render(); }}); return; }
+});
+/* ---------- מילואים (9.11.2026, איילת: «כל מידע ומסמך לפי מסעדה גם מהמייל וגם מהווטסאפ») ----------
+   רשומה לכל אישור (טופס 3010 / אישור חירום / מכתב ביטוח לאומי): תקופה, ימים, מה שולם בתלוש, מה נכנס לבנק, הערה ומקור.
+   הנתונים ב-pinkas_items (kind='mil'), המסמכים בתיק העובד (pinkas_files). מי שלא זוהה כעובד — מופיע בנפרד. */
+function milItems(){ var rc=PK.rc(REST); return (window.PK?PK.items():[]).filter(function(x){return x.kind==='mil'&&x.rest===rc&&!x.deleted;}); }
+function itemFiles(it){ var ids=((it&&it.data)||{}).files||[]; return (window.PK?PK.files():[]).filter(function(f){return ids.indexOf(f.id)>=0||((f.meta||{}).item===it.id);}); }
+var MIL_RX=/מילואים|3010|חירום|ביטוח לאומי.*תגמול|תגמול.*מילואים/;
+function empName(id){ var e=E.filter(function(x){return x.id===id;})[0]; return e?e.name:''; }
+function fileLinks(L,attr){ return L.map(function(f){ return '<a '+attr+'="'+esc(f.id)+'" title="'+esc(f.name||'')+'">📄 '+esc(f.dtype||f.name||'מסמך')+'</a>'; }).join(' '); }
+function renderMil(){
+  var box=document.getElementById('milView'), rc=PK.rc(REST), L=milItems(), G={}, used={};
+  L.forEach(function(x){ var k=x.eid?('e'+x.eid):('n'+(x.emp||'?')); (G[k]=G[k]||[]).push(x); itemFiles(x).forEach(function(f){used[f.id]=1;}); });
+  /* מסמכי מילואים שאין להם רשומה — גם הם מוצגים (שלא יתפספס אף מסמך) */
+  var loose=(window.PK?PK.files():[]).filter(function(f){ return f.rest===rc&&!used[f.id]&&MIL_RX.test(String(f.dtype||'')+' '+String(f.name||'')); });
+  loose.forEach(function(f){ var k=f.emp_id?('e'+f.emp_id):('n'+(((f.meta||{}).emp_name)||'?')); (G[k]=G[k]||[]).push({_file:f}); });
+  var keys=Object.keys(G).sort(function(a,b){ function last(k){ return G[k].map(function(x){return x._file?String((x._file.meta||{}).mail_date||x._file.created_at||''):String((x.data||{}).iso||'');}).sort().pop()||''; } return last(b).localeCompare(last(a)); });
+  var open=L.filter(function(x){return !(x.data||{}).done;}).length;
+  var h='<div class="pwrap"><section class="psec"><header><span class="pcnt">'+keys.length+'</span><h2>מילואים — '+esc(REST)+'</h2>'+
+    '<p class="pnote">כל אישור מילואים (טופס 3010, אישור שירות בזמן חירום, מכתב מביטוח לאומי) — מהמייל, מהוואטסאפ ומבקרת השכר. '+open+' עוד לא סומנו «טופל». המסמכים נפתחים בלחיצה.</p></header><div class="plist">';
+  if(!keys.length)h+='<div class="frow"><span class="hint">אין רשומות מילואים ב'+esc(REST)+'.</span></div>';
+  keys.forEach(function(k){ var X=G[k], x0=X[0], eid=x0._file?x0._file.emp_id:x0.eid;
+    var nm=eid?empName(eid):(x0._file?((x0._file.meta||{}).emp_name||''):(x0.emp||''));
+    h+='<div class="milgrp"><div class="milhd"><b>'+esc(nm||'לא ידוע')+'</b>'+(eid?'':' <span class="pill p-warn">לא משויך לעובד בפנקס</span>')+'</div>';
+    X.forEach(function(x){
+      if(x._file){ var f=x._file, m=f.meta||{};
+        h+='<div class="milrow"><span class="mild">'+esc(m.mail_date?fmtD(m.mail_date):'')+'</span><span class="milf">'+fileLinks([f],'data-mopenf')+'</span><span class="sub">'+esc(m.subject||f.source||'')+'</span></div>'; return; }
+      var d=x.data||{}, F=itemFiles(x);
+      h+='<div class="milrow'+(d.done?' done':'')+'">'+
+        '<span class="mild">'+esc(d.srcDate||'')+'</span>'+
+        '<span class="milf"><b>'+esc(d.form||'אישור מילואים')+'</b>'+(d.period?'<br><span class="sub">תקופה: '+esc(d.period)+(d.days?' · '+esc(d.days)+' ימים':'')+'</span>':(d.days?'<br><span class="sub">'+esc(d.days)+' ימים</span>':''))+'</span>'+
+        '<span class="milp">'+(d.slip?'<span class="pill p-idle">בתלוש: '+esc(d.slip)+'</span> ':'')+(d.bank?'<span class="pill p-idle">בנק: '+esc(d.bank)+'</span>':'')+
+          (d.note?'<div class="sub">'+esc(d.note)+'</div>':'')+'<div class="sub">מקור: '+esc(d.src||'')+(d.link?' · <a href="'+esc(d.link)+'" target="_blank" rel="noopener">המייל</a>':'')+'</div>'+
+          (F.length?'<div>'+fileLinks(F,'data-mopenf')+'</div>':'')+'</span>'+
+        '<label class="mildone"><input type="checkbox" data-mdone="'+esc(x.id)+'"'+(d.done?' checked':'')+'> טופל</label>'+
+      '</div>'; });
+    h+='</div>'; });
+  h+='</div></section></div>';
+  box.innerHTML=h;
+}
+document.getElementById('milView').addEventListener('click',function(ev){
+  var a=ev.target.closest('[data-mopenf]'); if(a){ var f=PK.files().filter(function(x){return x.id===a.dataset.mopenf;})[0]; if(f)PK.open(f); }
+});
+document.getElementById('milView').addEventListener('change',function(ev){
+  var t=ev.target; if(!t.dataset.mdone)return; var it=PK.items().filter(function(x){return x.id===t.dataset.mdone;})[0]; if(!it)return;
+  it.data=it.data||{}; it.data.done=t.checked; it.data.done_by=(PK.me&&PK.me.name)||''; it.data.done_at=new Date().toISOString().slice(0,10);
+  PK.saveItem(it).then(function(){ toast('✓ נשמר'); render(); },function(e){ alert('לא נשמר: '+e.message); });
 });
 function renderDocs(){
   var A=V().filter(function(e){return e.active&&!e.ext&&!e.foreign;});
@@ -2259,6 +2370,7 @@ function hero(){
   document.getElementById('c-todo').textContent=todo.length;
   document.getElementById('c-all').textContent=ALL.filter(function(e){return e.state==='פעיל'&&!e.foreign;}).length;
   document.getElementById('c-frn').textContent=A.filter(frnOn).length||'';
+  document.getElementById('c-mil').textContent=milItems().filter(function(x){return !(x.data||{}).done;}).length||'';
   document.getElementById('c-pens').textContent=A.filter(function(e){
     if(!e.active||e.ext||e.foreign||e.pens_open||!e.pmonth)return false;
     var q=e.pmonth.split('-'); return ((+q[0])*12+(+q[1]))<=NOWM+1;}).length;
@@ -2271,13 +2383,14 @@ function hero(){
   document.getElementById('n-hel').textContent=E.filter(function(e){return e.rest==='הלנה'&&!eff(e).ext;}).length||'';
   document.getElementById('n-nero').textContent=E.filter(function(e){return e.rest==="נרו ביץ'"&&!eff(e).ext;}).length||'';
   {var _np=document.getElementById('n-pas'); if(_np)_np.textContent=E.filter(function(e){return e.rest==='פאסטל'&&!eff(e).ext;}).length||'';}
+  {var _na=document.getElementById('n-ari'); if(_na)_na.textContent=E.filter(function(e){return e.rest==='אריאלה וטופול'&&!eff(e).ext;}).length||'';}
   var _nf=document.getElementById('n-frn'); if(_nf)_nf.textContent=E.filter(function(e){return eff(e).foreign&&!eff(e).ext;}).length;
 }
 var SCOPED_USERS={}; /* בענן: ההרשאה למסעדה נקבעת לפי המשתמש (pinkas_me) */ var USER_SCOPE=(typeof window!=='undefined'&&window.__FORCE_REST__)?({cha:"צ'אקולי",asa:"אסא",frn:"זרים"}[window.__FORCE_REST__]||window.__FORCE_REST__):null;function _scopeFor(x){if(!x)return null;var k=String(x).trim().toLowerCase();if(SCOPED_USERS[k])return SCOPED_USERS[k];for(var u in SCOPED_USERS){if(k.indexOf(u.split('@')[0])>=0)return SCOPED_USERS[u];}return null;}function applyUserScope(x){var s=_scopeFor(x);if(!s)return;USER_SCOPE=s;try{document.querySelectorAll('button[data-rest]').forEach(function(b){if(b.dataset.rest!==s)b.style.display='none';});}catch(e){}try{setRest(s);}catch(e){try{REST=s;render();}catch(_){}}}try{if(typeof google!=='undefined'&&google.script&&google.script.run){google.script.run.withSuccessHandler(function(w){try{applyUserScope(w);}catch(e){}}).withFailureHandler(function(){}).whoAmI();}}catch(e){}setTimeout(function(){try{applyUserScope(WHO);}catch(e){}},1800);function setRest(r){
   if(USER_SCOPE){r=USER_SCOPE;} REST=r; NRES=null; try{localStorage.setItem('pnkas-rest',r);}catch(e){}
-  document.documentElement.setAttribute('data-rest',r==='אסא'?'asa':(r==='זרים'?'frn':(r==='הלנה'?'hel':(r==="נרו ביץ'"?'nero':(r==='פאסטל'?'pas':'cha')))));
+  document.documentElement.setAttribute('data-rest',r==='אסא'?'asa':(r==='זרים'?'frn':(r==='הלנה'?'hel':(r==="נרו ביץ'"?'nero':(r==='פאסטל'?'pas':(r==='אריאלה וטופול'?'ari':'cha'))))));
   document.querySelectorAll('#restbar button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.rest===r);if(USER_SCOPE){b.style.display=(b.dataset.rest===USER_SCOPE?'':'none');}});
-  document.getElementById('stamp').textContent=(r==='אסא'?'אלמוגי עדן אחזקות':(r==='זרים'?"עובדים זרים — אסא ופינצ'וס":(r==='הלנה'?'הלנה':(r==="נרו ביץ'"?"נרו ביץ'":(r==='פאסטל'?'מעדנה מוזיאון — פאסטל':"פינצ'וס דולפינריום")))))+
+  document.getElementById('stamp').textContent=(r==='אסא'?'אלמוגי עדן אחזקות':(r==='זרים'?"עובדים זרים — אסא ופינצ'וס":(r==='הלנה'?'הלנה':(r==="נרו ביץ'"?"נרו ביץ'":(r==='פאסטל'?'מעדנה מוזיאון — פאסטל':(r==='אריאלה וטופול'?'אריאלה וטופול — עובדים זרים ומילואים':"פינצ'וס דולפינריום"))))))+
     ' · תלושי '+SLIP_N+' · נוכחות '+ATT_FULL;
   var A=E.filter(function(e){return e.rest===r;}),ds={};
   A.forEach(function(e){ds[eff(e).dept]=1;});
@@ -2293,10 +2406,11 @@ function render(){
   document.getElementById('pensView').hidden=(TAB!=='pens');
   document.getElementById('docsView').hidden=(TAB!=='docs');
   document.getElementById('frnView').hidden=(TAB!=='frn');
+  document.getElementById('milView').hidden=(TAB!=='mil');
   if(TAB!=='frn')FRN_SHOWN=false;
   document.getElementById('notesView').hidden=(TAB!=='notes');
-  document.getElementById('tableView').hidden=(TAB==='todo'||TAB==='pens'||TAB==='docs'||TAB==='notes'||TAB==='frn');
-  if(TAB==='todo')renderTodo(); else if(TAB==='pens')renderPens(); else if(TAB==='frn')renderFrn();
+  document.getElementById('tableView').hidden=(TAB==='todo'||TAB==='pens'||TAB==='docs'||TAB==='notes'||TAB==='frn'||TAB==='mil');
+  if(TAB==='todo')renderTodo(); else if(TAB==='pens')renderPens(); else if(TAB==='frn')renderFrn(); else if(TAB==='mil')renderMil();
   else if(TAB==='docs')renderDocs(); else if(TAB==='notes'){ var _nb=document.getElementById('nFormBox'); /* טופס פתוח לא מצויר מחדש ברקע (שלא יימחק מה שמקלידים) */ if(!(NFORM&&_nb&&_nb.__nf===NFORM))renderNotes(); } else renderTable();
   hero();
 }
@@ -2693,7 +2807,7 @@ var RPPRE={
 var RPST={scope:'act',cols:RPPRE.hr.slice()};
 try{var _s=localStorage.getItem('pnkas-rep'); if(_s){var j=JSON.parse(_s); if(j&&j.cols&&j.cols.length){RPST=j;}}}catch(e){}
 function rpSave(){try{localStorage.setItem('pnkas-rep',JSON.stringify(RPST));}catch(e){}}
-function rpShort(s){return String(s||'').replace(/\s*[-–]\s*(אסא|צ'אקולי|צאקולי|הלנה|נרו ביץ'|פאסטל)\s*$/,'').trim();}
+function rpShort(s){return String(s||'').replace(/\s*[-–]\s*(אסא|צ'אקולי|צאקולי|הלנה|נרו ביץ'|פאסטל|אריאלה וטופול)\s*$/,'').trim();}
 function repRows(){
   var all=E.map(eff).filter(function(e){return e.rest===REST;});
   if(RPST.scope==='act')all=all.filter(function(e){return e.active;});
@@ -2772,7 +2886,7 @@ document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&!rpDlg.hi
 var neDlg=document.getElementById('neDlg'), NE_EDIT=null;
 var NE_F=['name','tz','birth','gender','start','s101','pension','dept','role','rate','phone','email','addr'];
 function neEl(k){return document.getElementById('ne_'+k);}
-function neRests(){ var s=PK.me&&PK.me.scope; return s==='asa'?['אסא']:(s==='chakoli'?["צ'אקולי"]:['אסא',"צ'אקולי",'הלנה',"נרו ביץ'"].concat(PK.me&&PK.me.owner?['פאסטל']:[])); }
+function neRests(){ var s=PK.me&&PK.me.scope; return s==='asa'?['אסא']:(s==='chakoli'?["צ'אקולי"]:['אסא',"צ'אקולי",'הלנה',"נרו ביץ'"].concat(PK.me&&PK.me.owner?['פאסטל','אריאלה וטופול']:[])); }
 function neDepts(){ var r=neEl('rest').value, ds={};
   E.forEach(function(e){ if((e.rest===r||e.orig_rest===r)&&eff(e).dept)ds[eff(e).dept]=1; });
   document.getElementById('ne_depts').innerHTML=Object.keys(ds).sort(function(a,b){return a.localeCompare(b,'he');}).map(function(d){return '<option value="'+esc(d)+'">';}).join(''); }
