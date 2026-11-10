@@ -2404,8 +2404,10 @@ function ctrOf(e){
   var RHE={asa:'אסא',chakoli:"צ'אקולי",helena:'הלנה',nero:"נרו ביץ'",pastel:'פאסטל',ariela:'אריאלה וטופול'};
   return {st:'no',txt:'לא נמצא הסכם חתום'+(oth?' (יש הסכם ב'+(RHE[oth.rest]||oth.rest)+')':'')};
 }
-function ctrPool(){ return V().filter(function(e){return e.active&&!e.ext&&!e.system;}); }
-function ctrMissing(){ return ctrPool().filter(function(e){return ctrOf(e).st==='no';}); }
+function ctrPool(){ return V().filter(function(e){return e.active&&!e.ext&&!e.system&&ctrWorking(e);}); }   /* «עובדים לא פעילים לא מעניינים אותנו» (איילת 10.11.2026) */
+/* איילת 10.11.2026: «עובד שעזב לא מעניין אותי» — בלטיפול רק מי שעובד עכשיו (החתים בחודש הנוכחות האחרון, גלובלי, חדש, או סומן «פעיל») */
+function ctrWorking(e){ return !!(e.worked_sept||e.global||e.newhire||e.manual||((MARKS[e.id]||{}).status==='פעיל')); }
+function ctrMissing(){ return ctrPool().filter(function(e){return ctrOf(e).st==='no'&&ctrWorking(e);}); }
 function ctrRow(e,c){
   var by=((MARKS[e.id]||{}).by||{}).contract, act='';
   if(c.st==='no'||c.st==='unk')act='<button class="tlb done" type="button" data-ctr="yes" data-eid="'+e.id+'">✓ יש חוזה</button>'+
@@ -2424,8 +2426,8 @@ function ctrSec(sev,title,help,rows,open){
     (open?body:'<details class="ctrmore"><summary>להציג ('+rows.length+')</summary>'+body+'</details>')+'</section>';
 }
 function renderCtr(){
-  var box=document.getElementById('ctrView'), A=ctrPool(), G={no:[],unk:[],yes:[],mgr:[],none:[]}, src=ctrSrc(PK.rc(REST)), d=(src&&src.data)||{};
-  A.forEach(function(e){ G[ctrOf(e).st].push(e); });
+  var box=document.getElementById('ctrView'), A=ctrPool(), G={no:[],idle:[],unk:[],yes:[],mgr:[],none:[]}, src=ctrSrc(PK.rc(REST)), d=(src&&src.data)||{};
+  A.forEach(function(e){ var st=ctrOf(e).st; if(st==='no'&&!ctrWorking(e))st='idle'; G[st].push(e); });
   Object.keys(G).forEach(function(k){ G[k].sort(function(x,y){return String(x.name).localeCompare(String(y.name),'he');}); });
   var h='<div class="tl"><p class="ctrsrc">'+(src?'רשימת החוזים החתומים: <b>'+esc(d.src||'')+'</b>'+(d.checked?' · נבדק '+esc(fmtD(d.checked)):'')+(d.note?' · '+esc(d.note):'')
       :'⏳ רשימת החוזים של '+esc(REST)+' עוד לא נבדקה — מוצג רק מה שידוע (הסכם בתיק העובד / סימון ידני). מי שלא ידוע לא נכנס ל«לטיפול».')+'</p>';
@@ -2454,7 +2456,7 @@ function hero(){
   var ALL=V(), A=ALL.filter(function(e){return !e.ext;});   /* עובדי חוץ לא נספרים */
   var ext=ALL.filter(function(e){return e.ext;});
   var act=A.filter(function(e){return e.state==='פעיל';});
-  var todo=A.filter(function(e){return (e.todo&&!e.foreign)||(e.active&&!e.system&&ctrOf(e).st==='no');});   /* + בלי חוזה (10.11.2026) */
+  var todo=A.filter(function(e){return (e.todo&&!e.foreign)||(e.active&&!e.system&&ctrOf(e).st==='no'&&ctrWorking(e));});   /* + בלי חוזה (10.11.2026) */
   var pens=act.filter(function(e){return e.pens_open;});
   document.getElementById('hero').innerHTML=
     '<span class="big">'+act.length+'</span><span class="lbl">עובדים פעילים</span><span class="sep">·</span>'+
