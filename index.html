@@ -1050,6 +1050,7 @@ section.act .allgood,.act table{font-size:14.5px}
       <button role="tab" data-tab="todo" aria-selected="true">לטיפול<span class="c" id="c-todo"></span></button>
       <button role="tab" data-tab="pens" aria-selected="false">פנסיה<span class="c" id="c-pens"></span></button>
       <button role="tab" data-tab="docs" aria-selected="false">טופס 101 ומסמכים<span class="c" id="c-docs"></span></button>
+      <button role="tab" data-tab="ctr" aria-selected="false">חוזים<span class="c" id="c-ctr"></span></button>
       <button role="tab" data-tab="frn" aria-selected="false">עובדים זרים<span class="c" id="c-frn"></span></button>
       <button role="tab" data-tab="mil" aria-selected="false">מילואים<span class="c" id="c-mil"></span></button>
       <button role="tab" data-tab="notes" aria-selected="false">הערות שכר<span class="c" id="c-notes"></span></button>
@@ -1082,6 +1083,7 @@ section.act .allgood,.act table{font-size:14.5px}
 
   <div id="docsView" hidden></div>
 
+  <div id="ctrView" hidden></div>
   <div id="frnView" hidden></div>
   <div id="milView" hidden></div>
 
@@ -1287,7 +1289,8 @@ section.act .allgood,.act table{font-size:14.5px}
 .tlf{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:14px}
 .tlf b{font-weight:700;margin-inline-end:4px}
 .dchip{display:inline-block;font-size:12.5px;font-weight:700;padding:2px 9px;border-radius:999px}
-.dchip.ok{background:var(--ok-bg);color:var(--ok)}.dchip.no{background:var(--crit-bg);color:var(--crit)}
+.dchip.ok{background:var(--ok-bg);color:var(--ok)}
+.ctrsrc{margin:4px 2px 12px;font-size:14px} .ctrmore>summary{cursor:pointer;padding:8px 12px;font-weight:700;color:var(--accent)}.dchip.no{background:var(--crit-bg);color:var(--crit)}
 .dnote{font-size:12.5px;color:var(--muted)}
 .tla{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
 .tlb{font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap}
@@ -1902,6 +1905,8 @@ function renderTodo(){
          return '<div class="tlrow" data-id="'+e.id+'" tabindex="0"><div class="tln"><b>'+esc(e.name)+'</b><em>'+esc(e.dept)+(e.start?' · התחיל/ה '+esc(fmtD(e.start)):'')+'</em></div>'+
            '<div class="tlf"><b>חסר/ה בשיפט</b>'+(b?'<span class="dnote">סומן ע״י '+esc(b.who||'')+' · '+esc(fmtD(b.at))+'</span>':'')+'</div>'+
            '<div class="tla"><button class="tlb done" data-shiftok="'+e.id+'" type="button">✓ נפתח בשיפט</button></div></div>'; }).join('')+'</div></section>'; }
+  /* 10.11.2026: בלי חוזה חתום (רק במסעדה שרשימת החוזים שלה נבדקה) */
+  var NC=ctrMissing(); if(NC.length){ any=true; h+=ctrSec('warn','אין חוזה חתום','עובדים פעילים שאין להם חוזה חתום ברשימת החוזים. הפירוט המלא — בלשונית «חוזים».',NC,true); }
   if(!any)h+='<section class="tlsec sev-done"><header><h2>אין מה לטפל ✓</h2></header><p class="tlhelp">כל הנושאים סגורים במסעדה הזו.</p></section>';
   box.innerHTML=h+'</div>';
 }
@@ -2370,12 +2375,76 @@ document.addEventListener('click',function(ev){
   var d=document.getElementById('colPick');
   if(d&&d.open&&!d.contains(ev.target))d.open=false;});
 
+/* ---------- חוזים (10.11.2026, איילת: «לכל המסעדות לשונית נפרדת לחוזים, ולמי שאין חוזה — שיירשם בלטיפול») ----------
+   מה קובע, לפי הסדר: סימון ידני בכרטיס (MARKS.contract = 'yes' / 'none' + contract_why) → רשימת החוזים החתומים
+   (pinkas_items kind='contract', לפי eid או שם) → מסמך «הסכם עבודה» בתיק העובד (dtypes / pinkas_files).
+   «בלי חוזה» נקבע רק במסעדה שרשימת החוזים שלה נבדקה (שורה csrc_<rest>); אחרת — «עוד לא נבדק», ולא נכנס ללטיפול. */
+var CRX=/הסכם|חוזה/;
+function ctrNk(s){ return String(s||'').replace(/[׳'"]/g,'').replace(/\s+/g,' ').trim(); }
+function ctrSrc(rc){ return (window.PK?PK.items():[]).filter(function(x){return x.kind==='contract'&&x.id==='csrc_'+rc&&!x.deleted;})[0]||null; }
+function ctrItem(e){ var rc=PK.rc(e.orig_rest||e.rest), nk=ctrNk(e.name);
+  return (window.PK?PK.items():[]).filter(function(x){ return x.kind==='contract'&&x.id.indexOf('csrc_')!==0&&!x.deleted&&x.rest===rc&&
+    (x.eid===e.id||(!x.eid&&ctrNk(x.emp)===nk)); })[0]||null; }
+function ctrOf(e){
+  var m=MARKS[e.id]||{};
+  if(m.contract==='yes')return {st:'yes',txt:'סומן ידנית: יש חוזה',man:1};
+  if(m.contract==='none')return {st:'none',txt:'לא צריך חוזה'+(m.contract_why?' — '+m.contract_why:''),man:1};
+  var it=ctrItem(e); if(it&&(it.data||{}).has!==false){ var d=it.data||{}; return {st:'yes',txt:(d.form||'הסכם עבודה')+(d.date?' · נחתם '+fmtD(d.date):'')}; }
+  if((e.dtypes||[]).some(function(t){return CRX.test(t);}))return {st:'yes',txt:'הסכם עבודה בתיק העובד'};
+  var f=(window.PK?PK.byEmp(e.id):[]).filter(function(f){return CRX.test(String(f.dtype||'')+' '+String(f.name||''));})[0];
+  if(f)return {st:'yes',txt:'הסכם עבודה בתיק העובד'};
+  return ctrSrc(PK.rc(e.orig_rest||e.rest))?{st:'no',txt:'אין חוזה חתום'}:{st:'unk',txt:'עוד לא נבדק'};
+}
+function ctrPool(){ return V().filter(function(e){return e.active&&!e.ext&&!e.system;}); }
+function ctrMissing(){ return ctrPool().filter(function(e){return ctrOf(e).st==='no';}); }
+function ctrRow(e,c){
+  var by=((MARKS[e.id]||{}).by||{}).contract, act='';
+  if(c.st==='no'||c.st==='unk')act='<button class="tlb done" type="button" data-ctr="yes" data-eid="'+e.id+'">✓ יש חוזה</button>'+
+    '<button class="tlb" type="button" data-ctr="none" data-eid="'+e.id+'">לא צריך חוזה</button>';
+  else if(c.man)act='<button class="tlb" type="button" data-ctr="undo" data-eid="'+e.id+'">↩ לתקן</button>';
+  return '<div class="tlrow" data-id="'+e.id+'" tabindex="0"><div class="tln"><b>'+esc(e.name)+'</b>'+(e.foreign?'<span class="pill p-acc">זר</span>':'')+
+    '<em>'+esc(e.dept||'')+(e.role&&e.role!==e.dept?' · '+esc(e.role):'')+(e.start?' · התחיל/ה '+esc(fmtD(e.start)):'')+'</em></div>'+
+    '<div class="tlf"><span class="dchip '+(c.st==='yes'?'ok':(c.st==='no'?'no':''))+'">'+({yes:'✓',none:'—',no:'✗',unk:'?'}[c.st])+' '+esc(c.txt)+'</span>'+
+    (c.man&&by?'<span class="dnote">סומן ע״י '+esc(by.who||'')+' · '+esc(fmtD(by.at))+'</span>':'')+'</div><div class="tla">'+act+'</div></div>';
+}
+function ctrSec(sev,title,help,rows,open){
+  if(!rows.length)return '';
+  var body='<div class="tlrows">'+rows.map(function(e){return ctrRow(e,ctrOf(e));}).join('')+'</div>';
+  return '<section class="tlsec sev-'+sev+'"><header><span class="tlcnt">'+rows.length+'</span><h2>'+esc(title)+'</h2>'+
+    '<button class="tlq" type="button" data-help aria-label="הסבר" title="הסבר">?</button></header><p class="tlhelp" hidden>'+esc(help)+'</p>'+
+    (open?body:'<details class="ctrmore"><summary>להציג ('+rows.length+')</summary>'+body+'</details>')+'</section>';
+}
+function renderCtr(){
+  var box=document.getElementById('ctrView'), A=ctrPool(), G={no:[],unk:[],yes:[],none:[]}, src=ctrSrc(PK.rc(REST)), d=(src&&src.data)||{};
+  A.forEach(function(e){ G[ctrOf(e).st].push(e); });
+  Object.keys(G).forEach(function(k){ G[k].sort(function(x,y){return String(x.name).localeCompare(String(y.name),'he');}); });
+  var h='<div class="tl"><p class="ctrsrc">'+(src?'רשימת החוזים החתומים: <b>'+esc(d.src||'')+'</b>'+(d.checked?' · נבדק '+esc(fmtD(d.checked)):'')+(d.note?' · '+esc(d.note):'')
+      :'⏳ רשימת החוזים של '+esc(REST)+' עוד לא נבדקה — מוצג רק מה שידוע (הסכם בתיק העובד / סימון ידני). מי שלא ידוע לא נכנס ל«לטיפול».')+'</p>';
+  h+=ctrSec('crit','בלי חוזה חתום','עובדים פעילים שאין להם חוזה חתום ברשימה. אם יש חוזה במקום אחר — «✓ יש חוזה»; מי שלא אמור לחתום (בעלים, עובד חוץ) — «לא צריך חוזה» עם סיבה.',G.no,true);
+  h+=ctrSec('info','עוד לא נבדק','אין עדיין רשימת חוזים מבטר צ׳אנס למסעדה הזו, ולא נמצא הסכם בתיק העובד. אפשר לסמן ידנית.',G.unk,true);
+  h+=ctrSec('done','יש חוזה','חוזה חתום ברשימה, הסכם בתיק העובד, או סימון ידני.',G.yes,false);
+  h+=ctrSec('info','לא צריך חוזה','סומן ידנית, עם הסיבה.',G.none,false);
+  if(!A.length)h+='<section class="tlsec sev-done"><header><h2>אין עובדים פעילים</h2></header></section>';
+  box.innerHTML=h+'</div>';
+}
+document.getElementById('ctrView').addEventListener('click',function(ev){
+  var q=ev.target.closest('button[data-help]'); if(q){ var p=q.closest('section').querySelector('.tlhelp'); if(p)p.hidden=!p.hidden; return; }
+  if(ev.target.closest('summary'))return;
+  var tr=ev.target.closest('[data-id]'); if(tr)open(+tr.dataset.id); });
+document.addEventListener('click',function(ev){ var b=ev.target.closest&&ev.target.closest('button[data-ctr]'); if(!b)return; ev.stopPropagation(); ev.preventDefault();
+  var id=+b.dataset.eid, e=E.filter(function(x){return x.id===id;})[0]; if(!e)return; var v=b.dataset.ctr, m;
+  if(v==='yes'){ if(!confirm('לסמן ש'+e.name+' חתום/ה על חוזה?\n\nהסימון גובר על הנתונים. אפשר לתקן אחר כך בכרטיס העובד.'))return; m=mk(id); m.contract='yes'; m.contract_why=''; stamp(m,'contract'); }
+  else if(v==='none'){ var why=prompt('למה '+e.name+' לא צריך/ה חוזה? (למשל: בעלים, עובד חוץ)',''); if(why==null)return; if(!why.trim()){ alert('צריך לכתוב סיבה קצרה'); return; }
+    m=mk(id); m.contract='none'; m.contract_why=why.trim(); stamp(m,'contract'); }
+  else { if(!confirm('לבטל את הסימון הידני של החוזה אצל '+e.name+'?'))return; m=mk(id); delete m.contract; delete m.contract_why; if(m.by)delete m.by.contract; }
+  touch(id); save(); render(); toast('✓ נשמר — '+esc(e.name)); },true);
+
 /* ---------- hero + counts ---------- */
 function hero(){
   var ALL=V(), A=ALL.filter(function(e){return !e.ext;});   /* עובדי חוץ לא נספרים */
   var ext=ALL.filter(function(e){return e.ext;});
   var act=A.filter(function(e){return e.state==='פעיל';});
-  var todo=A.filter(function(e){return e.todo&&!e.foreign;});
+  var todo=A.filter(function(e){return (e.todo&&!e.foreign)||(e.active&&!e.system&&ctrOf(e).st==='no');});   /* + בלי חוזה (10.11.2026) */
   var pens=act.filter(function(e){return e.pens_open;});
   document.getElementById('hero').innerHTML=
     '<span class="big">'+act.length+'</span><span class="lbl">עובדים פעילים</span><span class="sep">·</span>'+
@@ -2385,6 +2454,7 @@ function hero(){
   document.getElementById('c-todo').textContent=todo.length;
   document.getElementById('c-all').textContent=ALL.filter(function(e){return e.state==='פעיל'&&!e.foreign;}).length;
   document.getElementById('c-frn').textContent=A.filter(frnOn).length||'';
+  document.getElementById('c-ctr').textContent=ctrMissing().length||'';
   document.getElementById('c-mil').textContent=milItems().filter(function(x){var d=x.data||{};return !d.done&&!d.btl&&!d.slips;}).length||'';
   document.getElementById('c-pens').textContent=A.filter(function(e){
     if(!e.active||e.ext||e.foreign||e.pens_open||!e.pmonth)return false;
@@ -2421,11 +2491,12 @@ function render(){
   document.getElementById('pensView').hidden=(TAB!=='pens');
   document.getElementById('docsView').hidden=(TAB!=='docs');
   document.getElementById('frnView').hidden=(TAB!=='frn');
+  document.getElementById('ctrView').hidden=(TAB!=='ctr');
   document.getElementById('milView').hidden=(TAB!=='mil');
   if(TAB!=='frn')FRN_SHOWN=false;
   document.getElementById('notesView').hidden=(TAB!=='notes');
-  document.getElementById('tableView').hidden=(TAB==='todo'||TAB==='pens'||TAB==='docs'||TAB==='notes'||TAB==='frn'||TAB==='mil');
-  if(TAB==='todo')renderTodo(); else if(TAB==='pens')renderPens(); else if(TAB==='frn')renderFrn(); else if(TAB==='mil')renderMil();
+  document.getElementById('tableView').hidden=(TAB==='todo'||TAB==='pens'||TAB==='docs'||TAB==='notes'||TAB==='frn'||TAB==='mil'||TAB==='ctr');
+  if(TAB==='todo')renderTodo(); else if(TAB==='pens')renderPens(); else if(TAB==='frn')renderFrn(); else if(TAB==='mil')renderMil(); else if(TAB==='ctr')renderCtr();
   else if(TAB==='docs')renderDocs(); else if(TAB==='notes'){ var _nb=document.getElementById('nFormBox'); /* טופס פתוח לא מצויר מחדש ברקע (שלא יימחק מה שמקלידים) */ if(!(NFORM&&_nb&&_nb.__nf===NFORM))renderNotes(); } else renderTable();
   hero();
 }
@@ -2599,6 +2670,7 @@ function open(id){
     (function(){ var by=m.by||{}, rows=[];
       function who(k){ var b=by[k]; return b?' <span class="mkby">'+esc(b.who||'')+(b.at?' · '+esc(fmtD(b.at)):'')+'</span>':''; }
       if(m.status)rows.push('<div class="mkrow"><span>סטטוס: <b>'+esc(m.status)+'</b>'+who('status')+'</span><button class="btn ghost" type="button" data-mkundo="status">↩ לתקן — לפי הנתונים</button></div>');
+      if(m.contract)rows.push('<div class="mkrow"><span>חוזה: <b>'+(m.contract==='yes'?'יש חוזה':'לא צריך חוזה'+(m.contract_why?' — '+esc(m.contract_why):''))+'</b>'+who('contract')+'</span><button class="btn ghost" type="button" data-mkundo="contract">↩ לתקן — לפי הנתונים</button></div>');
       Object.keys(m.done||{}).forEach(function(k){ if(m.done[k])rows.push('<div class="mkrow"><span>טופל: <b>'+esc(DONE_HE[k]||k)+'</b>'+who('done_'+k)+'</span><button class="btn ghost" type="button" data-mkundo="done_'+esc(k)+'">↩ לבטל «טופל»</button></div>'); });
       return rows.length?'<div class="mkbox"><span class="cap">סימונים שגוברים על הנתונים</span>'+rows.join('')+'</div>':''; })()+
     '<div class="fieldrow wide"><label for="mShift">שיפט</label><select id="mShift">'+
@@ -2676,8 +2748,8 @@ function wire(id){
   on('mShiftWhy','change',function(){var v=el('mShiftWhy').value.trim(); if(!v){ alert('צריך לכתוב סיבה קצרה'); el('mShiftWhy').value=(MARKS[id]||{}).shift_why||''; return; } apply(function(m){m.shift_why=v; stamp(m,'shift');});});
   var _mkb=el('dbody'); if(_mkb&&!_mkb.__mkundo){ _mkb.__mkundo=1; _mkb.addEventListener('click',function(ev){ var b=ev.target.closest('button[data-mkundo]'); if(!b)return;
     var k=b.dataset.mkundo, eid=+(_mkb.dataset.eid||0); if(!eid)return;
-    if(!confirm(k==='status'?'לבטל את סימון הסטטוס ולחזור ל«לפי הנתונים»?':'לבטל את «טופל» ('+(DONE_HE[k.slice(5)]||'')+')? השורה תחזור לרשימה.'))return;
-    var m=mk(eid); if(k==='status'){ m.status=''; if(m.done)delete m.done.left; } else if(m.done){ delete m.done[k.slice(5)]; }
+    if(!confirm(k==='status'?'לבטל את סימון הסטטוס ולחזור ל«לפי הנתונים»?':k==='contract'?'לבטל את סימון החוזה ולחזור ל«לפי הנתונים»?':'לבטל את «טופל» ('+(DONE_HE[k.slice(5)]||'')+')? השורה תחזור לרשימה.'))return;
+    var m=mk(eid); if(k==='contract'){ delete m.contract; delete m.contract_why; } else if(k==='status'){ m.status=''; if(m.done)delete m.done.left; } else if(m.done){ delete m.done[k.slice(5)]; }
     if(m.by)delete m.by[k]; touch(eid); JUSTSAVED=Date.now(); save(); render(); open(eid); }); }
   if(_mkb)_mkb.dataset.eid=id;
   on('mLast','change',function(){apply(function(m){m.left_last=el('mLast').value.trim();});});
