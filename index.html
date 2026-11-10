@@ -1613,6 +1613,7 @@ var SORT={key:'name',dir:1};
 var HE=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 /* מאיזה חודש התלושים והנוכחות — מגיע מהמחשב (slip_month / att_month, «YYYY-MM»). בלי זה: אוגוסט/ספטמבר 2026, הנתונים שנבנו עד 28.10.2026 */
 function _ym(v,d){v=/^\d{4}-\d{2}$/.test(String(v||''))?String(v):d;var q=v.split('-');return {y:+q[0],m:+q[1]};}
+try{ var _som=(window.PK?PK.items():[]).filter(function(x){return x.kind==='slips'&&!x.deleted&&x.data&&x.data.month;}).map(function(x){return x.data.month;}).sort(); if(_som.length)D.slip_month=_som[_som.length-1]; }catch(_){}
 var SLIP=_ym(D.slip_month,'2026-08'), ATT=_ym(D.att_month,'2026-09');
 try{var _sf=document.getElementById('srcFoot');if(_sf)_sf.innerHTML=_sf.innerHTML.replace('8/2026',SLIP.m+'/'+SLIP.y).replace('ספטמבר 2026',HE[ATT.m-1]+' '+ATT.y);}catch(_){}
 var SLIP_N=SLIP.m+'/'+SLIP.y, SLIP_HE=HE[SLIP.m-1], ATT_HE=HE[ATT.m-1], ATT_FULL=HE[ATT.m-1]+' '+ATT.y;
@@ -1672,9 +1673,16 @@ function savebar(){var n=nMarks(),bar=document.getElementById('savebar');
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];});}
 
 /* ---------- effective record ---------- */
+function slipOv(restHe){ var rc=PK.rc(restHe); var it=(window.PK?PK.items():[]).filter(function(x){return x.kind==='slips'&&x.id==='slips_'+rc&&!x.deleted;})[0];
+  return it&&it.data&&it.data.emps?it.data:null; }
 function eff(e){
   var m=MARKS[e.id]||{},o={};
   for(var k in e)o[k]=e[k];
+  /* 10.11.2026 (איילת: «עדכן לפי התלושים האחרונים — פעילים, פנסיות, 101»): תלושי החודש האחרון מבקרת השכר
+     (pinkas_items kind='slips', לפי מספר העובד) גוברים על דגלי התלוש שבקובץ — שם הם מאוגוסט. יש תלוש = פעיל, יש 101; הפרשת מעסיק לפנסיה = פנסיה מופרשת. */
+  var SO=slipOv(o.orig_rest||o.rest);
+  if(SO){ var se=SO.emps[String(e.id)]; o.slip=!!se; o.slip_month_ov=SO.month;
+    if(se){ o.pens_open=se.p>0; o.pens_ytd=se.p; if(se.f)o.pens_fund=se.f; o.s101='יש'; } else o.pens_open=!!e.pens_open; }
   if(m.dept)o.dept=m.dept;
   if(m.status)o.status=m.status;
   if(m.left_last)o.left_last=m.left_last;
@@ -1692,8 +1700,9 @@ function eff(e){
     o.pension=(m.pension==='אין')?'אין פנסיה פעילה':m.pension;}
   else {o.foreign=!!e.foreign; if(o.foreign)o.pension='אין פנסיה פעילה';}
   o.pension_disp=o.foreign?'עובד זר':o.pension;
-  o.pens_open=(m.opened===false)?false:(!!m.opened||!!e.pens_open);
-  o.opened_month=m.opened_month||(e.pens_open?'תלוש '+SLIP_N:'');
+  var _po=('slip_month_ov' in o)?!!o.pens_open:!!e.pens_open;
+  o.pens_open=(m.opened===false)?false:(!!m.opened||_po);
+  o.opened_month=m.opened_month||(_po?'תלוש '+SLIP_N:'');
   o.opened_date=m.opened_date||'';
   o.talked=!!m.talked; o.talked_at=m.talked_at||''; o.talked_note=m.talked_note||'';
   var md=m.docs||[];
