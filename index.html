@@ -2393,7 +2393,12 @@ function ctrOf(e){
   if((e.dtypes||[]).some(function(t){return CRX.test(t);}))return {st:'yes',txt:'הסכם עבודה בתיק העובד'};
   var f=(window.PK?PK.byEmp(e.id):[]).filter(function(f){return CRX.test(String(f.dtype||'')+' '+String(f.name||''));})[0];
   if(f)return {st:'yes',txt:'הסכם עבודה בתיק העובד'};
-  return ctrSrc(PK.rc(e.orig_rest||e.rest))?{st:'no',txt:'אין חוזה חתום'}:{st:'unk',txt:'עוד לא נבדק'};
+  var rc0=PK.rc(e.orig_rest||e.rest); if(!ctrSrc(rc0))return {st:'unk',txt:'עוד לא נבדק'};
+  if(it&&(it.data||{}).pending){ var dp=it.data; return {st:'no',txt:'נשלח לחתימה'+(dp.date?' ב-'+fmtD(dp.date):'')+' — עוד לא חתם/ה'}; }
+  /* חתם/ה על הסכם במסעדה אחרת (למשל בסניף אסא ולא בצ'אקולי) — עדיין «בלי חוזה» כאן, אבל כדאי לדעת */
+  var nk=ctrNk(e.name), oth=(window.PK?PK.items():[]).filter(function(x){return x.kind==='contract'&&x.rest!==rc0&&x.id.indexOf('csrc_')!==0&&!x.deleted&&(x.data||{}).has&&ctrNk(x.emp)===nk;})[0];
+  var RHE={asa:'אסא',chakoli:"צ'אקולי",helena:'הלנה',nero:"נרו ביץ'",pastel:'פאסטל',ariela:'אריאלה וטופול'};
+  return {st:'no',txt:'אין חוזה חתום'+(oth?' (יש הסכם ב'+(RHE[oth.rest]||oth.rest)+')':'')};
 }
 function ctrPool(){ return V().filter(function(e){return e.active&&!e.ext&&!e.system;}); }
 function ctrMissing(){ return ctrPool().filter(function(e){return ctrOf(e).st==='no';}); }
