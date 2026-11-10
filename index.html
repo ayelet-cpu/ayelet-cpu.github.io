@@ -1906,7 +1906,7 @@ function renderTodo(){
            '<div class="tlf"><b>חסר/ה בשיפט</b>'+(b?'<span class="dnote">סומן ע״י '+esc(b.who||'')+' · '+esc(fmtD(b.at))+'</span>':'')+'</div>'+
            '<div class="tla"><button class="tlb done" data-shiftok="'+e.id+'" type="button">✓ נפתח בשיפט</button></div></div>'; }).join('')+'</div></section>'; }
   /* 10.11.2026: בלי חוזה חתום (רק במסעדה שרשימת החוזים שלה נבדקה) */
-  var NC=ctrMissing(); if(NC.length){ any=true; h+=ctrSec('warn','אין חוזה חתום','עובדים פעילים שאין להם חוזה חתום ברשימת החוזים. הפירוט המלא — בלשונית «חוזים».',NC,true); }
+  var NC=ctrMissing(); if(NC.length){ any=true; h+=ctrSec('warn','לא נמצא חוזה חתום','עובדים פעילים שלא נמצא להם הסכם חתום ברשימת החוזים (אולי חתמו על נייר או בסניף אחר). הפירוט המלא — בלשונית «חוזים».',NC,true); }
   if(!any)h+='<section class="tlsec sev-done"><header><h2>אין מה לטפל ✓</h2></header><p class="tlhelp">כל הנושאים סגורים במסעדה הזו.</p></section>';
   box.innerHTML=h+'</div>';
 }
@@ -2398,7 +2398,7 @@ function ctrOf(e){
   /* חתם/ה על הסכם במסעדה אחרת (למשל בסניף אסא ולא בצ'אקולי) — עדיין «בלי חוזה» כאן, אבל כדאי לדעת */
   var nk=ctrNk(e.name), oth=(window.PK?PK.items():[]).filter(function(x){return x.kind==='contract'&&x.rest!==rc0&&x.id.indexOf('csrc_')!==0&&!x.deleted&&(x.data||{}).has&&ctrNk(x.emp)===nk;})[0];
   var RHE={asa:'אסא',chakoli:"צ'אקולי",helena:'הלנה',nero:"נרו ביץ'",pastel:'פאסטל',ariela:'אריאלה וטופול'};
-  return {st:'no',txt:'אין חוזה חתום'+(oth?' (יש הסכם ב'+(RHE[oth.rest]||oth.rest)+')':'')};
+  return {st:'no',txt:'לא נמצא הסכם חתום'+(oth?' (יש הסכם ב'+(RHE[oth.rest]||oth.rest)+')':'')};
 }
 function ctrPool(){ return V().filter(function(e){return e.active&&!e.ext&&!e.system;}); }
 function ctrMissing(){ return ctrPool().filter(function(e){return ctrOf(e).st==='no';}); }
@@ -2425,7 +2425,7 @@ function renderCtr(){
   Object.keys(G).forEach(function(k){ G[k].sort(function(x,y){return String(x.name).localeCompare(String(y.name),'he');}); });
   var h='<div class="tl"><p class="ctrsrc">'+(src?'רשימת החוזים החתומים: <b>'+esc(d.src||'')+'</b>'+(d.checked?' · נבדק '+esc(fmtD(d.checked)):'')+(d.note?' · '+esc(d.note):'')
       :'⏳ רשימת החוזים של '+esc(REST)+' עוד לא נבדקה — מוצג רק מה שידוע (הסכם בתיק העובד / סימון ידני). מי שלא ידוע לא נכנס ל«לטיפול».')+'</p>';
-  h+=ctrSec('crit','בלי חוזה חתום','עובדים פעילים שאין להם חוזה חתום ברשימה. אם יש חוזה במקום אחר — «✓ יש חוזה»; מי שלא אמור לחתום (בעלים, עובד חוץ) — «לא צריך חוזה» עם סיבה.',G.no,true);
+  h+=ctrSec('crit','לא נמצא חוזה חתום','עובדים פעילים שלא נמצא להם הסכם חתום ברשימה שנקראה (לא בהכרח שאין להם — אולי חתמו על נייר, בסניף אחר או לפני שהתחילו לעבוד עם הרשימה). אם יש חוזה במקום אחר — «✓ יש חוזה»; מי שלא אמור לחתום (בעלים, עובד חוץ) — «לא צריך חוזה» עם סיבה.',G.no,true);
   h+=ctrSec('info','עוד לא נבדק','אין עדיין רשימת חוזים מבטר צ׳אנס למסעדה הזו, ולא נמצא הסכם בתיק העובד. אפשר לסמן ידנית.',G.unk,true);
   h+=ctrSec('done','יש חוזה','חוזה חתום ברשימה, הסכם בתיק העובד, או סימון ידני.',G.yes,false);
   h+=ctrSec('info','לא צריך חוזה','סומן ידנית, עם הסיבה.',G.none,false);
