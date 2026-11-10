@@ -2404,9 +2404,15 @@ function ctrOf(e){
   var RHE={asa:'אסא',chakoli:"צ'אקולי",helena:'הלנה',nero:"נרו ביץ'",pastel:'פאסטל',ariela:'אריאלה וטופול'};
   return {st:'no',txt:'לא נמצא הסכם חתום'+(oth?' (יש הסכם ב'+(RHE[oth.rest]||oth.rest)+')':'')};
 }
-function ctrPool(){ return V().filter(function(e){return e.active&&!e.ext&&!e.system&&(ctrWorking(e)||e.slip);}); }   /* «עובדים לא פעילים לא מעניינים אותנו» (איילת 10.11.2026) */
+function ctrPool(){ return V().filter(function(e){return e.active&&!e.ext&&!e.system&&(ctrWorking(e)||(e.slip&&ctrSlipNow(e)===null));}); }   /* «עובדים לא פעילים לא מעניינים אותנו» (איילת 10.11.2026) */
 /* איילת 10.11.2026: «עובד שעזב לא מעניין אותי» — בלטיפול רק מי שעובד עכשיו (תלוש בחודש האחרון, החתים בחודש הנוכחות האחרון, גלובלי, חדש, או סומן «פעיל») */
-function ctrWorking(e){ var m=MARKS[e.id]||{}; return !!(e.worked_sept||e.global||e.newhire||e.manual||m.status==='פעיל'||m.shift==='none'); }
+/* תלושי החודש האחרון (מבקרת השכר בענן, csrc_<rest>.data.slip_names): true = יש לו תלוש עכשיו, false = אין, null = לא ידוע במסעדה הזו.
+   בפנקס הדגל «slip» מגיע מתלושי אוגוסט — לכן לא סומכים עליו כשיש רשימה עדכנית (בן לזר: תלוש אחרון באוגוסט). */
+function ctrSlipNow(e){ var s=ctrSrc(PK.rc(e.orig_rest||e.rest)), L=s&&s.data&&s.data.slip_names; if(!L)return null;
+  var a=ctrNk(String(e.name||'').replace(/\([^)]*\)/g,'')).split(' ').filter(Boolean); if(a.length<2)return null;
+  return L.some(function(n){ var b=ctrNk(String(n).replace(/\([^)]*\)/g,'')).split(' ').filter(Boolean); if(b.length<2)return false;
+    var x=a.length<=b.length?a:b, y=a.length<=b.length?b:a; return x.every(function(w){return y.indexOf(w)>=0;}); }); }
+function ctrWorking(e){ var m=MARKS[e.id]||{}; return !!(e.worked_sept||e.global||e.newhire||e.manual||m.status==='פעיל'||m.shift==='none'||ctrSlipNow(e)===true); }
 /* תלוש בלי שיפט — לא בטוח (אשר עובד ולא מחתים; בן לזר עזב וקיבל תלוש אחרון): רשימה נפרדת עם «עובד/ת», לא בלטיפול */
 function ctrMissing(){ return ctrPool().filter(function(e){return ctrOf(e).st==='no'&&ctrWorking(e);}); }
 function ctrRow(e,c){
