@@ -2382,9 +2382,11 @@ document.addEventListener('click',function(ev){
 var CRX=/הסכם|חוזה/;
 function ctrNk(s){ return String(s||'').replace(/[׳'"]/g,'').replace(/\s+/g,' ').trim(); }
 function ctrSrc(rc){ return (window.PK?PK.items():[]).filter(function(x){return x.kind==='contract'&&x.id==='csrc_'+rc&&!x.deleted;})[0]||null; }
-function ctrItem(e){ var rc=PK.rc(e.orig_rest||e.rest), nk=ctrNk(e.name);
-  return (window.PK?PK.items():[]).filter(function(x){ return x.kind==='contract'&&x.id.indexOf('csrc_')!==0&&!x.deleted&&x.rest===rc&&
-    (x.eid===e.id||(!x.eid&&ctrNk(x.emp)===nk)); })[0]||null; }
+function ctrTk(s){ return ctrNk(s).split(' ').filter(Boolean).sort().join(' '); }   /* «כהן מרדכי» = «מרדכי כהן» */
+function ctrItem(e){ var rc=PK.rc(e.orig_rest||e.rest), nk=ctrNk(e.name), tk=ctrTk(e.name);
+  var L=(window.PK?PK.items():[]).filter(function(x){ return x.kind==='contract'&&x.id.indexOf('csrc_')!==0&&!x.deleted&&x.rest===rc; });
+  return L.filter(function(x){return x.eid===e.id;})[0]||L.filter(function(x){return !x.eid&&ctrNk(x.emp)===nk;})[0]||
+         L.filter(function(x){return !x.eid&&ctrTk(x.emp)===tk;})[0]||null; }
 function ctrOf(e){
   var m=MARKS[e.id]||{};
   if(m.contract==='yes')return {st:'yes',txt:'סומן ידנית: יש חוזה',man:1};
