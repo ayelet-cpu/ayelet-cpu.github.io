@@ -1749,7 +1749,7 @@ function eff(e){
   var lead=99;
   if(o.pmonth){var pm=o.pmonth.split('-');lead=((+pm[0])*12+(+pm[1]))-NOWM;}
   /* הלנה ונרו ביץ' — אין תלושים בפנקס (איילת 7.11): לא מציגים פנסיה / «לברר אם עזב» ב«לטיפול» */
-  o.noslip=(o.rest==='הלנה'||o.rest==="נרו ביץ'"||o.rest==='אריאלה וטופול');
+  o.noslip=(o.rest==='הלנה'||o.rest==="נרו ביץ'");   /* אריאלה וטופול — מ-10.11.2026 נבנו מהתלושים, יש פנסיה ו«לברר אם עזב» */
   o.needs_pens_docs = o.active && !o.ext && !o.foreign && !o.pens_open && !o.noslip && lead<=2;
   o.ds={}; o.dsauto={};
   if(o.needs_pens_docs)PENS_DOCS.forEach(function(t){if(t==='אישור קרן פנסיה פעילה'&&o.pension!=='פעילה')return;  /* מבקשים אישור קרן רק ממי שסימן שיש לו פנסיה פעילה */o.ds[t]='need';o.dsauto[t]=1;});
