@@ -2404,13 +2404,15 @@ function ctrOf(e){
   var RHE={asa:'אסא',chakoli:"צ'אקולי",helena:'הלנה',nero:"נרו ביץ'",pastel:'פאסטל',ariela:'אריאלה וטופול'};
   return {st:'no',txt:'לא נמצא הסכם חתום'+(oth?' (יש הסכם ב'+(RHE[oth.rest]||oth.rest)+')':'')};
 }
-function ctrPool(){ return V().filter(function(e){return e.active&&!e.ext&&!e.system&&ctrWorking(e);}); }   /* «עובדים לא פעילים לא מעניינים אותנו» (איילת 10.11.2026) */
+function ctrPool(){ return V().filter(function(e){return e.active&&!e.ext&&!e.system&&(ctrWorking(e)||e.slip);}); }   /* «עובדים לא פעילים לא מעניינים אותנו» (איילת 10.11.2026) */
 /* איילת 10.11.2026: «עובד שעזב לא מעניין אותי» — בלטיפול רק מי שעובד עכשיו (תלוש בחודש האחרון, החתים בחודש הנוכחות האחרון, גלובלי, חדש, או סומן «פעיל») */
-function ctrWorking(e){ return !!(e.slip||e.worked_sept||e.global||e.newhire||e.manual||((MARKS[e.id]||{}).status==='פעיל')); }
+function ctrWorking(e){ var m=MARKS[e.id]||{}; return !!(e.worked_sept||e.global||e.newhire||e.manual||m.status==='פעיל'||m.shift==='none'); }
+/* תלוש בלי שיפט — לא בטוח (אשר עובד ולא מחתים; בן לזר עזב וקיבל תלוש אחרון): רשימה נפרדת עם «עובד/ת», לא בלטיפול */
 function ctrMissing(){ return ctrPool().filter(function(e){return ctrOf(e).st==='no'&&ctrWorking(e);}); }
 function ctrRow(e,c){
   var by=((MARKS[e.id]||{}).by||{}).contract, act='';
-  if(c.st==='no'||c.st==='unk')act='<button class="tlb done" type="button" data-ctr="yes" data-eid="'+e.id+'">✓ יש חוזה</button>'+
+  if(!ctrWorking(e))act='<button class="tlb done" type="button" data-ctr="work" data-eid="'+e.id+'">✓ עובד/ת</button>';
+  else if(c.st==='no'||c.st==='unk')act='<button class="tlb done" type="button" data-ctr="yes" data-eid="'+e.id+'">✓ יש חוזה</button>'+
     '<button class="tlb" type="button" data-ctr="none" data-eid="'+e.id+'">לא צריך חוזה</button>';
   else if(c.man)act='<button class="tlb" type="button" data-ctr="undo" data-eid="'+e.id+'">↩ לתקן</button>';
   return '<div class="tlrow" data-id="'+e.id+'" tabindex="0"><div class="tln"><b>'+esc(e.name)+'</b>'+(e.foreign?'<span class="pill p-acc">זר</span>':'')+
@@ -2427,11 +2429,12 @@ function ctrSec(sev,title,help,rows,open){
 }
 function renderCtr(){
   var box=document.getElementById('ctrView'), A=ctrPool(), G={no:[],idle:[],unk:[],yes:[],mgr:[],none:[]}, src=ctrSrc(PK.rc(REST)), d=(src&&src.data)||{};
-  A.forEach(function(e){ var st=ctrOf(e).st; if(st==='no'&&!ctrWorking(e))st='idle'; G[st].push(e); });
+  A.forEach(function(e){ var st=ctrOf(e).st; if(!ctrWorking(e)){ if(st!=='no')return; st='idle'; } G[st].push(e); });
   Object.keys(G).forEach(function(k){ G[k].sort(function(x,y){return String(x.name).localeCompare(String(y.name),'he');}); });
   var h='<div class="tl"><p class="ctrsrc">'+(src?'רשימת החוזים החתומים: <b>'+esc(d.src||'')+'</b>'+(d.checked?' · נבדק '+esc(fmtD(d.checked)):'')+(d.note?' · '+esc(d.note):'')
       :'⏳ רשימת החוזים של '+esc(REST)+' עוד לא נבדקה — מוצג רק מה שידוע (הסכם בתיק העובד / סימון ידני). מי שלא ידוע לא נכנס ל«לטיפול».')+'</p>';
   h+=ctrSec('crit','לא נמצא חוזה חתום','עובדים פעילים שלא נמצא להם הסכם חתום ברשימה שנקראה (לא בהכרח שאין להם — אולי חתמו על נייר, בסניף אחר או לפני שהתחילו לעבוד עם הרשימה). אם יש חוזה במקום אחר — «✓ יש חוזה»; מי שלא אמור לחתום (בעלים, עובד חוץ) — «לא צריך חוזה» עם סיבה.',G.no,true);
+  h+=ctrSec('info','יש תלוש אבל לא החתימו ב'+ATT_FULL+' — עדיין עובדים?','לא נמצא להם חוזה. יש להם תלוש, אבל הם לא החתימו בשיפט בחודש האחרון — אולי עזבו (תלוש אחרון), ואולי עובדים בלי להחתים. מי שעובד — «✓ עובד/ת» (נשמר בכרטיס), ואז הוא נכנס ללטיפול אם אין לו חוזה. מי שעזב — לא צריך לעשות כלום.',G.idle,false);
   h+=ctrSec('info','עוד לא נבדק','אין עדיין רשימת חוזים מבטר צ׳אנס למסעדה הזו, ולא נמצא הסכם בתיק העובד. אפשר לסמן ידנית.',G.unk,true);
   h+=ctrSec('done','יש חוזה','חוזה חתום ברשימה, הסכם בתיק העובד, או סימון ידני.',G.yes,false);
   h+=ctrSec('info','מנהלים — חוזה אישי','מנהלים בכירים (בתפקיד מופיע «מנהל»): החוזה האישי שלהם לא מעודכן בבטר צ׳אנס, ולכן הם לא נחשבים «בלי חוזה» (איילת, 10.11.2026).',G.mgr,false);
@@ -2448,6 +2451,7 @@ document.addEventListener('click',function(ev){ var b=ev.target.closest&&ev.targ
   if(v==='yes'){ if(!confirm('לסמן ש'+e.name+' חתום/ה על חוזה?\n\nהסימון גובר על הנתונים. אפשר לתקן אחר כך בכרטיס העובד.'))return; m=mk(id); m.contract='yes'; m.contract_why=''; stamp(m,'contract'); }
   else if(v==='none'){ var why=prompt('למה '+e.name+' לא צריך/ה חוזה? (למשל: בעלים, עובד חוץ)',''); if(why==null)return; if(!why.trim()){ alert('צריך לכתוב סיבה קצרה'); return; }
     m=mk(id); m.contract='none'; m.contract_why=why.trim(); stamp(m,'contract'); }
+  else if(v==='work'){ if(!confirm(e.name+' עדיין עובד/ת?\n\nיסומן «פעיל» בכרטיס (גובר על הנתונים, אפשר לתקן בכרטיס).'))return; m=mk(id); m.status='פעיל'; stamp(m,'status'); }
   else { if(!confirm('לבטל את הסימון הידני של החוזה אצל '+e.name+'?'))return; m=mk(id); delete m.contract; delete m.contract_why; if(m.by)delete m.by.contract; }
   touch(id); save(); render(); toast('✓ נשמר — '+esc(e.name)); },true);
 
