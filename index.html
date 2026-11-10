@@ -2394,6 +2394,8 @@ function ctrOf(e){
   var f=(window.PK?PK.byEmp(e.id):[]).filter(function(f){return CRX.test(String(f.dtype||'')+' '+String(f.name||''));})[0];
   if(f)return {st:'yes',txt:'הסכם עבודה בתיק העובד'};
   var rc0=PK.rc(e.orig_rest||e.rest); if(!ctrSrc(rc0))return {st:'unk',txt:'עוד לא נבדק'};
+  /* איילת 10.11.2026: «רק מנהלים גדולים — החוזה שלהם לא מעודכן בבטר צ'אנס» — מנהל/ת (לפי התפקיד) לא נחשב «בלי חוזה» */
+  if(/מנהל/.test(String(e.role||'')))return {st:'mgr',txt:'מנהל/ת — חוזה אישי (לא בבטר צ׳אנס)'};
   if(it&&(it.data||{}).pending){ var dp=it.data; return {st:'no',txt:'נשלח לחתימה'+(dp.date?' ב-'+fmtD(dp.date):'')+' — עוד לא חתם/ה'}; }
   /* חתם/ה על הסכם במסעדה אחרת (למשל בסניף אסא ולא בצ'אקולי) — עדיין «בלי חוזה» כאן, אבל כדאי לדעת */
   var nk=ctrNk(e.name), oth=(window.PK?PK.items():[]).filter(function(x){return x.kind==='contract'&&x.rest!==rc0&&x.id.indexOf('csrc_')!==0&&!x.deleted&&(x.data||{}).has&&ctrNk(x.emp)===nk;})[0];
@@ -2409,7 +2411,7 @@ function ctrRow(e,c){
   else if(c.man)act='<button class="tlb" type="button" data-ctr="undo" data-eid="'+e.id+'">↩ לתקן</button>';
   return '<div class="tlrow" data-id="'+e.id+'" tabindex="0"><div class="tln"><b>'+esc(e.name)+'</b>'+(e.foreign?'<span class="pill p-acc">זר</span>':'')+
     '<em>'+esc(e.dept||'')+(e.role&&e.role!==e.dept?' · '+esc(e.role):'')+(e.start?' · התחיל/ה '+esc(fmtD(e.start)):'')+'</em></div>'+
-    '<div class="tlf"><span class="dchip '+(c.st==='yes'?'ok':(c.st==='no'?'no':''))+'">'+({yes:'✓',none:'—',no:'✗',unk:'?'}[c.st])+' '+esc(c.txt)+'</span>'+
+    '<div class="tlf"><span class="dchip '+(c.st==='yes'||c.st==='mgr'?'ok':(c.st==='no'?'no':''))+'">'+({yes:'✓',none:'—',no:'✗',unk:'?',mgr:'✓'}[c.st])+' '+esc(c.txt)+'</span>'+
     (c.man&&by?'<span class="dnote">סומן ע״י '+esc(by.who||'')+' · '+esc(fmtD(by.at))+'</span>':'')+'</div><div class="tla">'+act+'</div></div>';
 }
 function ctrSec(sev,title,help,rows,open){
@@ -2420,7 +2422,7 @@ function ctrSec(sev,title,help,rows,open){
     (open?body:'<details class="ctrmore"><summary>להציג ('+rows.length+')</summary>'+body+'</details>')+'</section>';
 }
 function renderCtr(){
-  var box=document.getElementById('ctrView'), A=ctrPool(), G={no:[],unk:[],yes:[],none:[]}, src=ctrSrc(PK.rc(REST)), d=(src&&src.data)||{};
+  var box=document.getElementById('ctrView'), A=ctrPool(), G={no:[],unk:[],yes:[],mgr:[],none:[]}, src=ctrSrc(PK.rc(REST)), d=(src&&src.data)||{};
   A.forEach(function(e){ G[ctrOf(e).st].push(e); });
   Object.keys(G).forEach(function(k){ G[k].sort(function(x,y){return String(x.name).localeCompare(String(y.name),'he');}); });
   var h='<div class="tl"><p class="ctrsrc">'+(src?'רשימת החוזים החתומים: <b>'+esc(d.src||'')+'</b>'+(d.checked?' · נבדק '+esc(fmtD(d.checked)):'')+(d.note?' · '+esc(d.note):'')
@@ -2428,6 +2430,7 @@ function renderCtr(){
   h+=ctrSec('crit','לא נמצא חוזה חתום','עובדים פעילים שלא נמצא להם הסכם חתום ברשימה שנקראה (לא בהכרח שאין להם — אולי חתמו על נייר, בסניף אחר או לפני שהתחילו לעבוד עם הרשימה). אם יש חוזה במקום אחר — «✓ יש חוזה»; מי שלא אמור לחתום (בעלים, עובד חוץ) — «לא צריך חוזה» עם סיבה.',G.no,true);
   h+=ctrSec('info','עוד לא נבדק','אין עדיין רשימת חוזים מבטר צ׳אנס למסעדה הזו, ולא נמצא הסכם בתיק העובד. אפשר לסמן ידנית.',G.unk,true);
   h+=ctrSec('done','יש חוזה','חוזה חתום ברשימה, הסכם בתיק העובד, או סימון ידני.',G.yes,false);
+  h+=ctrSec('info','מנהלים — חוזה אישי','מנהלים בכירים (בתפקיד מופיע «מנהל»): החוזה האישי שלהם לא מעודכן בבטר צ׳אנס, ולכן הם לא נחשבים «בלי חוזה» (איילת, 10.11.2026).',G.mgr,false);
   h+=ctrSec('info','לא צריך חוזה','סומן ידנית, עם הסיבה.',G.none,false);
   if(!A.length)h+='<section class="tlsec sev-done"><header><h2>אין עובדים פעילים</h2></header></section>';
   box.innerHTML=h+'</div>';
