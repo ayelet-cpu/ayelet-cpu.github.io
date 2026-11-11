@@ -2528,7 +2528,7 @@ function renderCmp(){
     var acts='';
     if(r.slip)acts+='<button class="tlb" type="button" data-cslip="'+e.id+'">👁 תלוש</button>';
     r.tali.forEach(function(t){ var d=t.data||{}, st=d.state||'wait', w=d.type==='fix'?'תיקון תלוש':'חוזה';
-      if(st==='wait')acts+=T?'<button class="tlb done" type="button" data-tid2="'+esc(t.id)+'" title="'+esc(d.type==='fix'?d.line:(d.form||''))+'">✓ לאשר '+w+'</button>':'<span class="cmptag warn" title="'+esc(d.type==='fix'?d.line:(d.form||''))+'">⏳ '+w+' — מחכה לטלי</span>';
+      if(st==='wait')acts+=T?'<button class="tlb done" type="button" data-tid2="'+esc(t.id)+'" title="'+esc(d.type==='fix'?d.line:(d.form||''))+'">✓ לאשר '+w+'</button>':'<span class="cmptag warn" title="'+esc((d.type==='fix'?d.line:(d.form||''))+' — מחכה לאישור של טלי')+'">'+w+'</span>';
       else acts+='<span class="cmptag '+(st==='no'?'':'ok')+'">'+(st==='ok'?'✓ '+w+' אושר':st==='sent'?'✓ '+w+' נשלח':w+': לא לשלוח')+'</span>'; });
     h+='<tr data-cid="'+e.id+'"><td class="cmpn"><a href="#" data-copen="'+e.id+'">'+esc(e.name)+'</a>'+
       (x?'<span class="cmps">'+n2(x.h)+' שעות · ברוטו '+n2(x.g)+'</span>':'')+
