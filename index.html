@@ -2427,16 +2427,25 @@ function ctrSlipNow(e){ var s=ctrSrc(PK.rc(e.orig_rest||e.rest)), L=s&&s.data&&s
   var a=ctrNk(String(e.name||'').replace(/\([^)]*\)/g,'')).split(' ').filter(Boolean); if(a.length<2)return null;
   return L.some(function(n){ var b=ctrNk(String(n).replace(/\([^)]*\)/g,'')).split(' ').filter(Boolean); if(b.length<2)return false;
     var x=a.length<=b.length?a:b, y=a.length<=b.length?b:a; return x.every(function(w){return y.indexOf(w)>=0;}); }); }
-function ctrWorking(e){ var m=MARKS[e.id]||{}; return !!(e.worked_sept||e.global||e.newhire||e.manual||m.status==='פעיל'||m.shift==='none'||ctrSlipNow(e)===true); }
+function ctrWorking(e){ if(e.ghost)return true; var m=MARKS[e.id]||{}; return !!(e.worked_sept||e.global||e.newhire||e.manual||m.status==='פעיל'||m.shift==='none'||ctrSlipNow(e)===true); }
 /* תלוש בלי שיפט — לא בטוח (אשר עובד ולא מחתים; בן לזר עזב וקיבל תלוש אחרון): רשימה נפרדת עם «עובד/ת», לא בלטיפול */
-function ctrMissing(){ return ctrPool().filter(function(e){return ctrOf(e).st==='no'&&ctrWorking(e);}); }
+function ctrMissing(){ return ctrPool().filter(function(e){return ctrOf(e).st==='no'&&ctrWorking(e);}).concat(ctrGhosts()); }
+/* טלי 11.11.2026: «המערכת פספסה בצאקולי זואי פרקש, מלי בלי — הן לא חתומות על חוזה». הן עוד לא בפנקס (טופס 101 עוד לא נקלט),
+   ולכן לא הופיעו. עכשיו: עובד מבטר צ׳אנס בלי הסכם חתום (pinkas_items contract, has:false) שאין לו כרטיס בפנקס — מופיע בכל זאת, «עוד לא בפנקס». */
+function ctrGhosts(){ if(!window.PK)return []; var rc=PK.rc(REST), lim=new Date(Date.now()-45*864e5).toISOString().slice(0,10);   /* רק מ-45 הימים האחרונים — הסכמים ישנים שלא נחתמו = מי שלא הגיע/עזב */
+  var mine=E.filter(function(e){ return PK.rc(e.orig_rest||e.rest)===rc; }).map(function(e){ return ctrNk(String(e.name||'').replace(/\([^)]*\)/g,'')).split(' ').filter(Boolean); });
+  function known(n){ var a=ctrNk(n).split(' ').filter(Boolean); if(!a.length)return true;
+    return mine.some(function(b){ if(!b.length)return false; var x=a.length<=b.length?a:b, y=a.length<=b.length?b:a; return x.every(function(w){return y.indexOf(w)>=0;}); }); }
+  return PK.items().filter(function(x){ return x.kind==='contract'&&x.rest===rc&&!x.deleted&&x.id.indexOf('csrc_')!==0&&!x.eid&&(x.data||{}).has===false&&!(x.data||{}).left&&String((x.data||{}).date||'')>=lim&&!known(x.emp); })
+    .map(function(x){ var d=x.data||{}; return {id:'g_'+x.id,ghost:true,name:x.emp,rest:REST,active:true,dept:'',role:String(d.form||'').replace(/^הסכם עבודה\s*—\s*/,''),start:d.date||'',note:d.note||''}; }); }
 function ctrRow(e,c){
   var by=((MARKS[e.id]||{}).by||{}).contract, act='';
-  if(!ctrWorking(e))act='<button class="tlb done" type="button" data-ctr="work" data-eid="'+e.id+'">✓ עובד/ת</button>';
+  if(e.ghost)act='<span class="dnote" title="עוד אין לה/לו כרטיס בפנקס — טופס 101 עוד לא נקלט">עוד לא בפנקס</span>';
+  else if(!ctrWorking(e))act='<button class="tlb done" type="button" data-ctr="work" data-eid="'+e.id+'">✓ עובד/ת</button>';
   else if(c.st==='no'||c.st==='unk')act='<button class="tlb done" type="button" data-ctr="yes" data-eid="'+e.id+'">✓ יש חוזה</button>'+
     '<button class="tlb" type="button" data-ctr="none" data-eid="'+e.id+'">לא צריך חוזה</button>';
   else if(c.man)act='<button class="tlb" type="button" data-ctr="undo" data-eid="'+e.id+'">↩ לתקן</button>';
-  return '<div class="tlrow" data-id="'+e.id+'" tabindex="0"><div class="tln"><b>'+esc(e.name)+'</b>'+(e.foreign?'<span class="pill p-acc">זר</span>':'')+
+  return '<div class="tlrow"'+(e.ghost?'':' data-id="'+e.id+'"')+' tabindex="0"><div class="tln"><b>'+esc(e.name)+'</b>'+(e.ghost?'<span class="pill p-acc">עוד לא בפנקס</span>':'')+(e.foreign?'<span class="pill p-acc">זר</span>':'')+
     '<em>'+esc(e.dept||'')+(e.role&&e.role!==e.dept?' · '+esc(e.role):'')+(e.start?' · התחיל/ה '+esc(fmtD(e.start)):'')+'</em></div>'+
     '<div class="tlf"><span class="dchip '+(c.st==='yes'||c.st==='mgr'?'ok':(c.st==='no'?'no':''))+'">'+({yes:'✓',none:'—',no:'✗',unk:'?',mgr:'✓'}[c.st])+' '+esc(c.txt)+'</span>'+
     (c.man&&by?'<span class="dnote">סומן ע״י '+esc(by.who||'')+' · '+esc(fmtD(by.at))+'</span>':'')+'</div><div class="tla">'+act+'</div></div>';
@@ -2522,7 +2531,7 @@ function cmpCell(z,k,eid,man){
   return '<td class="cmpc">'+top+bot+rb+'</td>';
 }
 function cmpRows(){
-  return ctrPool().map(function(e){ return {e:e,r:cmpOf(e)}; });
+  return ctrPool().concat(ctrGhosts()).map(function(e){ return {e:e,r:cmpOf(e)}; });
 }
 function renderCmp(){
   var src=cmpSrc(), A=cmpRows();
@@ -2564,10 +2573,11 @@ function renderCmp(){
         else if(!r.agreed)acts+='<span class="cmptag" title="'+esc(d.line+' — אחרי שטלי תאשר את ההסכם')+'">תיקון תלוש — אחרי ההסכם</span>';
         else acts+=isOwn()?'<button class="tlb" type="button" data-tfix="'+esc(t.id)+'" title="'+esc(d.line||'')+'">📤 שלחתי לחשבת</button>':'<span class="cmptag warn" title="'+esc(d.line||'')+'">תיקון תלוש — אצל איילת</span>';
       } else acts+='<span class="cmptag '+(st==='no'?'':'ok')+'" title="'+esc(fx?d.line||'':d.form||'')+'">'+(st==='sent'?'✓ '+w+' נשלח':st==='ok'?'✓ '+w+' אושר':w+': לא לשלוח')+'</span>'; });
-    h+='<tr data-cid="'+e.id+'"><td class="cmpn"><a href="#" data-copen="'+e.id+'">'+esc(e.name)+'</a>'+
+    if(e.ghost)acts='<span class="cmptag warn" title="אין לה/לו כרטיס בפנקס — טופס 101 עוד לא נקלט">עוד לא בפנקס</span>';
+    h+='<tr data-cid="'+e.id+'"><td class="cmpn">'+(e.ghost?'<b>'+esc(e.name)+'</b>':'<a href="#" data-copen="'+e.id+'">'+esc(e.name)+'</a>')+
       (x?'<span class="cmps">'+n2(x.h)+' שעות · ברוטו '+n2(x.g)+'</span>':'')+
       (r.extra?'<span class="cmps ex">★ '+esc(r.extra)+'</span>':'')+'<button class="cmpx" type="button" data-cset="extra" data-eid="'+e.id+'">'+(r.extra?'✎ הסדר':'＋ הסדר מיוחד')+'</button></td>'+
-      '<td><select class="cmpdep'+(r.man.d?' man':'')+'" data-cset="dept" data-eid="'+e.id+'">'+(r.dept?'':'<option value="">— לבחור —</option>')+
+      '<td><select class="cmpdep'+(r.man.d?' man':'')+'" data-cset="dept" data-eid="'+e.id+'"'+(e.ghost?' disabled':'')+'>'+(r.dept?'':'<option value="">— לבחור —</option>')+
         CMP_DEPTS.map(function(d){return '<option'+(d===r.dept?' selected':'')+'>'+esc(d)+'</option>';}).join('')+'</select>'+(r.form?'<span class="cmps cmpform">'+esc(r.form)+'</span>':'')+(r.man.d?'<span class="cmps ex">סומן ידנית</span>':'')+'</td>'+
       '<td><span class="dchip '+cs[1]+'">'+cs[0]+'</span>'+(x&&x.cf?'<span class="cmps">'+esc(x.cf)+'</span>':'')+(r.wrong?'<span class="cmps bad">✗ לא ההסכם של המחלקה</span>':'')+(r.tosign?'<button class="cmpx" type="button" data-cdoc="'+esc(r.tosign.id)+'">📎 חוזה לחתימה מצורף</button>':'')+'</td>'+
       cmpCell(r.b,'b',e.id,r.man.r)+cmpCell(r.h,'h',e.id)+cmpCell(r.t,'t',e.id)+cmpCell(r.p,'p',e.id)+
