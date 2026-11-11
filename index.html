@@ -1290,7 +1290,7 @@ section.act .allgood,.act table{font-size:14.5px}
 .tlf b{font-weight:700;margin-inline-end:4px}
 .dchip{display:inline-block;font-size:12.5px;font-weight:700;padding:2px 9px;border-radius:999px}
 .dchip.ok{background:var(--ok-bg);color:var(--ok)}
-.ctrsrc{margin:4px 2px 12px;font-size:14px} .ctrmore>summary{cursor:pointer;padding:8px 12px;font-weight:700;color:var(--accent)}.dchip.no{background:var(--crit-bg);color:var(--crit)}
+.tali{display:grid;grid-template-columns:minmax(150px,1fr) minmax(220px,2fr) auto;gap:6px 14px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line-2)}.tali:last-child{border-bottom:0}.tali .tq{display:block;margin-top:4px;font-size:13px;font-weight:700;color:var(--warn)}.tali input{font:inherit;font-size:14px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;width:76px}.tali input.wide{width:min(260px,100%)}.tali .tf{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:14px}.tali .tf label{display:flex;gap:5px;align-items:center;white-space:nowrap}@media (max-width:760px){.tali{grid-template-columns:1fr}}.ctrsrc{margin:4px 2px 12px;font-size:14px} .ctrmore>summary{cursor:pointer;padding:8px 12px;font-weight:700;color:var(--accent)}.dchip.no{background:var(--crit-bg);color:var(--crit)}
 .dnote{font-size:12.5px;color:var(--muted)}
 .tla{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
 .tlb{font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap}
@@ -1915,6 +1915,10 @@ function renderTodo(){
            '<div class="tlf"><b>חסר/ה בשיפט</b>'+(b?'<span class="dnote">סומן ע״י '+esc(b.who||'')+' · '+esc(fmtD(b.at))+'</span>':'')+'</div>'+
            '<div class="tla"><button class="tlb done" data-shiftok="'+e.id+'" type="button">✓ נפתח בשיפט</button></div></div>'; }).join('')+'</div></section>'; }
   /* 10.11.2026: בלי חוזה חתום (רק במסעדה שרשימת החוזים שלה נבדקה) */
+  /* 11.11.2026: מה שמחכה לאישור של טלי (חוזים / תיקוני תלוש) — בראש «לטיפול» */
+  var TW=taliIt(PK.rc(REST)).filter(function(x){return ((x.data||{}).state||'wait')==='wait';});
+  if(TW.length){ any=true; h+='<section class="tlsec sev-warn"><header><span class="tlcnt">'+TW.length+'</span><h2>לאישור טלי — לפני שליחה</h2></header>'+
+    '<p class="tlhelp">'+(isTali()?'הסכמים ותיקוני תלוש שקלוד הכין. שום דבר לא נשלח עד שתאשרי.':'מחכה לאישור של טלי. שום דבר לא נשלח לפני כן.')+' <button class="tlb" type="button" data-goview="ctr">לפתוח בלשונית «חוזים»</button></p></section>'; }
   var NC=ctrMissing(); if(NC.length){ any=true; h+=ctrSec('warn','לא נמצא חוזה חתום','עובדים פעילים שלא נמצא להם הסכם חתום ברשימת החוזים (אולי חתמו על נייר או בסניף אחר). הפירוט המלא — בלשונית «חוזים».',NC,true); }
   if(!any)h+='<section class="tlsec sev-done"><header><h2>אין מה לטפל ✓</h2></header><p class="tlhelp">כל הנושאים סגורים במסעדה הזו.</p></section>';
   box.innerHTML=h+'</div>';
@@ -2446,7 +2450,7 @@ function renderCtr(){
   var box=document.getElementById('ctrView'), A=ctrPool(), G={no:[],idle:[],unk:[],yes:[],mgr:[],none:[]}, src=ctrSrc(PK.rc(REST)), d=(src&&src.data)||{};
   A.forEach(function(e){ var st=ctrOf(e).st; if(!ctrWorking(e)){ if(st!=='no')return; st='idle'; } G[st].push(e); });
   Object.keys(G).forEach(function(k){ G[k].sort(function(x,y){return String(x.name).localeCompare(String(y.name),'he');}); });
-  var h='<div class="tl"><p class="ctrsrc">'+(src?'רשימת החוזים החתומים: <b>'+esc(d.src||'')+'</b>'+(d.checked?' · נבדק '+esc(fmtD(d.checked)):'')+(d.note?' · '+esc(d.note):'')
+  var h='<div class="tl">'+taliSecs()+'<p class="ctrsrc">'+(src?'רשימת החוזים החתומים: <b>'+esc(d.src||'')+'</b>'+(d.checked?' · נבדק '+esc(fmtD(d.checked)):'')+(d.note?' · '+esc(d.note):'')
       :'⏳ רשימת החוזים של '+esc(REST)+' עוד לא נבדקה — מוצג רק מה שידוע (הסכם בתיק העובד / סימון ידני). מי שלא ידוע לא נכנס ל«לטיפול».')+'</p>';
   h+=ctrSec('crit','לא נמצא חוזה חתום','עובדים פעילים שלא נמצא להם הסכם חתום ברשימה שנקראה (לא בהכרח שאין להם — אולי חתמו על נייר, בסניף אחר או לפני שהתחילו לעבוד עם הרשימה). אם יש חוזה במקום אחר — «✓ יש חוזה»; מי שלא אמור לחתום (בעלים, עובד חוץ) — «לא צריך חוזה» עם סיבה.',G.no,true);
   h+=ctrSec('info','יש תלוש אבל לא החתימו ב'+ATT_FULL+' — עדיין עובדים?','לא נמצא להם חוזה. יש להם תלוש, אבל הם לא החתימו בשיפט בחודש האחרון — אולי עזבו (תלוש אחרון), ואולי עובדים בלי להחתים. מי שעובד — «✓ עובד/ת» (נשמר בכרטיס), ואז הוא נכנס ללטיפול אם אין לו חוזה. מי שעזב — לא צריך לעשות כלום.',G.idle,false);
@@ -2470,6 +2474,53 @@ document.addEventListener('click',function(ev){ var b=ev.target.closest&&ev.targ
   else { if(!confirm('לבטל את הסימון הידני של החוזה אצל '+e.name+'?'))return; m=mk(id); delete m.contract; delete m.contract_why; if(m.by)delete m.by.contract; }
   touch(id); save(); render(); toast('✓ נשמר — '+esc(e.name)); },true);
 
+document.addEventListener('click',function(ev){ var b=ev.target.closest&&ev.target.closest('button[data-goview]'); if(!b)return; ev.stopPropagation(); var t=document.querySelector('[data-tab="'+b.dataset.goview+'"]'); if(t)t.click(); },true);
+/* ---------- «לאישור טלי» (איילת 11.11.2026: «אל תשלח כרגע כלום לאף אחד — רק טלי יכולה לאשר לך בפנקס עובדים») ----------
+   קלוד מכין (pinkas_items kind='tali'): הסכם לשליחה בבטר צ'אנס (data.type='contract') או תיקון לתלוש (type='fix', data.line).
+   טלי רואה, מתקנת תעריף / הסדר מיוחד אם צריך, ומאשרת או «לא לשלוח». רק אחרי «✓ לאשר» קלוד שולח, ומסמן «נשלח».
+   שרת: private.pinkas_tali_guard — רק tali@pinkas.local יכולה לאשר; «נשלח» רק אחרי אישור. */
+function taliIt(rc){ return (window.PK?PK.items():[]).filter(function(x){return x.kind==='tali'&&!x.deleted&&x.rest===rc;}); }
+function isTali(){ return !!(window.PK&&PK.me&&PK.me.name==='טלי'); }
+function taliRow(x){
+  var d=x.data||{}, st=d.state||'wait', ed=st==='wait', T=isTali();
+  var what=d.type==='fix'?'<b>תיקון לתלוש '+esc(d.month||'')+':</b> '+esc(d.line||''):'<b>'+esc(d.form||'הסכם עבודה')+'</b>'+(d.why?' <span class="dnote">'+esc(d.why)+'</span>':'');
+  var f='';
+  if(d.type!=='fix'){
+    f+=d.fixed?'<span class="dnote">'+esc(d.fixed)+'</span>':'<label>'+(d.per_shift?'שכר למשמרת':'תעריף לשעה')+' <input type="number" step="0.5" data-tf="rate" value="'+esc(d.rate==null?'':d.rate)+'"'+(ed?'':' disabled')+'></label>';
+    f+='<label>הסדר מיוחד <input class="wide" data-tf="extra" placeholder="למשל: תוספת ניהול קבועה" value="'+esc(d.extra||'')+'"'+(ed?'':' disabled')+'></label>';
+  }
+  f+='<label>הערה <input class="wide" data-tf="note" value="'+esc(d.note||'')+'"'+(ed?'':' disabled')+'></label>';
+  var act='';
+  if(st==='wait') act=T?'<button class="tlb done" type="button" data-tali="ok">✓ לאשר</button><button class="tlb left" type="button" data-tali="no">לא לשלוח</button>'
+                       :'<span class="dnote">מחכה לאישור של טלי</span>';
+  else if(st==='ok') act='<span class="dchip ok">✓ אושר ע״י '+esc(d.ok_by||'טלי')+(d.ok_at?' · '+esc(d.ok_at):'')+'</span>'+(T?'<button class="tlb" type="button" data-tali="wait">↩ לבטל</button>':'');
+  else if(st==='no') act='<span class="dchip no">לא לשלוח'+(d.ok_at?' · '+esc(d.ok_at):'')+'</span>'+(T?'<button class="tlb" type="button" data-tali="wait">↩ לבטל</button>':'');
+  else act='<span class="dchip ok">✓ נשלח'+(d.sent_at?' · '+esc(d.sent_at):'')+'</span>';
+  return '<div class="tali" data-tid="'+esc(x.id)+'"><div class="tln"><b>'+esc(x.emp||'')+'</b><em>'+esc(d.role||'')+'</em></div>'+
+    '<div>'+what+(d.q&&ed?'<span class="tq">❓ '+esc(d.q)+'</span>':'')+'<div class="tf" style="margin-top:6px">'+f+'</div></div><div class="tla">'+act+'</div></div>';
+}
+function taliSecs(){
+  var L=taliIt(PK.rc(REST)); if(!L.length)return '';
+  var by={wait:[],ok:[],sent:[],no:[]}; L.forEach(function(x){ (by[(x.data||{}).state||'wait']||by.wait).push(x); });
+  Object.keys(by).forEach(function(k){ by[k].sort(function(a,b){ var A=a.data||{}, B=b.data||{}; return (A.type===B.type?0:A.type==='fix'?1:-1)||String(a.emp).localeCompare(String(b.emp),'he'); }); });
+  function sec(sev,title,help,rows,open){ if(!rows.length)return ''; var body=rows.map(taliRow).join('');
+    return '<section class="tlsec sev-'+sev+'"><header><span class="tlcnt">'+rows.length+'</span><h2>'+esc(title)+'</h2><button class="tlq" type="button" data-help aria-label="הסבר" title="הסבר">?</button></header>'+
+      '<p class="tlhelp" hidden>'+esc(help)+'</p>'+(open?body:'<details class="ctrmore"><summary>להציג ('+rows.length+')</summary>'+body+'</details>')+'</section>'; }
+  return sec('warn','לאישור טלי — לפני שליחה','קלוד הכין, ושום דבר לא נשלח. טלי בודקת את התעריף (ואם יש הסדר מיוחד — כותבת), ולוחצת «✓ לאשר» או «לא לשלוח». רק אחרי אישור קלוד שולח את ההסכם בבטר צ׳אנס / את התיקון לחשבת, ומסמן «נשלח».',by.wait,true)+
+    sec('done','אושר — קלוד ישלח','טלי אישרה. קלוד שולח ומסמן «נשלח».',by.ok,true)+
+    sec('done','נשלח','',by.sent,false)+sec('info','לא לשלוח','טלי סימנה «לא לשלוח».',by.no,false);
+}
+function taliSave(x,patch,msg){ var it={id:x.id,rest:x.rest,kind:'tali',eid:x.eid,emp:x.emp,data:Object.assign({},x.data||{},patch),deleted:false};
+  return PK.saveItem(it).then(function(){ return PK.reload(); }).then(function(){ render(); if(msg)toast(msg); },function(e){ alert('לא נשמר: '+e.message); }); }
+document.getElementById('ctrView').addEventListener('change',function(ev){ var i=ev.target.closest('input[data-tf]'); if(!i)return;
+  var r=i.closest('[data-tid]'), x=PK.items().filter(function(y){return y.id===r.dataset.tid;})[0]; if(!x)return;
+  var p={}, k=i.dataset.tf; p[k]=k==='rate'?(i.value===''?null:+i.value):i.value.trim(); taliSave(x,p,'✓ נשמר'); });
+document.getElementById('ctrView').addEventListener('click',function(ev){ var b=ev.target.closest('button[data-tali]'); if(!b)return; ev.stopPropagation();
+  var r=b.closest('[data-tid]'), x=PK.items().filter(function(y){return y.id===r.dataset.tid;})[0]; if(!x)return; var v=b.dataset.tali, d=x.data||{};
+  if(!isTali()){ alert('רק טלי יכולה לאשר'); return; }
+  var q=v==='ok'?('לאשר?\n\n'+x.emp+' — '+(d.type==='fix'?d.line:(d.form||'')+(d.rate!=null&&!d.fixed?' · '+d.rate+(d.per_shift?' למשמרת':' לשעה'):'')+(d.extra?' · '+d.extra:''))+'\n\nאחרי האישור קלוד ישלח.'):v==='no'?('לא לשלוח ל'+x.emp+'?'):'לבטל ולהחזיר ל«לאישור»?';
+  if(!confirm(q))return; taliSave(x,{state:v},v==='ok'?'✓ אושר — '+esc(x.emp):'✓ נשמר'); },true);
+
 /* ---------- hero + counts ---------- */
 function hero(){
   var ALL=V(), A=ALL.filter(function(e){return !e.ext;});   /* עובדי חוץ לא נספרים */
@@ -2485,7 +2536,7 @@ function hero(){
   document.getElementById('c-todo').textContent=todo.length;
   document.getElementById('c-all').textContent=ALL.filter(function(e){return e.state==='פעיל'&&!e.foreign;}).length;
   document.getElementById('c-frn').textContent=A.filter(frnOn).length||'';
-  document.getElementById('c-ctr').textContent=ctrMissing().length||'';
+  document.getElementById('c-ctr').textContent=(ctrMissing().length+taliIt(PK.rc(REST)).filter(function(x){return ((x.data||{}).state||'wait')==='wait';}).length)||'';
   document.getElementById('c-mil').textContent=milItems().filter(function(x){var d=x.data||{};return !d.done&&!d.btl&&!d.slips;}).length||'';
   document.getElementById('c-pens').textContent=A.filter(function(e){
     if(!e.active||e.ext||e.foreign||e.pens_open||!e.pmonth)return false;
