@@ -2473,7 +2473,7 @@ function cmpOf(e){
     var nr=src&&src.data&&src.data.norate;
     /* איילת 11.11.2026: «אולי 53 = 52 + 1» — בהסכמים ובהערות התעריף נכתב לפעמים כולל ההבראה (סכום + 1). תעריף + הבראה לשעה = ההסכם → תקין */
     var withHv=rate!=null&&x&&hv&&hv[1]>=0.99&&Math.abs(x.r+hv[1]-rate)<0.01;
-    R.b=withHv?c(n2(rate)+' לשעה',true,n2(x.r)+' + '+n2(hv[1])+' הבראה = '+n2(rate)):rate!=null?c(n2(rate)+' לשעה',x&&Math.abs(x.r-rate)<0.01,n2(x&&x.r)):nr?{t:'תעריף אישי',ok:null,s:x?n2(x.r):''}:{t:'חסר תעריף',ok:null,s:x?n2(x.r):'',need:x?1:0};
+    R.b=withHv?c(n2(rate)+' לשעה',true,n2(x.r)+' + '+n2(hv[1])+' הבראה = '+n2(rate)):rate!=null?c(n2(rate)+' לשעה',x&&x.r>=rate-0.01,n2(x&&x.r)+(x&&x.r>rate+0.01?' (יותר מההסכם — העלאה)':'')):nr?{t:'תעריף אישי',ok:null,s:x?n2(x.r):''}:{t:'חסר תעריף',ok:null,s:x?n2(x.r):'',need:x?1:0};
     R.h=c('1 לשעה',!!(hv&&hv[1]>=0.99),hvS); R.t=dept==='ראנר'?c('חופשי חודשי',x&&!!x.tv&&x.tv!=='אין',x&&x.tv):c('לפי חוק',x&&!!x.tv&&x.tv!=='אין',x&&x.tv);
   } else if(dept==='אחמ"ש'&&src&&src.data&&src.data.ach_terms){
     /* אסא: ההסכם של אחמ"ש (PDF מאיילת 11.11.2026) — 300 + 100 ש"נ גלובלי + 100 שבת/חג גלובלי למשמרת, בונוס סופ"ש 100, הבראה לפי חוק */
