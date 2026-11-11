@@ -1915,10 +1915,12 @@ function renderTodo(){
            '<div class="tlf"><b>חסר/ה בשיפט</b>'+(b?'<span class="dnote">סומן ע״י '+esc(b.who||'')+' · '+esc(fmtD(b.at))+'</span>':'')+'</div>'+
            '<div class="tla"><button class="tlb done" data-shiftok="'+e.id+'" type="button">✓ נפתח בשיפט</button></div></div>'; }).join('')+'</div></section>'; }
   /* 10.11.2026: בלי חוזה חתום (רק במסעדה שרשימת החוזים שלה נבדקה) */
-  /* 11.11.2026: מה שמחכה לאישור של טלי (חוזים / תיקוני תלוש) — בראש «לטיפול» */
-  var TW=taliIt(PK.rc(REST)).filter(function(x){return ((x.data||{}).state||'wait')==='wait';});
-  if(TW.length){ any=true; h+='<section class="tlsec sev-warn"><header><span class="tlcnt">'+TW.length+'</span><h2>לאישור טלי — לפני שליחה</h2></header>'+
-    '<p class="tlhelp">'+(isTali()?'הסכמים ותיקוני תלוש שקלוד הכין. שום דבר לא נשלח עד שתאשרי.':'מחכה לאישור של טלי. שום דבר לא נשלח לפני כן.')+' <button class="tlb" type="button" data-goview="ctr">לפתוח בלשונית «חוזים»</button></p></section>'; }
+  /* 11.11.2026: טלי מאשרת את ההסכם של העובד; תיקוני התלוש — איילת שולחת לחשבת אחרי אישור ההסכם */
+  var CR=taliIt(PK.rc(REST)).length?cmpRows():[], TW=CR.filter(function(o){return o.r.needT;}), FS=CR.filter(function(o){return o.r.toSend;});
+  if(TW.length){ any=true; h+='<section class="tlsec sev-warn"><header><span class="tlcnt">'+TW.length+'</span><h2>הסכם העובד — לאישור טלי</h2></header>'+
+    '<p class="tlhelp">'+(isTali()?'עובדים שקלוד הכין להם הסכם או תיקון תלוש. לאשר בשורה של העובד «✓ ההסכם נכון». שום דבר לא נשלח עד שתאשרי.':'מחכה שטלי תאשר את ההסכם של העובד. שום דבר לא נשלח לפני כן.')+' <button class="tlb" type="button" data-goview="ctr">לפתוח בלשונית «חוזים»</button></p></section>'; }
+  if(FS.length&&isOwn()){ any=true; h+='<section class="tlsec sev-info"><header><span class="tlcnt">'+FS.length+'</span><h2>תיקון תלוש — לשלוח לחשבת</h2></header>'+
+    '<p class="tlhelp">טלי אישרה את ההסכם. נשאר לשלוח לחשבת בקשה לתיקון התלוש. <button class="tlb" type="button" data-goview="ctr">לפתוח בלשונית «חוזים»</button></p></section>'; }
   var NC=ctrMissing(); if(NC.length){ any=true; h+=ctrSec('warn','לא נמצא חוזה חתום','עובדים פעילים שלא נמצא להם הסכם חתום ברשימת החוזים (אולי חתמו על נייר או בסניף אחר). הפירוט המלא — בלשונית «חוזים».',NC,true); }
   if(!any)h+='<section class="tlsec sev-done"><header><h2>אין מה לטפל ✓</h2></header><p class="tlhelp">כל הנושאים סגורים במסעדה הזו.</p></section>';
   box.innerHTML=h+'</div>';
@@ -2485,12 +2487,14 @@ function cmpOf(e){
   } else if(dept==='אחמ"ש'){
     R.b={t:(rate||300)+' למשמרת',ok:null,s:x?n2(x.r):''}; R.h=c('10 למשמרת',!!(hv&&hv[1]>=9.99),hvS); var at=src&&src.data&&src.data.ach_trav; R.t=at?c(at,x&&!x.mt,x&&x.tv):{t:'לפי ההסכם',ok:null,s:x?x.tv:''};
   } else {
-    var per={t:'חוזה אישי',ok:null}; R.b={t:per.t,ok:null,s:x?n2(x.r):''}; R.h={t:'—',ok:null,s:x?hvS:''}; R.t={t:'—',ok:null,s:x?x.tv:''};
+    var per={t:'חוזה אישי',ok:null}; R.b={t:per.t,ok:null,s:x?n2(x.r):''}; R.t={t:'—',ok:null,s:x?x.tv:''};
+    /* איילת 11.11.2026: «שכר גלובלי — גם אמור להיות הבראה» (אחמ"ש — ההבראה בתוך השכר, תקין) */
+    R.h=(dept==='גלובלי'||dept==='מנהל')?c('חייבת להיות בתלוש',!!(hv&&hv[0]>0),hvS):{t:'—',ok:null,s:x?hvS:''};
   }
   /* איילת 11.11.2026: «איך אני מעדכנת שם נתונים? נסיעות, הבראה» — לוחצים על הערך בטבלה (נשמר בכרטיס: chv הבראה לשעה, ctrav נסיעות) */
   if(m.chv!=null&&m.chv!==''){ var hvn=+m.chv; R.h={t:(isNaN(hvn)?m.chv:n2(hvn)+' לשעה')+' ✎',ok:x&&!isNaN(hvn)?!!(hv&&hv[1]>=hvn-0.001):null,s:x?hvS:''}; }
   if(m.ctrav){ R.t={t:m.ctrav+' ✎',ok:null,s:x?x.tv:''}; }
-  R.ready=m.cready||null;
+  R.ready=null;
   var FM={'מלצרות':'הסכם מלצר/ברמן','מטבח':'הסכם טבח','דלפק':'הסכם עובד דלפק','אירוח':'הסכם מארח/ת','ראנר':'הסכם ראנר','אחמ"ש':'הסכם אחמ"ש',"צ'קר":'הסכם צ׳קר'};
   R.form=FM[dept]?FM[dept]+': '+R.b.t+' · הבראה '+R.h.t+' · נסיעות '+R.t.t:(dept?'חוזה אישי — בלי השוואה':'');
   R.p={t:'לפי החוק',ok:x?!x.np:null,s:x?(x.p?n2(x.p)+' ₪':(x.np?'אין':'עוד לא')):''};
@@ -2498,7 +2502,11 @@ function cmpOf(e){
   if((R.c==='no'||R.c==='unk')&&x&&(x.c==='wait'||x.c==='yes'))R.c=x.c;   /* ההתאמה לבטר צ׳אנס מבדיקת התלושים (לפי שם בתלוש) */
   R.wrong=!!(x&&x.cf&&((dept==='אחמ"ש'&&/מלצר/.test(x.cf))||(dept==='אירוח'&&/מלצר/.test(x.cf))||(dept==='מלצרות'&&/מארח/.test(x.cf))));
   R.bad=[R.b,R.h,R.t,R.p].filter(function(z){return z.ok===false;}).length+(R.c==='no'||R.c==='wait'?1:0)+(R.wrong?1:0)+(R.b.need?1:0)+(R.b.ask?1:0);
-  R.tali=taliIt(PK.rc(REST)).filter(function(t){return ctrNk(t.emp)===ctrNk(e.name);});
+  /* איילת 11.11.2026: «תלושים הם לא באישור של טלי. טלי צריכה לאשר מה הסכם העובד ואז אני צריכה לשלוח בקשה לתיקון תלושים» */
+  var TL=taliIt(PK.rc(REST)).filter(function(t){return ctrNk(t.emp)===ctrNk(e.name);}), W=function(t){return ((t.data||{}).state||'wait')==='wait';};
+  R.agree=TL.filter(function(t){return (t.data||{}).type==='agree';})[0]||null; R.agreed=!!(R.agree&&(R.agree.data||{}).state==='ok');
+  R.tali=TL.filter(function(t){return (t.data||{}).type!=='agree';}); R.fix=R.tali.filter(function(t){return (t.data||{}).type==='fix';});
+  R.needT=!R.agreed&&R.tali.some(W); R.toSend=R.agreed&&R.fix.some(W);
   R.tosign=(window.PK?PK.byEmp(e.id):[]).filter(function(f){return f.dtype==='חוזה לחתימה';})[0]||null;   /* איילת 11.11.2026: «תרשום חוזה לחתימה מצורף» */
   R.slip=(window.PK?PK.byEmp(e.id):[]).filter(function(f){return f.dtype==='תלוש שכר';}).sort(function(a,b){return String(b.created_at).localeCompare(String(a.created_at));})[0]||null;
   return R;
@@ -2520,14 +2528,14 @@ function renderCmp(){
   var src=cmpSrc(), A=cmpRows();
   var cnt={all:A.length,noc:0,diff:0,ok:0,tali:0,ready:0};
   A.forEach(function(o){ var r=o.r; if(r.c==='no'||r.c==='wait'||r.wrong)cnt.noc++; if([r.b,r.h,r.t,r.p].some(function(z){return z.ok===false;})||r.b.need||r.b.ask)cnt.diff++; if(!r.bad)cnt.ok++;
-    if(r.tali.some(function(t){return ((t.data||{}).state||'wait')==='wait';}))cnt.tali++; if(r.ready)cnt.ready++; });
+    if(r.needT)cnt.tali++; if(r.toSend)cnt.ready++; });
   var q=CMPQ.trim(), L=A.filter(function(o){ var r=o.r;
     if(CMPD&&r.dept!==CMPD)return false; if(q&&String(o.e.name).indexOf(q)<0)return false;
     if(CMPF==='noc')return r.c==='no'||r.c==='wait'||r.wrong;
     if(CMPF==='diff')return [r.b,r.h,r.t,r.p].some(function(z){return z.ok===false;})||!!r.b.need||!!r.b.ask;
     if(CMPF==='ok')return !r.bad;
-    if(CMPF==='ready')return !!r.ready;
-    if(CMPF==='tali')return r.tali.some(function(t){return ((t.data||{}).state||'wait')==='wait';});
+    if(CMPF==='ready')return r.toSend;
+    if(CMPF==='tali')return r.needT;
     return true; });
   L.sort(function(a,b){ if(CMPS==='d')return String(a.r.dept).localeCompare(String(b.r.dept),'he')||String(a.e.name).localeCompare(String(b.e.name),'he');
     if(CMPS==='x'||!CMPS)return (b.r.bad-a.r.bad)||String(a.e.name).localeCompare(String(b.e.name),'he');
@@ -2536,7 +2544,8 @@ function renderCmp(){
   var CS={yes:['✓ חתום','ok'],no:['✗ אין','no'],wait:['⏳ נשלח, לא חתום','warn'],mgr:['חוזה אישי','ok'],none:['לא צריך','ok'],unk:['? לא נבדק','']};
   var T=isTali();
   function chip(k,t){ return '<button type="button" class="cmpchip'+(CMPF===k?' on':'')+'" data-cf="'+k+'">'+t+' <b>'+cnt[k]+'</b></button>'; }
-  var h='<div class="cmp"><div class="cmpbar">'+chip('all','הכול')+chip('noc','בלי חוזה חתום')+chip('diff','תלוש לא לפי החוזה')+chip('tali','לאישור טלי')+chip('ready','מוכן לשליחה')+chip('ok','תקין')+
+  var h='<div class="cmp"><div class="cmpbar">'+chip('all','הכול')+chip('noc','בלי חוזה חתום')+chip('diff','תלוש לא לפי החוזה')+chip('tali','הסכם — לאישור טלי')+chip('ready','תיקון תלוש — לשליחה')+chip('ok','תקין')+
+    (isOwn()&&cnt.ready?'<button type="button" class="tlb done" data-fixcopy="1" title="טקסט אחד לחשבת עם כל תיקוני התלוש שההסכם שלהם אושר">📋 בקשת תיקון תלושים ('+cnt.ready+')</button>':'')+
     '<span class="cmpsp"></span><input type="search" class="cmpq" placeholder="חיפוש שם" value="'+esc(CMPQ)+'">'+
     '<select class="cmpd"><option value="">כל המחלקות</option>'+CMP_DEPTS.map(function(d){return '<option'+(d===CMPD?' selected':'')+'>'+esc(d)+'</option>';}).join('')+'</select></div>'+
     '<p class="cmpsrc">'+(src?'התלושים: <b>'+esc((src.data||{}).src||'')+'</b> · ירוק = לפי החוזה · אדום = מה יצא בתלוש · מחלקה ותעריף — לוחצים ומשנים':'⏳ עוד אין השוואה לתלושים במסעדה הזו — מוצג רק מצב החוזה.')+'</p>'+
@@ -2544,12 +2553,17 @@ function renderCmp(){
   L.forEach(function(o){ var e=o.e, r=o.r, x=r.x, cs=CS[r.c]||['',''];
     var acts='';
     if(r.slip)acts+='<button class="tlb" type="button" data-cslip="'+e.id+'">👁 תלוש</button>';
-    /* איילת 11.11.2026: «לסמן — נתונים מעודכנים להוצאת חוזה ותיקון תלוש; את אלה תשלח בעצמך, ויהיו מוכנים לשליחה לחשבת» */
-    if(r.ready)acts+='<span class="cmptag ok" title="סומן ע״י '+esc(r.ready.who||'')+' · '+esc(r.ready.at||'')+'">✓ מוכן — חוזה ותיקון</span><button class="cmpx" type="button" data-cready="0" data-eid="'+e.id+'">↩</button>';
-    else if(cmpCanReady())acts+='<button class="tlb done" type="button" data-cready="1" data-eid="'+e.id+'" title="הנתונים בשורה נכונים — קלוד יוציא חוזה בבטר צ׳אנס ויכין תיקון תלוש לחשבת">✓ נתונים מעודכנים</button>';
-    r.tali.forEach(function(t){ var d=t.data||{}, st=d.state||'wait', w=d.type==='fix'?'תיקון תלוש':'חוזה';
-      if(st==='wait')acts+=T?'<button class="tlb done" type="button" data-tid2="'+esc(t.id)+'" title="'+esc(d.type==='fix'?d.line:(d.form||''))+'">✓ לאשר '+w+'</button>':'<span class="cmptag warn" title="'+esc((d.type==='fix'?d.line:(d.form||''))+' — מחכה לאישור של טלי')+'">'+w+'</span>';
-      else acts+='<span class="cmptag '+(st==='no'?'':'ok')+'">'+(st==='ok'?'✓ '+w+' אושר':st==='sent'?'✓ '+w+' נשלח':w+': לא לשלוח')+'</span>'; });
+    /* איילת 11.11.2026: טלי מאשרת את ההסכם של העובד (מחלקה, בסיס, הבראה, נסיעות). תיקוני התלוש — איילת שולחת לחשבת, רק אחרי שההסכם אושר. */
+    var ad=r.agree&&r.agree.data||{};
+    if(r.agreed)acts+='<span class="cmptag ok" title="'+esc('אישרה טלי'+(ad.ok_at?' · '+ad.ok_at:'')+(ad.b?' · '+ad.b+' · הבראה '+ad.h+' · נסיעות '+ad.t:''))+'">✓ ההסכם אושר</span>'+(T?'<button class="cmpx" type="button" data-cagree="0" data-eid="'+e.id+'">↩</button>':'');
+    else if(T)acts+='<button class="tlb done" type="button" data-cagree="1" data-eid="'+e.id+'" title="המחלקה והנתונים בשורה הם ההסכם של העובד">✓ ההסכם נכון</button>';
+    else if(r.needT)acts+='<span class="cmptag warn" title="טלי צריכה לאשר את ההסכם של העובד">הסכם — מחכה לטלי</span>';
+    r.tali.forEach(function(t){ var d=t.data||{}, st=d.state||'wait', fx=d.type==='fix', w=fx?'תיקון תלוש':'חוזה';
+      if(st==='wait'){
+        if(!fx)acts+=r.agreed?'<span class="cmptag ok" title="'+esc(d.form||'')+'">חוזה — יישלח</span>':'';
+        else if(!r.agreed)acts+='<span class="cmptag" title="'+esc(d.line+' — אחרי שטלי תאשר את ההסכם')+'">תיקון תלוש — אחרי ההסכם</span>';
+        else acts+=isOwn()?'<button class="tlb" type="button" data-tfix="'+esc(t.id)+'" title="'+esc(d.line||'')+'">📤 שלחתי לחשבת</button>':'<span class="cmptag warn" title="'+esc(d.line||'')+'">תיקון תלוש — אצל איילת</span>';
+      } else acts+='<span class="cmptag '+(st==='no'?'':'ok')+'" title="'+esc(fx?d.line||'':d.form||'')+'">'+(st==='sent'?'✓ '+w+' נשלח':st==='ok'?'✓ '+w+' אושר':w+': לא לשלוח')+'</span>'; });
     h+='<tr data-cid="'+e.id+'"><td class="cmpn"><a href="#" data-copen="'+e.id+'">'+esc(e.name)+'</a>'+
       (x?'<span class="cmps">'+n2(x.h)+' שעות · ברוטו '+n2(x.g)+'</span>':'')+
       (r.extra?'<span class="cmps ex">★ '+esc(r.extra)+'</span>':'')+'<button class="cmpx" type="button" data-cset="extra" data-eid="'+e.id+'">'+(r.extra?'✎ הסדר':'＋ הסדר מיוחד')+'</button></td>'+
@@ -2561,6 +2575,13 @@ function renderCmp(){
   if(!L.length)h+='<tr><td colspan="9" class="cmpempty">אין עובדים בסינון הזה</td></tr>';
   return h+'</tbody></table></div></div>';
 }
+function isOwn(){ return !!(window.PK&&PK.me&&(PK.me.owner||PK.me.name==='איילת')); }
+function fixText(L){ var by={}; L.forEach(function(o){ o.r.fix.forEach(function(t){ var d=t.data||{}; if((d.state||'wait')!=='wait')return; (by[d.month||'']=by[d.month||'']||[]).push('• '+o.e.name+' — '+d.line); }); });
+  return Object.keys(by).map(function(mo){ return 'תבדקי בבקשה את התלושים'+(mo?' של '+mo:'')+' לפי ההסכמים:\n'+by[mo].join('\n'); }).join('\n\n'); }
+function agreeSave(e,on){ var rc=PK.rc(REST), id='tali_'+rc+'_a_'+e.id, r=cmpOf(e);
+  var it={id:id,rest:rc,kind:'tali',eid:e.id,emp:e.name,deleted:false,data:{type:'agree',state:on?'ok':'wait',dept:r.dept,b:r.b.t,h:r.h.t,t:r.t.t,extra:r.extra||''}};
+  var P=PK.saveItem(it); if(on)r.tali.filter(function(t){ var d=t.data||{}; return d.type!=='fix'&&(d.state||'wait')==='wait'; }).forEach(function(t){ P=P.then(function(){ return PK.saveItem({id:t.id,rest:t.rest,kind:'tali',eid:t.eid,emp:t.emp,data:Object.assign({},t.data,{state:'ok'}),deleted:false}); }); });
+  return P.then(function(){ return PK.reload(); }).then(function(){ render(); toast(on?'✓ ההסכם אושר — '+esc(e.name):'✓ בוטל'); },function(er){ alert('לא נשמר: '+er.message); }); }
 function cmpCanReady(){ return !!(window.PK&&PK.me&&(PK.me.owner||PK.me.name==='טלי'||PK.me.name==='איילת')); }
 function cmpSet(eid,k,v){ var e=E.filter(function(x){return x.id===eid;})[0]; if(!e)return; var m=mk(eid);
   if(v===''||v==null){ delete m[k]; } else m[k]=v; stamp(m,k); touch(eid); save(); render(); toast('✓ נשמר — '+esc(e.name)); }
@@ -2574,6 +2595,16 @@ document.addEventListener('click',function(ev){ var t=ev.target; if(!t.closest||
   var b=t.closest('[data-cf]'); if(b){ CMPF=b.dataset.cf; render(); return; }
   b=t.closest('th[data-cs]'); if(b){ CMPS=b.dataset.cs; render(); return; }
   b=t.closest('[data-copen]'); if(b){ ev.preventDefault(); open(+b.dataset.copen); return; }
+  b=t.closest('[data-cagree]'); if(b){ var e4=E.filter(function(x){return x.id===+b.dataset.eid;})[0]; if(!e4)return; if(!isTali()){ alert('רק טלי מאשרת את ההסכם'); return; }
+    var r4=cmpOf(e4); if(b.dataset.cagree==='1'){ if(!confirm(e4.name+' — זה ההסכם שלו/ה?\n\n'+r4.dept+' · בסיס '+r4.b.t+' · הבראה '+r4.h.t+' · נסיעות '+r4.t.t+(r4.extra?' · '+r4.extra:'')+'\n\nאחרי האישור: קלוד ישלח את החוזה בבטר צ׳אנס, ואיילת תשלח את תיקון התלוש לחשבת.'))return; agreeSave(e4,true); }
+    else { if(!confirm('לבטל את אישור ההסכם של '+e4.name+'?'))return; agreeSave(e4,false); } return; }
+  b=t.closest('[data-tfix]'); if(b){ var xf=PK.items().filter(function(y){return y.id===b.dataset.tfix;})[0]; if(!xf)return; if(!isOwn()){ alert('רק איילת'); return; }
+    if(!confirm('שלחת לחשבת את התיקון?\n\n'+xf.emp+' — '+(xf.data||{}).line))return; taliSave(xf,{state:'sent'},'✓ סומן «נשלח» — '+esc(xf.emp)); return; }
+  b=t.closest('[data-fixcopy]'); if(b){ var LL=cmpRows().filter(function(o){return o.r.toSend;}), tx=fixText(LL); if(!tx)return;
+    var done=function(){ if(!confirm('הטקסט הועתק ('+LL.length+' עובדים). אחרי ששלחת לחשבת — לסמן את כולם «נשלח»?'))return;
+      var P=Promise.resolve(); LL.forEach(function(o){ o.r.fix.forEach(function(t){ if(((t.data||{}).state||'wait')!=='wait')return; P=P.then(function(){ return PK.saveItem({id:t.id,rest:t.rest,kind:'tali',eid:t.eid,emp:t.emp,data:Object.assign({},t.data,{state:'sent'}),deleted:false}); }); }); });
+      P.then(function(){ return PK.reload(); }).then(function(){ render(); toast('✓ סומן «נשלח»'); },function(er){ alert('לא נשמר: '+er.message); }); };
+    (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(tx):Promise.reject()).then(done,function(){ prompt('להעתיק:',tx); done(); }); return; }
   b=t.closest('[data-cready]'); if(b){ var e3=E.filter(function(x){return x.id===+b.dataset.eid;})[0]; if(!e3)return;
     if(b.dataset.cready==='1'){ if(!cmpCanReady()){ alert('רק איילת או טלי'); return; } if(!confirm(e3.name+': הנתונים בשורה נכונים?\n\nקלוד יוציא חוזה בבטר צ׳אנס לפי השורה, ויכין תיקון תלוש מוכן לשליחה לחשבת.'))return;
       cmpSet(e3.id,'cready',{who:whoNow(),at:new Date().toISOString().slice(0,10)}); }
@@ -2654,7 +2685,9 @@ function taliRow(x){
   }
   f+='<label>הערה <input class="wide" data-tf="note" value="'+esc(d.note||'')+'"'+(ed?'':' disabled')+'></label>';
   var act='';
-  if(st==='wait') act=T?'<button class="tlb done" type="button" data-tali="ok">✓ לאשר</button><button class="tlb left" type="button" data-tali="no">לא לשלוח</button>'
+  if(d.type==='fix') act=st==='wait'?(isOwn()?'<button class="tlb" type="button" data-tali="sent">📤 שלחתי לחשבת</button><button class="tlb left" type="button" data-tali="no">לא לשלוח</button>':'<span class="dnote">אצל איילת</span>')
+                       :'<span class="dchip '+(st==='no'?'no':'ok')+'">'+(st==='no'?'לא לשלוח':'✓ נשלח לחשבת')+(d.sent_at?' · '+esc(d.sent_at):'')+'</span>'+(isOwn()?'<button class="tlb" type="button" data-tali="wait">↩ לבטל</button>':'');
+  else if(st==='wait') act=T?'<button class="tlb done" type="button" data-tali="ok">✓ לאשר</button><button class="tlb left" type="button" data-tali="no">לא לשלוח</button>'
                        :'<span class="dnote">מחכה לאישור של טלי</span>';
   else if(st==='ok') act='<span class="dchip ok">✓ אושר ע״י '+esc(d.ok_by||'טלי')+(d.ok_at?' · '+esc(d.ok_at):'')+'</span>'+(T?'<button class="tlb" type="button" data-tali="wait">↩ לבטל</button>':'');
   else if(st==='no') act='<span class="dchip no">לא לשלוח'+(d.ok_at?' · '+esc(d.ok_at):'')+'</span>'+(T?'<button class="tlb" type="button" data-tali="wait">↩ לבטל</button>':'');
@@ -2663,15 +2696,19 @@ function taliRow(x){
     '<div>'+what+(d.q&&ed?'<span class="tq">❓ '+esc(d.q)+'</span>':'')+'<div class="tf" style="margin-top:6px">'+f+'</div></div><div class="tla">'+act+'</div></div>';
 }
 function taliSecs(){
-  var L=taliIt(PK.rc(REST)); if(!L.length)return '';
+  var ALL=taliIt(PK.rc(REST)), L=ALL.filter(function(x){ var t=(x.data||{}).type; return t!=='fix'&&t!=='agree'; }), FX=ALL.filter(function(x){return (x.data||{}).type==='fix';});
+  var fxw=FX.filter(function(x){return ((x.data||{}).state||'wait')==='wait';}), fxs=FX.filter(function(x){return ((x.data||{}).state||'wait')!=='wait';});
+  var fsec=FX.length?'<section class="tlsec sev-info"><header><span class="tlcnt">'+fxw.length+'</span><h2>תיקוני תלוש — איילת שולחת לחשבת</h2></header><p class="dnote">לא באישור של טלי. אחרי שטלי מאשרת את ההסכם של העובד — איילת שולחת לחשבת (בטבלה: «📋 בקשת תיקון תלושים»).</p>'+
+    '<details class="ctrmore"><summary>להציג ('+FX.length+')</summary>'+fxw.concat(fxs).map(taliRow).join('')+'</details></section>':'';
+  if(!L.length)return fsec;
   var by={wait:[],ok:[],sent:[],no:[]}; L.forEach(function(x){ (by[(x.data||{}).state||'wait']||by.wait).push(x); });
   Object.keys(by).forEach(function(k){ by[k].sort(function(a,b){ var A=a.data||{}, B=b.data||{}; return (A.type===B.type?0:A.type==='fix'?1:-1)||String(a.emp).localeCompare(String(b.emp),'he'); }); });
   function sec(sev,title,help,rows,open){ if(!rows.length)return ''; var body=rows.map(taliRow).join('');
     return '<section class="tlsec sev-'+sev+'"><header><span class="tlcnt">'+rows.length+'</span><h2>'+esc(title)+'</h2><button class="tlq" type="button" data-help aria-label="הסבר" title="הסבר">?</button></header>'+
       '<p class="tlhelp" hidden>'+esc(help)+'</p>'+(open?body:'<details class="ctrmore"><summary>להציג ('+rows.length+')</summary>'+body+'</details>')+'</section>'; }
-  return sec('warn','לאישור טלי — לפני שליחה','קלוד הכין, ושום דבר לא נשלח. טלי בודקת את התעריף (ואם יש הסדר מיוחד — כותבת), ולוחצת «✓ לאשר» או «לא לשלוח». רק אחרי אישור קלוד שולח את ההסכם בבטר צ׳אנס / את התיקון לחשבת, ומסמן «נשלח».',by.wait,true)+
+  return sec('warn','הסכמים — לאישור טלי','קלוד הכין, ושום דבר לא נשלח. טלי בודקת את התעריף (ואם יש הסדר מיוחד — כותבת), ולוחצת «✓ לאשר» או «לא לשלוח». רק אחרי אישור קלוד שולח את ההסכם בבטר צ׳אנס ומסמן «נשלח».',by.wait,true)+
     sec('done','אושר — קלוד ישלח','טלי אישרה. קלוד שולח ומסמן «נשלח».',by.ok,true)+
-    sec('done','נשלח','',by.sent,false)+sec('info','לא לשלוח','טלי סימנה «לא לשלוח».',by.no,false);
+    sec('done','נשלח','',by.sent,false)+sec('info','לא לשלוח','טלי סימנה «לא לשלוח».',by.no,false)+fsec;
 }
 function taliSave(x,patch,msg){ var it={id:x.id,rest:x.rest,kind:'tali',eid:x.eid,emp:x.emp,data:Object.assign({},x.data||{},patch),deleted:false};
   return PK.saveItem(it).then(function(){ return PK.reload(); }).then(function(){ render(); if(msg)toast(msg); },function(e){ alert('לא נשמר: '+e.message); }); }
@@ -2680,6 +2717,7 @@ document.getElementById('ctrView').addEventListener('change',function(ev){ var i
   var p={}, k=i.dataset.tf; p[k]=k==='rate'?(i.value===''?null:+i.value):i.value.trim(); taliSave(x,p,'✓ נשמר'); });
 document.getElementById('ctrView').addEventListener('click',function(ev){ var b=ev.target.closest('button[data-tali]'); if(!b)return; ev.stopPropagation();
   var r=b.closest('[data-tid]'), x=PK.items().filter(function(y){return y.id===r.dataset.tid;})[0]; if(!x)return; var v=b.dataset.tali, d=x.data||{};
+  if(d.type==='fix'){ if(!isOwn()){ alert('רק איילת'); return; } if(!confirm(v==='sent'?'שלחת לחשבת את התיקון?\n\n'+x.emp+' — '+d.line:v==='no'?'לא לשלוח את התיקון של '+x.emp+'?':'להחזיר ל«לשליחה»?'))return; taliSave(x,{state:v},'✓ נשמר'); return; }
   if(!isTali()){ alert('רק טלי יכולה לאשר'); return; }
   var q=v==='ok'?('לאשר?\n\n'+x.emp+' — '+(d.type==='fix'?d.line:(d.form||'')+(d.rate!=null&&!d.fixed?' · '+d.rate+(d.per_shift?' למשמרת':' לשעה'):'')+(d.extra?' · '+d.extra:''))+'\n\nאחרי האישור קלוד ישלח.'):v==='no'?('לא לשלוח ל'+x.emp+'?'):'לבטל ולהחזיר ל«לאישור»?';
   if(!confirm(q))return; taliSave(x,{state:v},v==='ok'?'✓ אושר — '+esc(x.emp):'✓ נשמר'); },true);
@@ -2699,7 +2737,8 @@ function hero(){
   document.getElementById('c-todo').textContent=todo.length;
   document.getElementById('c-all').textContent=ALL.filter(function(e){return e.state==='פעיל'&&!e.foreign;}).length;
   document.getElementById('c-frn').textContent=A.filter(frnOn).length||'';
-  document.getElementById('c-ctr').textContent=(ctrMissing().length+taliIt(PK.rc(REST)).filter(function(x){return ((x.data||{}).state||'wait')==='wait';}).length)||'';
+  var CR2=taliIt(PK.rc(REST)).length?cmpRows():[];
+  document.getElementById('c-ctr').textContent=(ctrMissing().length+CR2.filter(function(o){return o.r.needT||(isOwn()&&o.r.toSend);}).length)||'';
   document.getElementById('c-mil').textContent=milItems().filter(function(x){var d=x.data||{};return !d.done&&!d.btl&&!d.slips;}).length||'';
   document.getElementById('c-pens').textContent=A.filter(function(e){
     if(!e.active||e.ext||e.foreign||e.pens_open||!e.pmonth)return false;
