@@ -2450,6 +2450,8 @@ function ctrSec(sev,title,help,rows,open){
    נתוני התלוש: pinkas_items kind='cmp' id 'cmp_<rest>' (data.emps[מספר עובד] = k מחלקה, r תעריף ששולם, hv [הבראה ₪, לשעה], tv נסיעות, mt נסיעות לא לפי החוזה, p פנסיה, np חסרה פנסיה, cr תעריף בהסכם, cf ההסכם, g ברוטו, h שעות).
    מה שטלי / איילת מסמנות בטבלה נשמר בכרטיס (MARKS: cdept מחלקה, crate תעריף, cextra הסדר מיוחד) וגובר על הנתונים.
    תנאי החוזה לפי מחלקה — ההסכמים של אסא בבטר צ׳אנס (מלצר/ברמן, מארח/ת, טבח); אחמ"ש — ההסכם של אסא עוד לא נקרא, לכן נסיעות בלי השוואה. */
+/* איילת 11.11.2026: 30.61 בהסכם המלצרים = שכר מינימום ישן. תמיד מציגים ומשווים לשכר המינימום של היום; הסכם ישן עם 30.61 — לא טעות, לא מתקנים. */
+var MINW=35.41;
 var CMP_DEPTS=['מלצרות','מטבח','דלפק','אירוח',"צ'קר",'ראנר','אחמ"ש','גלובלי','מנהל','עובד זר'];
 var CMPF='all', CMPD='', CMPQ='', CMPS='';
 function cmpSrc(){ return (window.PK?PK.items():[]).filter(function(x){return x.kind==='cmp'&&x.id==='cmp_'+PK.rc(REST)&&!x.deleted;})[0]||null; }
@@ -2465,7 +2467,7 @@ function cmpOf(e){
   function c(t,ok,s){ return {t:t,ok:x?ok:null,s:x?s:''}; }
   var hvS=hv?n2(hv[0])+' ₪':'אין';
   if(dept==='מלצרות'){
-    R.b=R.man.r?c(rate+' לשעה (אישי)',x&&Math.abs(x.r-rate)<0.01,n2(x&&x.r)):c('30.61 + טיפים',x&&x.r>=35.4,n2(x&&x.r));
+    R.b=R.man.r?c(rate+' לשעה (אישי)',x&&Math.abs(x.r-rate)<0.01,n2(x&&x.r)):c(MINW+' + טיפים',x&&x.r>=MINW-0.01,n2(x&&x.r));
     R.h=c('1 לשעה',!!(hv&&hv[1]>=0.99),hvS); R.t=c('4 לשעה',x&&!x.mt,x&&x.tv);
   } else if(['מטבח','דלפק','אירוח',"צ'קר",'ראנר'].indexOf(dept)>=0){
     var nr=src&&src.data&&src.data.norate;
