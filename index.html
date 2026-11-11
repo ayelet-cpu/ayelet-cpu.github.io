@@ -2471,7 +2471,9 @@ function cmpOf(e){
     R.h=c('1 לשעה',!!(hv&&hv[1]>=0.99),hvS); R.t=c('4 לשעה',x&&!x.mt,x&&x.tv);
   } else if(['מטבח','דלפק','אירוח',"צ'קר",'ראנר'].indexOf(dept)>=0){
     var nr=src&&src.data&&src.data.norate;
-    R.b=rate!=null?c(n2(rate)+' לשעה',x&&Math.abs(x.r-rate)<0.01,n2(x&&x.r)):nr?{t:'תעריף אישי',ok:null,s:x?n2(x.r):''}:{t:'חסר תעריף',ok:null,s:x?n2(x.r):'',need:x?1:0};
+    /* איילת 11.11.2026: «אולי 53 = 52 + 1» — בהסכמים ובהערות התעריף נכתב לפעמים כולל ההבראה (סכום + 1). תעריף + הבראה לשעה = ההסכם → תקין */
+    var withHv=rate!=null&&x&&hv&&hv[1]>=0.99&&Math.abs(x.r+hv[1]-rate)<0.01;
+    R.b=withHv?c(n2(rate)+' לשעה',true,n2(x.r)+' + '+n2(hv[1])+' הבראה = '+n2(rate)):rate!=null?c(n2(rate)+' לשעה',x&&Math.abs(x.r-rate)<0.01,n2(x&&x.r)):nr?{t:'תעריף אישי',ok:null,s:x?n2(x.r):''}:{t:'חסר תעריף',ok:null,s:x?n2(x.r):'',need:x?1:0};
     R.h=c('1 לשעה',!!(hv&&hv[1]>=0.99),hvS); R.t=dept==='ראנר'?c('חופשי חודשי',x&&!!x.tv&&x.tv!=='אין',x&&x.tv):c('לפי חוק',x&&!!x.tv&&x.tv!=='אין',x&&x.tv);
   } else if(dept==='אחמ"ש'){
     R.b={t:(rate||300)+' למשמרת',ok:null,s:x?n2(x.r):''}; R.h=c('10 למשמרת',!!(hv&&hv[1]>=9.99),hvS); var at=src&&src.data&&src.data.ach_trav; R.t=at?c(at,x&&!x.mt,x&&x.tv):{t:'לפי ההסכם',ok:null,s:x?x.tv:''};
@@ -2482,6 +2484,7 @@ function cmpOf(e){
   R.form=FM[dept]?FM[dept]+': '+R.b.t+' · הבראה '+R.h.t+' · נסיעות '+R.t.t:(dept?'חוזה אישי — בלי השוואה':'');
   R.p={t:'לפי החוק',ok:x?!x.np:null,s:x?(x.p?n2(x.p)+' ₪':(x.np?'אין':'עוד לא')):''};
   var co=ctrOf(e); R.c=co.st==='no'?(/^נשלח/.test(co.txt)?'wait':'no'):co.st;
+  if((R.c==='no'||R.c==='unk')&&x&&(x.c==='wait'||x.c==='yes'))R.c=x.c;   /* ההתאמה לבטר צ׳אנס מבדיקת התלושים (לפי שם בתלוש) */
   R.wrong=!!(x&&x.cf&&((dept==='אחמ"ש'&&/מלצר/.test(x.cf))||(dept==='אירוח'&&/מלצר/.test(x.cf))||(dept==='מלצרות'&&/מארח/.test(x.cf))));
   R.bad=[R.b,R.h,R.t,R.p].filter(function(z){return z.ok===false;}).length+(R.c==='no'||R.c==='wait'?1:0)+(R.wrong?1:0)+(R.b.need?1:0);
   R.tali=taliIt(PK.rc(REST)).filter(function(t){return ctrNk(t.emp)===ctrNk(e.name);});
