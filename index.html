@@ -2476,10 +2476,12 @@ function cmpOf(e){
     R.b=withHv?c(n2(rate)+' לשעה',true,n2(x.r)+' + '+n2(hv[1])+' הבראה = '+n2(rate)):rate!=null?(x&&x.r>rate+0.01?(m.craise==='ok'?{t:n2(rate)+' לשעה',ok:true,s:n2(x.r)+' — העלאה, אושר',raise:1}:m.craise==='update'?{t:n2(rate)+' לשעה',ok:false,s:n2(x.r)+' — צריך חוזה מעודכן',raise:1}:{t:n2(rate)+' לשעה',ok:null,s:n2(x.r)+' — יותר מההסכם',raise:1,ask:1}):c(n2(rate)+' לשעה',x&&Math.abs(x.r-rate)<0.01,n2(x&&x.r))):nr?{t:'תעריף אישי',ok:null,s:x?n2(x.r):''}:{t:'חסר תעריף',ok:null,s:x?n2(x.r):'',need:x?1:0};
     R.h=c('1 לשעה',!!(hv&&hv[1]>=0.99),hvS); R.t=dept==='ראנר'?c('חופשי חודשי',x&&!!x.tv&&x.tv!=='אין',x&&x.tv):c('לפי חוק',x&&!!x.tv&&x.tv!=='אין',x&&x.tv);
   } else if(dept==='אחמ"ש'&&src&&src.data&&src.data.ach_terms){
-    /* אסא: ההסכם של אחמ"ש (PDF מאיילת 11.11.2026) — 300 + 100 ש"נ גלובלי + 100 שבת/חג גלובלי למשמרת, בונוס סופ"ש 100, הבראה לפי חוק */
-    var T=src.data.ach_terms, A=x&&x.ach, tot=T.b+T.g1+T.g2;
-    R.b=A?c(tot+' למשמרת (300+100+100)',A.b+A.g1+A.g2>=tot-0.01,n2(A.b+A.g1+A.g2)+' ('+A.b+'+'+A.g1+'+'+A.g2+') · סופ״ש '+A.wk+'×100'):{t:tot+' למשמרת (300+100+100)',ok:null,s:x?n2(x.r):''};
-    R.h={t:T.hv,ok:null,s:A?A.hv+' למשמרת':(x?hvS:'')}; R.t={t:T.trav,ok:null,s:A?A.tr+' למשמרת':(x?x.tv:'')};
+    /* אסא: איילת 11.11.2026 — «ה-500 ש"ח בנויים גם מנסיעות והבראה»: 500 למשמרת = יסוד + גלובליות + נסיעות + הבראה; סופ"ש 100 בנוסף */
+    var T=src.data.ach_terms, A=x&&x.ach, tot=T.tot||500;
+    var got=A?A.b+A.g1+A.g2+A.tr+A.hv:null;
+    R.b=A?c(tot+' למשמרת, הכול כלול',Math.abs(got-tot)<0.01,n2(got)+' ('+[A.b,A.g1,A.g2,A.tr,A.hv].join('+')+') · סופ״ש '+A.wk+'×100'):{t:tot+' למשמרת, הכול כלול',ok:null,s:x?n2(x.r):''};
+    R.h=A?c('בתוך ה-'+tot,A.hv>0,A.hv+' למשמרת'):{t:'בתוך ה-'+tot,ok:null,s:x?hvS:''};
+    R.t=A?c('בתוך ה-'+tot,A.tr>0,A.tr+' למשמרת'):{t:'בתוך ה-'+tot,ok:null,s:x?x.tv:''};
   } else if(dept==='אחמ"ש'){
     R.b={t:(rate||300)+' למשמרת',ok:null,s:x?n2(x.r):''}; R.h=c('10 למשמרת',!!(hv&&hv[1]>=9.99),hvS); var at=src&&src.data&&src.data.ach_trav; R.t=at?c(at,x&&!x.mt,x&&x.tv):{t:'לפי ההסכם',ok:null,s:x?x.tv:''};
   } else {
