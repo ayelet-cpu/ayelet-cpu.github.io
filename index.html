@@ -2406,7 +2406,7 @@ function ctrOf(e){
   if(m.contract==='none')return {st:'none',txt:'לא צריך חוזה'+(m.contract_why?' — '+m.contract_why:''),man:1};
   var it=ctrItem(e); if(it&&(it.data||{}).has!==false){ var d=it.data||{}; return {st:'yes',txt:(d.form||'הסכם עבודה')+(d.date?' · נחתם '+fmtD(d.date):'')}; }
   if((e.dtypes||[]).some(function(t){return CRX.test(t);}))return {st:'yes',txt:'הסכם עבודה בתיק העובד'};
-  var f=(window.PK?PK.byEmp(e.id):[]).filter(function(f){return CRX.test(String(f.dtype||'')+' '+String(f.name||''));})[0];
+  var f=(window.PK?PK.byEmp(e.id):[]).filter(function(f){return f.dtype!=='חוזה לחתימה'&&CRX.test(String(f.dtype||'')+' '+String(f.name||''));})[0];   /* «חוזה לחתימה» = עוד לא חתום */
   if(f)return {st:'yes',txt:'הסכם עבודה בתיק העובד'};
   var rc0=PK.rc(e.orig_rest||e.rest); if(!ctrSrc(rc0))return {st:'unk',txt:'עוד לא נבדק'};
   /* איילת 10.11.2026: «רק מנהלים גדולים — החוזה שלהם לא מעודכן בבטר צ'אנס» — מנהל/ת (לפי התפקיד) לא נחשב «בלי חוזה» */
@@ -2475,6 +2475,11 @@ function cmpOf(e){
     var withHv=rate!=null&&x&&hv&&hv[1]>=0.99&&Math.abs(x.r+hv[1]-rate)<0.01;
     R.b=withHv?c(n2(rate)+' לשעה',true,n2(x.r)+' + '+n2(hv[1])+' הבראה = '+n2(rate)):rate!=null?c(n2(rate)+' לשעה',x&&Math.abs(x.r-rate)<0.01,n2(x&&x.r)):nr?{t:'תעריף אישי',ok:null,s:x?n2(x.r):''}:{t:'חסר תעריף',ok:null,s:x?n2(x.r):'',need:x?1:0};
     R.h=c('1 לשעה',!!(hv&&hv[1]>=0.99),hvS); R.t=dept==='ראנר'?c('חופשי חודשי',x&&!!x.tv&&x.tv!=='אין',x&&x.tv):c('לפי חוק',x&&!!x.tv&&x.tv!=='אין',x&&x.tv);
+  } else if(dept==='אחמ"ש'&&src&&src.data&&src.data.ach_terms){
+    /* אסא: ההסכם של אחמ"ש (PDF מאיילת 11.11.2026) — 300 + 100 ש"נ גלובלי + 100 שבת/חג גלובלי למשמרת, בונוס סופ"ש 100, הבראה לפי חוק */
+    var T=src.data.ach_terms, A=x&&x.ach, tot=T.b+T.g1+T.g2;
+    R.b=A?c(tot+' למשמרת (300+100+100)',A.b+A.g1+A.g2>=tot-0.01,n2(A.b+A.g1+A.g2)+' ('+A.b+'+'+A.g1+'+'+A.g2+') · סופ״ש '+A.wk+'×100'):{t:tot+' למשמרת (300+100+100)',ok:null,s:x?n2(x.r):''};
+    R.h={t:T.hv,ok:null,s:A?A.hv+' למשמרת':(x?hvS:'')}; R.t={t:T.trav,ok:null,s:A?A.tr+' למשמרת':(x?x.tv:'')};
   } else if(dept==='אחמ"ש'){
     R.b={t:(rate||300)+' למשמרת',ok:null,s:x?n2(x.r):''}; R.h=c('10 למשמרת',!!(hv&&hv[1]>=9.99),hvS); var at=src&&src.data&&src.data.ach_trav; R.t=at?c(at,x&&!x.mt,x&&x.tv):{t:'לפי ההסכם',ok:null,s:x?x.tv:''};
   } else {
@@ -2488,6 +2493,7 @@ function cmpOf(e){
   R.wrong=!!(x&&x.cf&&((dept==='אחמ"ש'&&/מלצר/.test(x.cf))||(dept==='אירוח'&&/מלצר/.test(x.cf))||(dept==='מלצרות'&&/מארח/.test(x.cf))));
   R.bad=[R.b,R.h,R.t,R.p].filter(function(z){return z.ok===false;}).length+(R.c==='no'||R.c==='wait'?1:0)+(R.wrong?1:0)+(R.b.need?1:0);
   R.tali=taliIt(PK.rc(REST)).filter(function(t){return ctrNk(t.emp)===ctrNk(e.name);});
+  R.tosign=(window.PK?PK.byEmp(e.id):[]).filter(function(f){return f.dtype==='חוזה לחתימה';})[0]||null;   /* איילת 11.11.2026: «תרשום חוזה לחתימה מצורף» */
   R.slip=(window.PK?PK.byEmp(e.id):[]).filter(function(f){return f.dtype==='תלוש שכר';}).sort(function(a,b){return String(b.created_at).localeCompare(String(a.created_at));})[0]||null;
   return R;
 }
@@ -2535,7 +2541,7 @@ function renderCmp(){
       (r.extra?'<span class="cmps ex">★ '+esc(r.extra)+'</span>':'')+'<button class="cmpx" type="button" data-cset="extra" data-eid="'+e.id+'">'+(r.extra?'✎ הסדר':'＋ הסדר מיוחד')+'</button></td>'+
       '<td><select class="cmpdep'+(r.man.d?' man':'')+'" data-cset="dept" data-eid="'+e.id+'">'+(r.dept?'':'<option value="">— לבחור —</option>')+
         CMP_DEPTS.map(function(d){return '<option'+(d===r.dept?' selected':'')+'>'+esc(d)+'</option>';}).join('')+'</select>'+(r.form?'<span class="cmps cmpform">'+esc(r.form)+'</span>':'')+(r.man.d?'<span class="cmps ex">סומן ידנית</span>':'')+'</td>'+
-      '<td><span class="dchip '+cs[1]+'">'+cs[0]+'</span>'+(x&&x.cf?'<span class="cmps">'+esc(x.cf)+'</span>':'')+(r.wrong?'<span class="cmps bad">✗ לא ההסכם של המחלקה</span>':'')+'</td>'+
+      '<td><span class="dchip '+cs[1]+'">'+cs[0]+'</span>'+(x&&x.cf?'<span class="cmps">'+esc(x.cf)+'</span>':'')+(r.wrong?'<span class="cmps bad">✗ לא ההסכם של המחלקה</span>':'')+(r.tosign?'<button class="cmpx" type="button" data-cdoc="'+esc(r.tosign.id)+'">📎 חוזה לחתימה מצורף</button>':'')+'</td>'+
       cmpCell(r.b,'b',e.id,r.man.r)+cmpCell(r.h,'h',e.id)+cmpCell(r.t,'t',e.id)+cmpCell(r.p,'p',e.id)+
       '<td>'+(r.bad?'<span class="dchip no">'+r.bad+' לתקן</span>':'<span class="dchip ok">תקין</span>')+'</td><td class="cmpa">'+acts+'</td></tr>'; });
   if(!L.length)h+='<tr><td colspan="9" class="cmpempty">אין עובדים בסינון הזה</td></tr>';
@@ -2553,6 +2559,7 @@ document.addEventListener('click',function(ev){ var t=ev.target; if(!t.closest||
   var b=t.closest('[data-cf]'); if(b){ CMPF=b.dataset.cf; render(); return; }
   b=t.closest('th[data-cs]'); if(b){ CMPS=b.dataset.cs; render(); return; }
   b=t.closest('[data-copen]'); if(b){ ev.preventDefault(); open(+b.dataset.copen); return; }
+  b=t.closest('[data-cdoc]'); if(b){ var fd=(PK.files()||[]).filter(function(f){return String(f.id)===b.dataset.cdoc;})[0]; if(fd)PK.open(fd); return; }
   b=t.closest('[data-cslip]'); if(b){ var f=(PK.byEmp(+b.dataset.cslip)||[]).filter(function(f){return f.dtype==='תלוש שכר';}).sort(function(a,c){return String(c.created_at).localeCompare(String(a.created_at));})[0]; if(f)PK.open(f); return; }
   b=t.closest('[data-tid2]'); if(b){ ev.stopPropagation(); var x=PK.items().filter(function(y){return y.id===b.dataset.tid2;})[0]; if(!x)return; var d=x.data||{};
     if(!isTali()){ alert('רק טלי יכולה לאשר'); return; }
