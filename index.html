@@ -1313,6 +1313,8 @@ button.ps{font:inherit;cursor:pointer;background:var(--surface)}
 .ptrack .chips .chsep{width:1px;align-self:stretch;background:var(--line);margin:0 4px}
 .ptrack>header .pasof{margin-inline-start:auto;font-size:12.5px;color:var(--sub)}
 .ptrack .pbasis .pill{display:inline-block;margin:0 0 3px}
+.kitsec .kitchips .dk{display:inline-block;margin-inline-end:8px;font-size:12.5px}.kitsec .dk.ok{color:var(--ok)}.kitsec .dk.no{color:var(--crit,#C0392B);font-weight:600}
+.kitsec .pp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ptrack .ptacts{display:flex;flex-wrap:nowrap;gap:5px;margin-top:5px}
 .ptrack .ptacts .tlb{padding:3px 9px;font-size:12px;white-space:nowrap}
 .ptrack td.pdocs{white-space:normal;min-width:330px}
@@ -1910,7 +1912,7 @@ function renderTodo(){
   var MD=A.filter(function(e){return e.todo==='חסרים מסמכים';}), mdO=MD.filter(function(e){return (e.missing||[]).some(function(t){return t!=='טופס 101'&&PENS_DOCS.indexOf(t)<0;});}).length;
   var sp=gb('pens','data-ptf="late"','crit',cn('פנסיה באיחור'),'פנסיה באיחור')+gb('pens','data-ptf="now"','warn',cn('לפתוח פנסיה'),'לפתוח פנסיה החודש')+
          gb('pens','data-ptf="next"','warn',cn('פנסיה בחודש הבא'),'פנסיה בחודש הבא')+gb('pens','data-ptf="all"','idle',MD.length-mdO,'חסרים מסמכי פנסיה');
-  var sd=gb('docs','data-psfk="no101"','crit',cn('חסר טופס 101'),'חסר טופס 101')+gb('docs','data-psfk="other"','idle',mdO,'חסרים מסמכים אחרים');
+  var sd=gb('docs','data-psfk="no101"','crit',cn('חסר טופס 101'),'חסר טופס 101')+(kitData()?gb('docs','data-psfk="kit"','warn',kitRows().length,'קיט עובד — חסרים טפסים'):'')+gb('docs','data-psfk="other"','idle',mdO,'חסרים מסמכים אחרים');
   if(sp){ any=true; h+='<section class="tlsec tlsum sev-warn"><header><h2>פנסיה</h2><span class="pnote">לחיצה פותחת את הרשימה בלשונית «פנסיה»</span></header><div class="pstrip">'+sp+'</div></section>'; }
   if(sd){ any=true; h+='<section class="tlsec tlsum sev-warn"><header><h2>טופס 101 ומסמכים</h2><span class="pnote">לחיצה פותחת את הרשימה בלשונית «טופס 101 ומסמכים»</span></header><div class="pstrip">'+sd+'</div></section>'; }
   var TABBED={'חסר טופס 101':1,'פנסיה באיחור':1,'לפתוח פנסיה':1,'פנסיה בחודש הבא':1,'חסרים מסמכים':1};
@@ -2018,7 +2020,7 @@ function pstageInfo(e){ var m=MARKS[e.id]||{}; var w=[]; if(m.pstage_at)w.push(f
 function ptMatch(e,k){
   var formYes=e.pform&&(e.pform.meta||{}).active==='כן';
   if(k==='act')return e.pension==='פעילה'||formYes;
-  if(k==='noform')return !e.pform&&!e.pens_open&&!e.foreign;
+  if(k==='noform')return !e.pform&&!e.pens_open&&!e.foreign&&!((kitOf(e)||{}).m&8);
   var w=!e.pens_open, n=e.pmonth?pmNum(e):null;
   if(k==='late')return w&&n!==null&&n<NOWM;
   if(k==='now')return w&&n===NOWM;
@@ -2056,7 +2058,7 @@ function pensTrack(A){
     h+='<tr data-id="'+e.id+'" tabindex="0">'+
       '<td class="pn"><b>'+esc(e.name)+'</b>'+(e.newhire?' <span class="pill p-acc">חדש/ה</span>':'')+'<em>'+esc(e.dept)+(e.start?' · החל '+esc(fmtD(e.start)):'')+'</em></td>'+
       '<td class="wrap pbasis">'+pensBasis(e)+'</td>'+
-      '<td class="wrap">'+(e.pform?esc(pformLine(e.pform))+'<em style="display:block;font-style:normal;font-size:11.5px;color:var(--muted)">'+esc(mt.form_date||mt.date||'')+'</em>':'<span style="color:var(--muted)">—</span>')+'</td>'+
+      '<td class="wrap">'+(e.pform?esc(pformLine(e.pform))+'<em style="display:block;font-style:normal;font-size:11.5px;color:var(--muted)">'+esc(mt.form_date||mt.date||'')+'</em>':(((kitOf(e)||{}).m&8)?'<span class="dk ok" title="העובד מילא את הטופס בבטר צ׳אנס; התשובות שלו עוד לא נקראו לפנקס">✓ מולא בבטר צ׳אנס</span>':'<span style="color:var(--muted)">—</span>'))+'</td>'+
       '<td>'+(e.pens_open?'—':esc(e.pmonth_he||'חסר תאריך התחלה'))+due+'</td>'+
       '<td>'+(e.pens_open?'<span class="pill p-ok">✓ '+esc(e.opened_date?fmtD(e.opened_date):(e.opened_month||'מופרש'))+'</span>':'—')+'</td>'+
       '<td class="wrap ptedit">'+pstageSel(e)+
@@ -2227,6 +2229,30 @@ document.getElementById('milView').addEventListener('change',function(ev){
   it.data=it.data||{}; it.data.done=t.checked; it.data.done_by=(PK.me&&PK.me.name)||''; it.data.done_at=new Date().toISOString().slice(0,10);
   PK.saveItem(it).then(function(){ toast('✓ נשמר'); render(); },function(e){ alert('לא נשמר: '+e.message); });
 });
+/* ---------- קיט עובד (12.11.2026, איילת: «לדאוג בפנקס לשליחת קיט עובדים… דרך בטר צ'אנס») ----------
+   מצב הטפסים מגיע מבטר צ'אנס (pinkas_items kind='kit' id 'kit_<rest>', מתעדכן במשימת הבוקר): data.emps[מספר עובד] = מסכת ביטים, data.need = אילו טפסים נדרשים במסעדה.
+   העובד ממלא את הטפסים בעצמו באפליקציית Better Chains; מכאן מעתיקים לו הודעה עם מה שחסר ומסמנים «📨 נשלח» (kitreq_<rest>_<eid>). ההסכם — בלשונית «חוזים». */
+var KIT_F=[[1,'טופס 101'],[2,'קוד אתי'],[4,'מניעת הטרדה מינית'],[8,'פרטי פנסיה'],[16,'פרטים אישיים'],[32,'נהלים לעובד']];
+function kitData(){ if(!window.PK)return null; var rc=PK.rc(REST), it=PK.items().filter(function(x){return x.kind==='kit'&&x.id==='kit_'+rc&&!x.deleted;})[0]; return it&&it.data&&it.data.emps?it.data:null; }
+function kitOf(e){ var d=kitData(); if(!d)return null; var need=d.need||63, m=d.emps[String(e.id)]; return {need:need, m:(m==null?null:m), miss:(m==null?need:(need&~m))}; }
+function kitReq(e){ if(!window.PK)return null; var id='kitreq_'+PK.rc(REST)+'_'+e.id; return PK.items().filter(function(x){return x.id===id&&!x.deleted;})[0]||null; }
+function kitMissNames(k){ return KIT_F.filter(function(f){return k.miss&f[0];}).map(function(f){return f[1];}); }
+function kitText(e){ var k=kitOf(e), L=kitMissNames(k), c=(typeof ctrOf==='function')?ctrOf(e):null;
+  return 'היי '+String(e.name).split(' ')[0]+', כדי להשלים את הקליטה שלך חסרים לנו כמה טפסים באפליקציית Better Chains:\n'+L.map(function(t){return '• '+t;}).join('\n')+
+    '\nנכנסים לאפליקציה ← טפסים ← ממלאים וחותמים. זה לוקח כמה דקות. תודה!'; }
+function kitRows(){ return V().filter(function(e){ if(!e.active||e.ext||e.foreign||e.dup)return false; var k=kitOf(e); return !!(k&&k.miss); })
+  .sort(function(a,b){ return String(b.start||'').localeCompare(String(a.start||''))||String(a.name).localeCompare(String(b.name),'he'); }); }
+function kitSec(){ var d=kitData(); if(!d)return ''; var R=kitRows();
+  if(!R.length)return '<section class="psec sev-done"><header><span class="pcnt">0</span><h2>קיט עובד — טפסים בבטר צ׳אנס</h2><span class="pnote">כל העובדים הפעילים מילאו את כל הטפסים. נבדק '+esc(fmtD(d.checked))+'.</span></header></section>';
+  return '<section class="psec sev-now kitsec"><header><span class="pcnt">'+R.length+'</span><h2>קיט עובד — טפסים שחסרים בבטר צ׳אנס</h2>'+
+    '<span class="pnote">העובד ממלא בעצמו באפליקציית Better Chains. «📋 הודעה לעובד» מעתיק הודעה מוכנה עם מה שחסר לו. החדשים למעלה. נבדק '+esc(fmtD(d.checked))+' — מתעדכן כל בוקר.</span></header><div class="plist">'+
+    R.map(function(e){ var k=kitOf(e), rq=kitReq(e), rd=rq&&rq.data||{};
+      return '<div class="prow" data-id="'+e.id+'" tabindex="0"><span class="pn"><b>'+esc(e.name)+'</b>'+(e.newhire?' <span class="pill p-acc">חדש/ה</span>':'')+
+        '<em>'+esc(e.dept)+(e.start?' · החל '+esc(fmtD(e.start)):'')+'</em></span>'+
+        '<span class="pb kitchips">'+(k.m===null?'<span class="pill p-crit">לא נמצא בבטר צ׳אנס</span>':KIT_F.filter(function(f){return k.need&f[0];}).map(function(f){ var ok=!!(k.m&f[0]); return '<span class="dk '+(ok?'ok':'no')+'">'+(ok?'✓':'✗')+' '+esc(f[1])+'</span>'; }).join(''))+'</span>'+
+        '<span class="pp">'+(rd.at?'<span class="prep ready">📨 נשלח '+esc(fmtD(rd.at))+(rd.by?' · '+esc(rd.by):'')+'</span>':'')+
+          '<button type="button" class="tlb" data-kitask="'+e.id+'" title="מעתיק הודעה מוכנה לוואטסאפ">📋 הודעה לעובד</button>'+
+          (rd.at?'':'<button type="button" class="tlb done" data-kitsent="'+e.id+'">📨 שלחתי</button>')+'</span></div>'; }).join('')+'</div></section>'; }
 function renderDocs(){
   var A=V().filter(function(e){return e.active&&!e.ext&&!e.foreign;});
   var h='<div class="pwrap">';
@@ -2239,6 +2265,7 @@ function renderDocs(){
 
   h+='<div class="pstrip" data-strip="docs">'+
     psBtn('docs','no101','crit',no101.length,'חסר טופס 101')+
+    (kitData()?psBtn('docs','kit','warn',kitRows().length,'קיט עובד — חסרים טפסים'):'')+
     psBtn('docs','other','idle',other.length,'מסמכים אחרים')+
     psBtn('docs','clean','ok',clean.length,'שלם')+
     (PSF.docs?'<button type="button" class="psall" data-psf="docs" data-k="">✕ הצג הכול</button>':'')+
@@ -2249,6 +2276,8 @@ function renderDocs(){
      no101,function(e){
        var q=e.start?e.start.split('-'):null, d=q?NOWM-((+q[0])*12+(+q[1])):0;
        return docRow(e,'לבקש טופס 101',d>=2,'<button type="button" class="tlb" data-has101="'+e.id+'" title="הטופס הוגש (למשל ישר לחשבת) — גם אם אין לנו עותק">✓ יש 101 — גם בלי עותק</button>');},true);
+
+  if(show('kit'))h+=kitSec();
 
   if(show('other'))h+=pensSec('sev-later','מסמכים אחרים שחסרים','לפי מה שהעובד הצהיר בטופס 101 — תיאום מס, תעודת שחרור, תעודת עולה וכדומה.',
      other,function(e){
@@ -3145,6 +3174,15 @@ function todoClick(ev){
     toast('✓ '+esc(nm)+' — סומן «טופל»',function(){ if(prev)MARKS[id]=JSON.parse(prev); else delete MARKS[id]; PEND[id]=1; DIRTY=true; save(); render(); });
     return;}
   var tr=ev.target.closest('[data-id]'); if(tr)open(+tr.dataset.id);}
+document.getElementById('docsView').addEventListener('click',function(ev){
+  var a=ev.target.closest('button[data-kitask]'), b=ev.target.closest('button[data-kitsent]'); if(!a&&!b)return; ev.stopPropagation();
+  var id=+(a||b).dataset[a?'kitask':'kitsent'], e=eff(E.filter(function(x){return x.id===id;})[0]); if(!e)return;
+  if(a){ var txt=kitText(e); function okc(){ toast('📋 ההודעה ל'+esc(e.name)+' הועתקה — אפשר להדביק בוואטסאפ'); }
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(okc,function(){prompt('העתיקי:',txt);}); else prompt('העתיקי:',txt); return; }
+  var k=kitOf(e), rc=PK.rc(REST);
+  PK.saveItem({id:'kitreq_'+rc+'_'+e.id,rest:rc,kind:'kit',eid:e.id,emp:e.name,deleted:false,data:{type:'req',at:new Date().toISOString().slice(0,10),by:(PK.me&&PK.me.name)||WHO||'',missing:k?k.miss:0}})
+    .then(function(){ return PK.reload(); }).then(function(){ render(); toast('📨 סומן: נשלח ל'+esc(e.name)); },function(er){ alert('לא נשמר: '+er.message); });
+},true);
 /* 12.11.2026 (איילת): «איך מסמנים שיש 101 — גם אם אין לנו עותק» — כפתור בשורה של «חסר טופס 101» */
 document.getElementById('docsView').addEventListener('click',function(ev){
   var b=ev.target.closest('button[data-has101]'); if(!b)return; ev.stopPropagation();
