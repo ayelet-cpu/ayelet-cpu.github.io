@@ -3782,10 +3782,19 @@ function nCorrText(rest,L){ var out=['תיקוני שכר — '+rest,'(הופק 
   if(!L.length)out.push('— אין תיקוני שכר פתוחים —');
   L.forEach(function(n){ out.push('• '+(n.emp||'—')+(n.dept?' ('+n.dept+')':'')+(nCorrFor(n)?' — תיקון ל'+nCorrFor(n):'')+': '+String(n.detail||'')+(n.amount?' — '+fmtAmt(n.amount):'')+(n.status==='done'?' ✓ תוקן בתלוש':'')); });
   return out.join('\n'); }
+/* 12.11.2026 (איילת): «אני רוצה אפשרות להעתיק לוואטסאפ את ההערות המוצגות» — בדיוק השורות שבטבלה (אחרי סינון ומיון), בלי פרטיות (אלא אם סיננה «רק שלי»). */
+function nWaLine(n,i,withTopic){ return (i+1)+'. *'+(n.emp||'—')+'*'+(n.dept?' ('+n.dept+')':'')+(withTopic&&n.topic&&n.topic!=='כללי'?' · '+n.topic:'')+(nIsCorr(n)&&nCorrFor(n)?' · תיקון ל'+nCorrFor(n):'')+
+  '\n'+String(n.detail||'').trim()+(n.amount?' — '+fmtAmt(n.amount):'')+(n.status==='done'&&nIsCorr(n)?' ✓ תוקן בתלוש':''); }
+function nWaText(rest,title,L,withTopic){ var out=['*'+title+' — '+rest+'*',''];
+  if(!L.length)out.push('— אין —');
+  L.forEach(function(n,i){ out.push(nWaLine(n,i,withTopic)); out.push(''); });
+  return out.join('\n').replace(/\n+$/,''); }
+function nWaCopy(t,b,label){ function ok(){ b.textContent='✓ הועתק — להדביק בוואטסאפ'; setTimeout(function(){b.textContent=label;},1800); }
+  (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t):Promise.reject()).then(ok,function(){prompt('להעתקה:',t);}); }
 function nCorrHtml(rest){ var L=nCorrList(rest,NCORRALL), nOpen=nCorrList(rest,false).length;
   var h='<div class="corrbox"><div class="corrhead"><b>🔧 תיקוני שכר — '+esc(rest)+'</b> <span class="sub">'+nOpen+' פתוחים · מכל החודשים</span>'+
     '<label class="nchk"><input type="checkbox" id="nCorrAll"'+(NCORRALL?' checked':'')+'> גם מה שתוקן</label>'+
-    '<button class="btn" type="button" id="nCorrCopy">📋 העתקה</button><button class="btn" type="button" id="nCorrPrint">🖨 הדפסה</button>'+
+    '<button class="btn" type="button" id="nCorrCopy" title="מעתיק את התיקונים שמוצגים — להדבקה בוואטסאפ">📋 העתקה לוואטסאפ</button><button class="btn" type="button" id="nCorrPrint">🖨 הדפסה</button>'+
     '<button class="btn primary" type="button" id="nCorrAdd">➕ תיקון חדש</button><button class="btn ghost" type="button" id="nCorrX">חזרה לכל ההערות</button></div>'+
     '<div class="tablecard"><div class="scroll"><table class="ntab"><thead><tr><th>#</th><th>עובד</th><th>מחלקה</th><th>תיקון לחודש</th><th>נרשם בחודש</th><th>פירוט</th><th>סכום</th><th>תוקן בתלוש</th></tr></thead><tbody>';
   if(!L.length)h+='<tr><td colspan="8" class="nempty">אין תיקוני שכר פתוחים 👍</td></tr>';
@@ -3903,6 +3912,7 @@ function renderNotes(){
     '<button class="btn primary" id="nAdd" type="button">➕ הערה חדשה</button>'+
     (nCorrRest(rest)?'<button class="btn" id="nCorr" type="button" aria-pressed="'+(NCORR?'true':'false')+'" title="רק תיקוני השכר, מכל החודשים — להעתקה ולהדפסה">🔧 תיקוני שכר'+(function(){var c=nCorrList(rest,false).length;return c?' ('+c+' פתוחים)':'';})()+'</button>':'')+
     '<button class="btn" id="nSend" type="button" aria-pressed="'+(NSHOW?'true':'false')+'">📤 לשליחה לחשבת שכר</button>'+
+    '<button class="btn" id="nWa" type="button" title="מעתיק את ההערות שמוצגות עכשיו בטבלה (אחרי הסינון) — להדבקה בוואטסאפ">📋 העתקה לוואטסאפ</button>'+
     '<button class="btn" id="nXlsx" type="button" title="בחירת עמודות ומה ייכלל — אקסל">⬇ אקסל</button>'+
     '<button class="btn" id="nPdf" type="button" title="בחירת עמודות ומה ייכלל — מסך מסודר להדפסה / שמירה כ-PDF">PDF</button>'+
     '<button class="btn primary" id="nDocUp" type="button" title="מסמך בלי הערה (מחלה, מילואים, טפסים) — עובד, סוג, חודש וקובץ">📄 העלאת מסמך</button>'+
@@ -4767,13 +4777,16 @@ function nWire(rest,y,m){
     el('nCorrAll').addEventListener('change',function(){NCORRALL=this.checked;renderNotes();});
     el('nCorrAdd').addEventListener('click',function(){NFORM={topic:CORRT};renderNotes();var f=el('fEmp');if(f)f.focus();});
     el('nCorrPrint').addEventListener('click',function(){nCorrPrint(rest);});
-    el('nCorrCopy').addEventListener('click',function(){var t=nCorrText(rest,nCorrList(rest,NCORRALL)),b=this;
-      (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){b.textContent='✓ הועתק';setTimeout(function(){b.textContent='📋 העתקה';},1500);},function(){prompt('להעתקה:',t);});});
+    el('nCorrCopy').addEventListener('click',function(){ nWaCopy(nWaText(rest,'תיקוני שכר',nCorrList(rest,NCORRALL),false),this,'📋 העתקה לוואטסאפ'); });
     [].forEach.call(box.querySelectorAll('[data-corrdone]'),function(b){b.addEventListener('click',function(ev){ev.stopPropagation(); var n=NOTES[b.getAttribute('data-corrdone')]; if(!n)return;
       n.status=n.status==='done'?'open':'done'; n.upd=today(); NPEND[n.id]=1; nsave(); renderNotes(); hero();});});
     [].forEach.call(box.querySelectorAll('.corrbox tr[data-nid]'),function(tr){tr.addEventListener('click',function(){var n=NOTES[tr.getAttribute('data-nid')]; if(!n)return; NFORM=n; renderNotes();});});
   }
   el('nSend').addEventListener('click',function(){NSHOW=!NSHOW;NFORM=null;renderNotes();});
+  el('nWa').addEventListener('click',function(){
+    if(NCORR&&nCorrRest(rest)){ nWaCopy(nWaText(rest,'תיקוני שכר',nCorrList(rest,NCORRALL),false),this,'📋 העתקה לוואטסאפ'); return; }
+    var L=(window.__NROWS||[]).filter(function(n){ return NTOF==='__priv'||!nPriv(n); });
+    nWaCopy(nWaText(rest,(NTOPIC||'הערות שכר')+(NALLM?'':' · '+nlabel(y,m)),L,!NTOPIC),this,'📋 העתקה לוואטסאפ'); });
   el('nToF').addEventListener('change',function(){NTOF=this.value;renderNotes();});
   el('nAllM').addEventListener('change',function(){NALLM=this.checked;NFORM=null;renderNotes();});
   el('nXlsx').addEventListener('click',function(){ nxOpen('xls',rest,y,m); });
