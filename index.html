@@ -2050,7 +2050,8 @@ function pensTrack(A){
   rows.forEach(function(e){
     var mt=(e.pform&&e.pform.meta)||{};
     var lateBy=(e.pmonth&&!e.pens_open)?NOWM-pmNum(e):0;
-    var due=e.pens_open?'':(e.due==='עבר'?' <span class="pill p-crit">באיחור'+(lateBy>0?' '+lateBy+' ח׳':'')+'</span>':(e.due==='עכשיו'?' <span class="pill p-warn">החודש</span>':(e.due==='קרוב'?' <span class="pill p-warn">חודש הבא</span>':'')));
+    /* איילת 12.11.2026: «בשכר רביעי משלמים רטרו פנסיה, אז האיחור הוא רק מהחודש» — מי שיש לו קרן פעילה: לא סופרים חודשי איחור, נפתחת בשכר הנוכחי עם רטרו */
+    var due=e.pens_open?'':(e.due==='עבר'&&e.pension==='פעילה'?' <span class="pill p-warn" title="קרן פעילה: נפתחת בשכר הזה, עם תשלום רטרואקטיבי">לפתוח בשכר '+esc(pmLabel(NOWM))+' · כולל רטרו</span>':e.due==='עבר'?' <span class="pill p-crit">באיחור'+(lateBy>0?' '+lateBy+' ח׳':'')+'</span>':(e.due==='עכשיו'?' <span class="pill p-warn">החודש</span>':(e.due==='קרוב'?' <span class="pill p-warn">חודש הבא</span>':'')));
     var pk=(e.todo==='פנסיה באיחור'||e.todo==='לפתוח פנסיה'||e.todo==='פנסיה בחודש הבא')?e.todo:'';
     var acts=(e.missing&&e.missing.length?'<button class="tlb" data-ask="'+e.id+'" type="button" title="מעתיק הודעה מוכנה לוואטסאפ">📋 בקשת מסמכים</button>':'')+
       (pk?(pensNoteOf(e)?'<span class="dnote">📝 יש הערה ב'+esc(nlabel(NDEF.y,NDEF.m))+'</span>':'<button class="tlb" data-pnote="'+e.id+'" type="button" title="מוסיף הערת «פנסיה» לחשבת השכר — רק אם לוחצים">📝 הערה לחשבת</button>')+
