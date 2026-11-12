@@ -2549,8 +2549,8 @@ function cmpRows(){
 }
 function renderCmp(){
   var src=cmpSrc(), A=cmpRows(); if(!CMPF)CMPF=isTali()?'noc':'all';   /* טלי נכנסת ישר ל«בלי חוזה חתום» */
-  var cnt={all:A.length,noc:0,diff:0,ok:0,tali:0,ready:0};
-  A.forEach(function(o){ var r=o.r; if(r.c==='no'||r.c==='wait'||r.wrong||r.needT)cnt.noc++; if([r.b,r.h,r.t,r.p].some(function(z){return z.ok===false;})||r.b.need||r.b.ask)cnt.diff++; if(!r.bad)cnt.ok++;
+  var cnt={all:A.length,noc:0,diff:0,ok:0,tali:0,ready:0,nocx:0};
+  A.forEach(function(o){ var r=o.r; if(r.c==='no'||r.c==='wait'||r.wrong||r.needT)cnt.noc++; if(r.c==='no'||r.c==='wait'||r.wrong)cnt.nocx++; if([r.b,r.h,r.t,r.p].some(function(z){return z.ok===false;})||r.b.need||r.b.ask)cnt.diff++; if(!r.bad)cnt.ok++;
     if(r.needT)cnt.tali++; if(r.toSend)cnt.ready++; });
   var q=CMPQ.trim(), L=A.filter(function(o){ var r=o.r;
     if(CMPD&&r.dept!==CMPD)return false; if(q&&String(o.e.name).indexOf(q)<0)return false;
@@ -2567,9 +2567,11 @@ function renderCmp(){
   var CS={yes:['✓ חתום','ok'],no:['✗ אין','no'],wait:['⏳ נשלח, לא חתום','warn'],mgr:['חוזה אישי','ok'],none:['לא צריך','ok'],unk:['? לא נבדק','']};
   var T=isTali();
   function chip(k,t){ return '<button type="button" class="cmpchip'+(CMPF===k?' on':'')+'" data-cf="'+k+'">'+t+' <b>'+cnt[k]+'</b></button>'; }
+  /* 12.11.2026 (איילת: «57 בלי חוזה חתום?? אתמול היו שלושים ומשהו»): אותה לשונית, אבל המספר מפוצל — בלי חוזה באמת / יש חוזה ומחכה לאישור הסכם של טלי (בגלל תיקון תלוש) */
+  function chipNoc(){ var ta=cnt.noc-cnt.nocx; return '<button type="button" class="cmpchip'+(CMPF==='noc'?' on':'')+'" data-cf="noc">בלי חוזה חתום <b>'+cnt.nocx+'</b>'+(ta?' · לאישור טלי <b>'+ta+'</b>':'')+'</button>'; }
   /* איילת 11.11.2026: «לא טוב פה 2 לשוניות — שהאישור של טלי יהיה בלשונית הראשית של בלי חוזה חתום. טלי לא תבין מה לעשות» */
   var h='<div class="cmp">'+(T&&cnt.noc?'<div class="cmptali"><b>טלי — מה לעשות:</b> בלשונית «בלי חוזה חתום» עוברים על כל עובד: בודקים שהמחלקה, השכר, ההבראה והנסיעות בשורה נכונים (אם לא — לוחצים על הערך ומתקנים), ולוחצים <b>«✓ ההסכם נכון»</b>. אחרי זה קלוד שולח לעובד את החוזה בבטר צ׳אנס.</div>':'')+
-    '<div class="cmpbar">'+chip('all','הכול')+chip('noc','בלי חוזה חתום')+chip('diff','תלוש לא לפי החוזה')+chip('ready','תיקון תלוש — לשליחה')+chip('ok','תקין')+
+    '<div class="cmpbar">'+chip('all','הכול')+chipNoc()+chip('diff','תלוש לא לפי החוזה')+chip('ready','תיקון תלוש — לשליחה')+chip('ok','תקין')+
     (isOwn()&&cnt.ready?'<button type="button" class="tlb done" data-fixcopy="1" title="טקסט אחד לחשבת עם כל תיקוני התלוש שההסכם שלהם אושר">📋 בקשת תיקון תלושים ('+cnt.ready+')</button>':'')+
     '<span class="cmpsp"></span><input type="search" class="cmpq" placeholder="חיפוש שם" value="'+esc(CMPQ)+'">'+
     '<select class="cmpd"><option value="">כל המחלקות</option>'+CMP_DEPTS.map(function(d){return '<option'+(d===CMPD?' selected':'')+'>'+esc(d)+'</option>';}).join('')+'</select></div>'+
