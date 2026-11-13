@@ -1033,7 +1033,12 @@ section.act .allgood,.act table{font-size:14.5px}
     <div class="brand">
       <h1>פנקס עובדים</h1>
       <span class="stamp" id="stamp"></span>
-      <button class="themebtn" id="themeToggle" type="button">מצב כהה</button>
+      <div class="umenu" id="umenu">
+        <button class="themebtn" id="uBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="תפריט">☰</button>
+        <div class="upop" id="uPop" hidden>
+          <button type="button" id="themeToggle">מצב כהה</button>
+        </div>
+      </div>
     </div>
     <div class="restbar" id="restbar" role="group" aria-label="בחירת מסעדה">
       <button type="button" data-rest="אסא" aria-pressed="true">אסא<span class="n" id="n-asa"></span></button>
@@ -1351,6 +1356,30 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 .psall{font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--accent-ink);cursor:pointer}
 @media (max-width:760px){.tlrow{grid-template-columns:1fr}.tla{justify-content:flex-start}}
 @media (max-width:640px){.gcard{padding:24px 16px 18px}.gwho button{min-width:80px;padding:9px 14px}}
+/* ---- 13.11.2026: כותרת בשורה אחת + תפריט משתמש + מספרים בלשוניות רק כשיש מה לטפל ---- */
+.topin{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;padding:10px 20px}
+.brand{display:contents}
+.brand h1{order:1}
+.topin .restbar{order:2;margin-top:0}
+.brand .stamp{order:3;flex:1 1 180px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.umenu{order:4;position:relative;margin-inline-start:auto}
+.umenu .themebtn{margin:0;white-space:nowrap}
+.upop{position:absolute;top:calc(100% + 6px);inset-inline-end:0;z-index:70;min-width:170px;background:var(--surface);border:1px solid var(--line);
+  border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:4px;display:flex;flex-direction:column}
+.upop[hidden]{display:none}
+.upop button{font:inherit;font-size:14px;text-align:start;background:none;border:0;border-radius:8px;padding:9px 12px;color:var(--ink);cursor:pointer}
+.upop button:hover,.upop button:focus-visible{background:var(--accent-soft)}
+nav.tabs button .c:empty{display:none}
+nav.tabs button .c.hot{display:inline-block;min-width:22px;text-align:center;padding:1px 7px;border-radius:999px;background:var(--warn-bg);color:var(--warn);font-weight:800;opacity:1}
+nav.tabs button[data-tab="todo"] .c.hot{background:var(--crit);color:var(--surface)}
+@media (max-width:760px){
+  .topin{padding:8px 12px;gap:6px 10px}
+  .topin .restbar{order:5;flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .topin .restbar::-webkit-scrollbar{display:none}
+  .topin .restbar button{flex:0 0 auto;padding:7px 14px}
+  .brand .stamp{order:6;flex:1 1 100%;font-size:12px}
+}
+@media print{.umenu{display:none}}
 </style>
 
 <div class="gate" id="gate">
@@ -1617,10 +1646,9 @@ function boot(){
     $('gate').hidden=true; booted=true;
     window.__pinkasMain();
     inboxNotice();
-    var br=document.querySelector('.brand');
-    if(br){ var c=document.createElement('span'); c.className='userchip';
-      c.innerHTML='👤 '+PK.me.name+'<button type="button" id="uPw">שינוי סיסמה</button><button type="button" id="uOut">יציאה</button>';
-      br.appendChild(c);
+    var br=$('uPop');
+    if(br){ $('uBtn').textContent='👤 '+PK.me.name+' ▾';
+      br.insertAdjacentHTML('beforeend','<button type="button" id="uPw">שינוי סיסמה</button><button type="button" id="uOut">יציאה</button>');
       $('uOut').onclick=function(){ if(confirm('לצאת מבקרת השכר במכשיר הזה?'))PK.logout(); };
       $('uPw').onclick=function(){ var p=prompt('סיסמה חדשה (לפחות 8 תווים):'); if(!p)return; if(p.length<8){alert('הסיסמה קצרה מדי');return;}
         PK.setPassword(p).then(function(){alert('הסיסמה עודכנה ✓');},function(e){alert('לא הצלחתי לעדכן: '+e.message);}); };
@@ -1844,6 +1872,12 @@ function curDark(){var a=document.documentElement.getAttribute('data-theme');
 function syncBtn(){tb.textContent=curDark()?'מצב בהיר':'מצב כהה';}
 try{var st=localStorage.getItem('pnkas-theme'); if(st)document.documentElement.setAttribute('data-theme',st);}catch(e){}
 syncBtn();
+(function(){var ub=document.getElementById('uBtn'),up=document.getElementById('uPop'); if(!ub||!up)return;
+  function set(o){up.hidden=!o;ub.setAttribute('aria-expanded',o?'true':'false');}
+  ub.addEventListener('click',function(ev){ev.stopPropagation();set(up.hidden);});
+  up.addEventListener('click',function(){set(false);});
+  document.addEventListener('click',function(ev){if(!up.hidden&&!up.contains(ev.target))set(false);});
+  document.addEventListener('keydown',function(ev){if(ev.key==='Escape')set(false);});})();
 tb.addEventListener('click',function(){var d=!curDark();document.documentElement.setAttribute('data-theme',d?'dark':'light');
   try{localStorage.setItem('pnkas-theme',d?'dark':'light');}catch(e){}syncBtn();});
 
@@ -2809,11 +2843,16 @@ function hero(){
   {var _np=document.getElementById('n-pas'); if(_np)_np.textContent=E.filter(function(e){return e.rest==='פאסטל'&&!eff(e).ext;}).length||'';}
   {var _na=document.getElementById('n-ari'); if(_na)_na.textContent=E.filter(function(e){return e.rest==='אריאלה וטופול'&&!eff(e).ext;}).length||'';}
   var _nf=document.getElementById('n-frn'); if(_nf)_nf.textContent=E.filter(function(e){return eff(e).foreign&&!eff(e).ext;}).length;
+  /* מספר בלשונית רק כשיש מה לראות; בלשוניות של טיפול — בולט */
+  document.querySelectorAll('nav.tabs button .c').forEach(function(c){var t=c.parentNode.dataset.tab,v=String(c.textContent).trim();
+    if(v==='0'){c.textContent='';v='';}
+    c.classList.toggle('hot',!!v&&['todo','pens','docs','ctr','mil','notes'].indexOf(t)>=0);});
 }
 var SCOPED_USERS={}; /* בענן: ההרשאה למסעדה נקבעת לפי המשתמש (pinkas_me) */ var USER_SCOPE=(typeof window!=='undefined'&&window.__FORCE_REST__)?({cha:"צ'אקולי",asa:"אסא",frn:"זרים"}[window.__FORCE_REST__]||window.__FORCE_REST__):null;function _scopeFor(x){if(!x)return null;var k=String(x).trim().toLowerCase();if(SCOPED_USERS[k])return SCOPED_USERS[k];for(var u in SCOPED_USERS){if(k.indexOf(u.split('@')[0])>=0)return SCOPED_USERS[u];}return null;}function applyUserScope(x){var s=_scopeFor(x);if(!s)return;USER_SCOPE=s;try{document.querySelectorAll('button[data-rest]').forEach(function(b){if(b.dataset.rest!==s)b.style.display='none';});}catch(e){}try{setRest(s);}catch(e){try{REST=s;render();}catch(_){}}}try{if(typeof google!=='undefined'&&google.script&&google.script.run){google.script.run.withSuccessHandler(function(w){try{applyUserScope(w);}catch(e){}}).withFailureHandler(function(){}).whoAmI();}}catch(e){}setTimeout(function(){try{applyUserScope(WHO);}catch(e){}},1800);function setRest(r){
   if(USER_SCOPE){r=USER_SCOPE;} REST=r; NRES=null; try{localStorage.setItem('pnkas-rest',r);}catch(e){}
   document.documentElement.setAttribute('data-rest',r==='אסא'?'asa':(r==='זרים'?'frn':(r==='הלנה'?'hel':(r==="נרו ביץ'"?'nero':(r==='פאסטל'?'pas':(r==='אריאלה וטופול'?'ari':'cha'))))));
-  document.querySelectorAll('#restbar button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.rest===r);if(USER_SCOPE){b.style.display=(b.dataset.rest===USER_SCOPE?'':'none');}});
+  document.querySelectorAll('#restbar button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.rest===r);if(USER_SCOPE){b.style.display=(b.dataset.rest===USER_SCOPE?'':'none');}
+    if(b.dataset.rest===r&&b.scrollIntoView&&b.parentNode.scrollWidth>b.parentNode.clientWidth){try{b.scrollIntoView({block:'nearest',inline:'nearest'});}catch(_){}}});
   document.getElementById('stamp').textContent=(r==='אסא'?'אלמוגי עדן אחזקות':(r==='זרים'?"עובדים זרים — אסא ופינצ'וס":(r==='הלנה'?'הלנה':(r==="נרו ביץ'"?"נרו ביץ'":(r==='פאסטל'?'מעדנה מוזיאון — פאסטל':(r==='אריאלה וטופול'?'אריאלה וטופול — עובדים זרים ומילואים':"פינצ'וס דולפינריום"))))))+
     ' · תלושי '+SLIP_N+' · נוכחות '+ATT_FULL;
   var A=E.filter(function(e){return e.rest===r;}),ds={};
