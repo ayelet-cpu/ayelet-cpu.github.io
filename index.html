@@ -1054,6 +1054,11 @@ section.act .allgood,.act table{font-size:14.5px}
 #dbody .flist.fcomp .fn{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #dbody .flist.fcomp .fn em{display:inline;font-size:13px;color:var(--sub);margin-inline-start:6px}
 #dbody .flist.fcomp button{flex:0 0 auto;padding:3px 10px}
+#dbody .mkpair{display:grid;grid-template-columns:1fr 1fr;column-gap:12px;grid-column:1/-1}
+#dbody .mkpair .fieldrow{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;margin-bottom:6px}
+#dbody .mkpair .fieldrow label{flex:0 0 auto;min-width:0;width:auto}
+#dbody .mkpair .fieldrow select{flex:1 1 auto;min-width:0;width:auto}
+#dbody .mkpair .fieldrow[hidden]+.fieldrow{grid-column:1}
 #dbody #mNote{min-height:0;field-sizing:content;max-height:160px}
 details.pfacts{margin:0}
 </style>
@@ -1413,6 +1418,10 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 </div>
 
 <script>
+/* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
+var PK_VER='20261114-3';
+(function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
+  var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
 "use strict";
 var SB='https://mjhywoiwdvuxymuyhhdc.supabase.co';
@@ -3109,10 +3118,13 @@ function open(id){
     (e.ext
       ? '<p class="hint">'+esc(e.extlbl)+' — אין פנסיה, אין טופס 101 ואין דרישת מסמכים.</p>'
       /* 14.11.2026 (איילת: «אם כבר יש פנסיה — לא מעניין ולא רלוונטי אם יש פנסיה קודמת»): כשהפנסיה נפתחה השדה מוסתר (נשאר בדף כדי שהשמירה תעבוד) */
-      : '<div class="fieldrow"'+(e.pens_open?' hidden':'')+'><label for="mPens">פנסיה קודמת</label><select id="mPens">'+
+      /* 14.11.2026 (איילת: «השורה של 101 תופסת המון מקום»): פנסיה קודמת וטופס 101 — זה לצד זה בשורה אחת */
+      : '<div class="mkpair"><div class="fieldrow"'+(e.pens_open?' hidden':'')+'><label for="mPens">פנסיה קודמת</label><select id="mPens">'+
           (function(){ var dv=e.foreign?'זר':e.pension==='פעילה'?'פעילה':(e.pension==='אין'||e.pension==='אין פנסיה פעילה')?'אין':'';
             return mkOpts(m.pension||'',dv,dv==='פעילה'?'יש':dv==='אין'?'אין':dv==='זר'?'עובד זר':'אין',[['פעילה','יש'],['אין','אין'],['זר','עובד זר']]); })()+
         '</select></div>'+
+        '<div class="fieldrow"><label for="m101">טופס 101</label><select id="m101">'+
+          mkOpts(m.f101||'',e.s101==='יש'?'יש':'חסר',e.s101==='יש'?'יש':'אין',[['יש','יש'],['חסר','אין']])+'</select></div></div>'+
         '<div class="fieldrow"><label for="mOpened">הפנסיה נפתחה</label><span>'+
           '<input type="checkbox" id="mOpened"'+(e.pens_open?' checked':'')+'>'+
           '<input type="date" id="mOpenedD" value="'+esc(m.opened_date&&/^\d{4}-\d{2}-\d{2}$/.test(m.opened_date)?m.opened_date:'')+'" aria-label="תאריך פתיחת הפנסיה"></span></div>'+
@@ -3123,8 +3135,7 @@ function open(id){
           '<input type="checkbox" id="mTalked"'+(m.talked?' checked':'')+'>'+
           '<input type="date" id="mTalkedD" value="'+esc(m.talked_at||'')+'" aria-label="תאריך השיחה"></span></div>'+
         '<div class="fieldrow wide"><label for="mTalkedN">מה נאמר</label><textarea id="mTalkedN" placeholder="למשל: אמר שיש לו מיטב, ישלח אישור עד סוף השבוע…">'+esc(m.talked_note||'')+'</textarea></div></details>'+
-        '<div class="fieldrow"><label for="m101">טופס 101</label><select id="m101">'+
-          mkOpts(m.f101||'',e.s101==='יש'?'יש':'חסר',e.s101==='יש'?'יש':'אין',[['יש','יש'],['חסר','אין']])+'</select></div>')+
+        '')+
     '<div class="fieldrow"><label for="mBirth">תאריך לידה</label><span>'+
       /* 14.11.2026 (איילת: «איך אתה לא יודע את הנתונים האלה?? הכל רשום ב-101»): השדות הציגו רק סימון ידני — עכשיו מוצג מה שנקלט מה-101 (e.birth / e.gender), וסימון ידני גובר */
       '<input type="date" id="mBirth" value="'+esc(isoD(e.birth))+'" aria-label="תאריך לידה">'+
