@@ -2094,6 +2094,8 @@ function pensTrack(A){
     else if(noFund)docs='<span class="pdone">לא צריך מסמכים — קרן ברירת מחדל</span>';
     else if(e.pform||kitF)docs='<span class="pwait">'+(kitF&&!e.pform?'מילא/ה טופס בבטר צ׳אנס — לבדוק שם אם יש קרן פעילה':'לסמן בכרטיס אם יש קרן פעילה')+'</span>';
     else { docs='<span class="dk no">✗ טופס פרטי פנסיה</span>'; needAsk.push('טופס «פרטי פנסיה» באפליקציית Better Chains (האם יש לך קרן פנסיה פעילה)'); }
+    /* 14.11.2026: הקבצים שהעובד צירף לטופס הפנסיה בבטר צ'אנס הורדו לכרטיס (סוג «מסמכי פנסיה מבטר צ׳אנס») — לא מסמנים לבד «התקבל», רק מראים שיש מה לפתוח */
+    if(!e.pens_open&&window.PK&&PK.byEmp(e.id).some(function(f){return f.dtype==='מסמכי פנסיה מבטר צ׳אנס';}))docs+='<em class="pinfo pbcf">📎 יש קבצים מהטופס בכרטיס — לפתוח ולסמן</em>';
     var pk=(e.todo==='פנסיה באיחור'||e.todo==='לפתוח פנסיה'||e.todo==='פנסיה בחודש הבא')?e.todo:'';
     var acts=(needAsk.length?'<button class="tlb" data-pask="'+e.id+'" data-need="'+esc(needAsk.join('|'))+'" type="button" title="מעתיק הודעה מוכנה לוואטסאפ — רק מה שחסר לפנסיה">📋 בקשה</button>':'')+
       (pk?(pensNoteOf(e)?'<span class="dnote">📝 יש הערה ב'+esc(nlabel(NDEF.y,NDEF.m))+'</span>':'<button class="tlb" data-pnote="'+e.id+'" type="button" title="מוסיף הערת «פנסיה» לחשבת השכר — רק אם לוחצים">📝 לחשבת</button>')+
