@@ -135,10 +135,14 @@ aside.drawer{position:fixed;inset-block:0;inset-inline-end:0;width:min(470px,94v
 aside.drawer.on{transform:translateX(0);visibility:visible;pointer-events:auto}
 .dhead{padding:18px 20px 14px;padding-inline-start:58px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:2}
 .dhead h2{margin:0 0 3px;font-size:19px;font-weight:800}
-.dpens{position:absolute;inset-inline-end:20px;top:12px;max-width:min(48%,420px)}
+/* ריבוע הפנסיה תופס מקום בכותרת (לא צף) — כדי שלא יעלה על התוכן בגלילה (איילת 14.11) */
+.dhead{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:18px;align-items:start}
+.dhead #dname,.dhead #dsub{grid-column:1}
+.dhead #dsub .dsw{display:block;font-size:14.5px;color:var(--ink-2);font-weight:600}.dhead #dsub .dsid{display:block;font-size:13px;color:var(--sub);margin-top:2px}
+.dpens{grid-column:2;grid-row:1 / span 2;max-width:420px}
 .dpens .callout{padding:8px 13px}.dpens .callout .big{font-size:20px}.dpens .callout div{font-size:12.5px}
 .dpens:empty{display:none}
-@media (max-width:760px){.dpens{position:static;max-width:none;margin-top:10px}}
+@media (max-width:760px){.dhead{grid-template-columns:1fr}.dpens{grid-column:1;grid-row:auto;max-width:none;margin-top:10px}}
 .dclose{position:absolute;inset-block-start:14px;inset-inline-start:16px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:8px;width:30px;height:30px;font-size:16px;cursor:pointer;color:var(--ink-2);line-height:1}
 .dbody{padding:16px 20px 72px;display:flex;flex-direction:column;gap:18px}
@@ -2993,7 +2997,9 @@ function open(id){
   var raw=E.filter(function(x){return x.id===id;})[0]; if(!raw)return;
   var e=eff(raw), m=MARKS[id]||{};
   document.getElementById('dname').textContent=e.name;
-  document.getElementById('dsub').textContent=[e.role||e.dept,e.tz?'ת״ז '+e.tz:'',e.emp_no?'מס׳ עובד '+e.emp_no:''].filter(Boolean).join(' · ');
+  document.getElementById('dsub').innerHTML='<b class="dsw">'+esc([e.role&&e.role!==e.dept?e.role:'',e.dept].filter(Boolean).join(' · '))+
+    (e.start?' · התחיל/ה '+esc(fmtD(e.start))+(e.months!=null?' · ותק '+e.months+' ח׳':''):' · <span style="color:var(--crit)">חסר תאריך התחלה</span>')+'</b>'+
+    '<span class="dsid">'+esc([e.tz?'ת״ז '+e.tz:'',e.emp_no?'מס׳ עובד '+e.emp_no:''].filter(Boolean).join(' · '))+'</span>';
   function pensTag(x){
     if(x.ext)return '';
     if(x.pens_open)return '<span class="pill p-ok">פנסיה מופרשת</span>';
@@ -3016,7 +3022,7 @@ function open(id){
   h+='<div class="callout '+cl+'"><span class="cap">'+(e.pens_open?'הפנסיה נפתחה':'חודש פתיחת פנסיה')+'</span>'+
      '<span class="big">'+esc(e.pens_open?(e.opened_date?fmtD(e.opened_date):(e.opened_month||'מופרש')):(e.pmonth_he||'חסר תאריך תחילת עבודה'))+'</span>'+
      (e.start?'<div style="font-size:12.5px;margin-top:4px">'+
-       (e.pens_open?'הפרשה לקופ״ג מופיעה בתלוש '+SLIP_N:'<b>'+esc(e.wait)+'</b> מתחילת העבודה · '+
+       (e.pens_open?'הפרשה לקופ״ג בתלוש '+SLIP_N+(e.pens_ytd?' · '+(e.pens_ytd||0).toLocaleString('he-IL')+' ₪':''):'<b>'+esc(e.wait)+'</b> מתחילת העבודה · '+
         (e.foreign?'עובד זר — פתיחה אחרי חצי שנה':(e.pension==='פעילה'?'יש פנסיה קודמת פעילה':((e.pension==='אין פנסיה פעילה'||e.pension==='אין')?'אין פנסיה קודמת — לא צריך מסמכים':'אין פנסיה קודמת — לא צריך מסמכים'))))+
        '</div>':'')+
      (function(){ var f=(typeof pfOf==='function')?pfOf(e):null; if(!f||(f.a!=='y'&&f.a!=='n'))return '';
@@ -3029,7 +3035,6 @@ function open(id){
   function F(l,v){ if(v)FA.push('<span><i>'+l+'</i>'+v+'</span>'); }
   /* 14.11.2026 (איילת: «פרטים אישיים בתוך כרטיס העובד יהיו בתוך כפתור נלחץ»): פרטים אישיים ופרטי ה-101 — מקופלים */
   function P(l,v){ if(v)PA.push('<span><i>'+l+'</i>'+v+'</span>'); }
-  F('מחלקה',esc(e.dept));
   if(e.addr)P('כתובת',esc(e.addr));
   if(e.phone)P('טלפון',esc(e.phone));
   if(e.email)P('מייל',esc(e.email));
@@ -3048,13 +3053,11 @@ function open(id){
     if(_b.income)P('סוג ההכנסה אצלנו',esc(_b.income));
     if(_b.credits)P('נקודות זיכוי שביקש/ה',esc(_b.credits.split(' | ').map(function(t){return t.replace(/^(\d{1,2} ?[אב]? ?)\.\s*/,'$1. ');}).join(' · ')));
     if(_b.d)P('טופס 101 אחרון','בטר צ׳אנס · '+esc(fmtD(_b.d))); }
-  F('תחילת עבודה',e.start?esc(fmtD(e.start))+(e.months!=null?' · ותק '+e.months+' ח׳':''):'<b>חסר</b>');
   F('תלוש '+SLIP_N,e.slip?'יש':'<b>אין</b>');
-  F(ATT_HE,e.worked_sept?(e.sept_days+' ימים · '+(e.sept_hours||0)+' ש׳'):(e.global?'לא מחתים':'<b>לא החתים</b>'));
-  if(e.sept_roles&&e.sept_roles.length)F('תפקידים',e.sept_roles.map(function(r){return esc(r.role)+' ('+r.days+')';}).join(' · '));
+  F('נוכחות '+ATT_HE,(e.worked_sept?(e.sept_days+' ימים · '+(e.sept_hours||0)+' ש׳'):(e.global?'לא מחתים':'<b>לא החתים</b>'))+
+    (e.sept_roles&&e.sept_roles.length>1?'<div class="sub">'+e.sept_roles.map(function(r){return esc(r.role)+' '+r.days;}).join(' · ')+'</div>':''));
   if(e.rate)F('תעריף',esc(e.rate));
   if(e.slip){
-    F('פנסיה בתלוש',e.pens_open?('<b>מופרש</b> · '+(e.pens_ytd||0).toLocaleString('he-IL')+' ₪'):'<b>טרם</b>');
     if(e.kahal)F('השתלמות',(e.kahal_ytd||0).toLocaleString('he-IL')+' ₪');
     if(e.sev_ytd)F('פיצויים',(e.sev_ytd||0).toLocaleString('he-IL')+' ₪');
   }
