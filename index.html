@@ -1106,6 +1106,7 @@ details.pfacts{margin:0}
 #dbody .kfacts>span b{color:var(--warn)}
 #dbody .kfacts>span{flex:1 1 180px}
 #dbody .kfacts>span.wide{flex-basis:100%}
+#dbody .shiftpill{cursor:help;border:1px dashed var(--line);background:var(--surface);color:var(--ink-2)}
 #dbody h4.fgrp{margin:12px 0 6px;font-size:14px;font-weight:700;color:var(--ink-2)}
 #dbody h4.fgrp:first-child{margin-top:0}
 #dbody .kfacts .slips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
@@ -1470,7 +1471,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261114-10';
+var PK_VER='20261114-11';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -3110,6 +3111,9 @@ function open(id){
   }
   var h='<div class="statusline">'+pState(e)+'<button class="pill" id="btnToggleActive" type="button" style="cursor:pointer;border:1px solid #bbb;background:#fff">'+(e.state==='לא פעיל'?'↩ החזר לפעיל':'➖ סמן כלא פעיל')+'</button>'+pFlags(e)+
     (e.ext?'':'<span class="pill '+(e.s101==='יש'?'p-ok':'p-crit')+'">טופס 101 '+(e.s101==='יש'?'✓':'חסר')+'</span>')+
+    (function(){ var t=['שיפט — '+ATT_HE+':', e.worked_sept?(e.sept_days+' ימים'+(e.sept_hours?' · '+e.sept_hours+' שעות':'')):(e.global?'גלובלי — לא מחתים':'לא החתים')];
+      if(e.sept_roles&&e.sept_roles.length)t.push('לפי תפקיד: '+e.sept_roles.map(function(r){return r.role+' '+r.days+' ימים';}).join(' · '));
+      return '<span class="pill shiftpill" tabindex="0" title="'+esc(t.join(' · '))+'">🕒 פירוט שיפט</span>'; })()+
     '</div>';   /* מצב הפנסיה — בריבוע שבכותרת (בלי כפילות, 14.11.2026) */
   if(raw.manual)h+='<div class="statusline"><span class="hint">נוסף ידנית'+(raw.manual_by?' על ידי '+esc(raw.manual_by):'')+(raw.manual_at?' · '+esc(fmtD(String(raw.manual_at).slice(0,10))):'')+'</span>'+
     '<button class="btn" id="mNeEdit" type="button">✎ תיקון פרטים</button><button class="btn ghost" id="mNeDel" type="button">נוסף בטעות — למחוק</button></div>';
@@ -3157,8 +3161,7 @@ function open(id){
   FA.push('<span><i>תלוש '+SLIP_N+'</i>'+(e.slip?'יש':'<b>אין</b>')+
     (_sl.length?'<div class="slips">'+_sl.map(function(x){return '<button type="button" class="slipbtn" data-slipopen="'+esc(x.f.id)+'" title="פתיחת התלוש">📄 '+esc(x.l)+'</button>';}).join('')+'</div>'
       :'<div class="sub">אין עדיין העתק תלוש בבקרה</div>')+'</span>');
-  F('נוכחות '+ATT_HE,(e.worked_sept?(e.sept_days+' ימים · '+(e.sept_hours||0)+' ש׳'):(e.global?'לא מחתים':'<b>לא החתים</b>'))+
-    (e.sept_roles&&e.sept_roles.length>1?'<div class="sub">'+e.sept_roles.map(function(r){return esc(r.role)+' '+r.days;}).join(' · ')+'</div>':''));
+  /* 14.11.2026 (איילת: «הנתון הזה לא ממש חשוב… כשנעמוד על פירוט שיפט שנראה את זה»): הנוכחות — רק בריחוף על «פירוט שיפט» בשורת המצב */
   if(e.rate){ var _r=String(e.rate), _ri=_r.indexOf(' (');   /* 14.11.2026 (איילת: «הנתונים האלה מאוד חשובים — ברור ומודגש»): הסכום גדול, ההסבר קטן מתחת */
     FA.push('<span class="wide"><i>תעריף</i>'+esc(_ri>0?_r.slice(0,_ri):_r)+(_ri>0?'<div class="sub">'+esc(_r.slice(_ri+2).replace(/\)$/,''))+'</div>':'')+'</span>'); }
   if(e.slip){
