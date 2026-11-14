@@ -1111,7 +1111,7 @@ details.pfacts{margin:0}
 #dbody .kfacts .slipbtn.shiftpill:hover,#dbody .kfacts .slipbtn.shiftpill:focus-within{background:var(--accent) !important;color:#fff}
 #dbody .kfacts .slipbtn.shiftpill .shpop span{border:0 !important;background:none !important;padding:0 !important;display:inline !important}
 #dbody .shpop{color:var(--ink);font-size:13px}
-.cslip{display:none;position:fixed;top:3vh;bottom:3vh;left:50%;transform:translateX(-50%);width:min(780px,calc(100vw - 24px));z-index:99999;
+.cslip{display:none;position:fixed;top:2vh;bottom:2vh;left:50%;transform:translateX(-50%);width:min(1150px,calc(100vw - 24px));z-index:99999;
   background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.3);padding:10px;flex-direction:column;color:var(--ink);font-size:13px}
 .cslip.on{display:flex}
 .cslipvh{display:flex;align-items:center;gap:10px;margin:0 4px 8px}
@@ -1496,7 +1496,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261114-17';
+var PK_VER='20261114-18';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
