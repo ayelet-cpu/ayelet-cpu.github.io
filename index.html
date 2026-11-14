@@ -742,7 +742,7 @@ footer{font-size:13px}
   gap:0 26px;align-items:start}
 .mkpanel>h3,.mkpanel>.hint,.mkpanel>.doclegend,.mkpanel>.mkfoot,
 .mkpanel>.fieldrow.wide,.mkpanel>p{grid-column:1/-1}
-.mkpanel .fieldrow{margin-bottom:11px;gap:10px}
+.mkpanel .fieldrow{margin-bottom:11px;gap:10px}.fieldrow[hidden]{display:none}
 .mkpanel .fieldrow>label{min-width:96px;flex:0 0 auto}
 .mkpanel .fieldrow>select,.mkpanel .fieldrow>input,.mkpanel .fieldrow>span{flex:1 1 140px;min-width:0}
 .mkpanel .fieldrow>span{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -3036,7 +3036,8 @@ function open(id){
   var hm='<div class="mkpanel"><h3>סימון</h3>'+
     (e.ext
       ? '<p class="hint">'+esc(e.extlbl)+' — אין פנסיה, אין טופס 101 ואין דרישת מסמכים.</p>'
-      : '<div class="fieldrow"><label for="mPens">פנסיה קודמת</label><select id="mPens">'+
+      /* 14.11.2026 (איילת: «אם כבר יש פנסיה — לא מעניין ולא רלוונטי אם יש פנסיה קודמת»): כשהפנסיה נפתחה השדה מוסתר (נשאר בדף כדי שהשמירה תעבוד) */
+      : '<div class="fieldrow"'+(e.pens_open?' hidden':'')+'><label for="mPens">פנסיה קודמת</label><select id="mPens">'+
           (function(){ var dv=e.foreign?'זר':e.pension==='פעילה'?'פעילה':(e.pension==='אין'||e.pension==='אין פנסיה פעילה')?'אין':'';
             return mkOpts(m.pension||'',dv,dv==='פעילה'?'יש':dv==='אין'?'אין':dv==='זר'?'עובד זר':'לא ידוע',[['פעילה','יש'],['אין','אין'],['זר','עובד זר']]); })()+
         '</select></div>'+
