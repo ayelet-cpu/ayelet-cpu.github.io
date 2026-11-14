@@ -1050,6 +1050,11 @@ section.act .allgood,.act table{font-size:14.5px}
 #dbody .flist li button:first-of-type{grid-column:2}
 #dbody .flist li button{padding:3px 10px}
 #dbody .fup{margin-top:6px}
+#dbody .flist.fcomp li{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;padding:5px 10px}
+#dbody .flist.fcomp .fn{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#dbody .flist.fcomp .fn em{display:inline;font-size:13px;color:var(--sub);margin-inline-start:6px}
+#dbody .flist.fcomp button{flex:0 0 auto;padding:3px 10px}
+#dbody #mNote{min-height:0;field-sizing:content;max-height:160px}
 details.pfacts{margin:0}
 </style>
 </head>
@@ -2983,9 +2988,14 @@ function docsBox(e){
   var legacy=(e.docs||[]).filter(function(d){return !(d&&typeof d==='object'&&d.path&&window.PK&&PK.bySource(d.path));});
   var opts=DOCTYPES.concat(['פרטי פנסיה','הסכם עבודה','תלוש שכר','אחר']);
   return '<div class="sec"><h3>📁 כל המסמכים של העובד/ת ('+L.length+')</h3>'+
-    (L.length?'<ul class="flist" id="cfList">'+L.map(function(f){
+    /* 14.11.2026 (איילת: «אפשר עוד לצמצם, תחשוב חכם», Impeccable): שורה אחת למסמך. מה שלא משנה החלטה (שם הקובץ, גודל, מקור) — בריחוף */
+    (L.length?'<ul class="flist fcomp" id="cfList">'+L.map(function(f){
         var src=f.kind==='note'?'מהערת שכר':(f.kind==='pension_form'?'טופס פרטי פנסיה':(f.source&&f.source!=='העלאה'?'מהתיקייה':'הועלה'));
-        return fRowHtml(f,f.source==='העלאה').replace('</b>','</b><span class="ftag">'+esc(src)+'</span>');}).join('')+'</ul>'
+        var m=(f.meta||{}), when=m.month||(String(f.source||'').match(/\d{2}\.\d{4}/)||[''])[0]||fmtD(String(m.date||f.created_at||'').slice(0,10));
+        var tip=[f.name,fSize(f.bytes),src,f.created_by,String(f.created_at||'').slice(0,10)].filter(Boolean).join(' · ');
+        return '<li data-fid="'+esc(f.id)+'" title="'+esc(tip)+'"><span class="fn"><b>'+esc(f.dtype||f.name)+'</b>'+(when?' <em>'+esc(when)+'</em>':'')+'</span>'+
+          '<button type="button" data-fopen="'+esc(f.id)+'">פתיחה</button><button type="button" data-fdl="'+esc(f.id)+'" aria-label="הורדה" title="הורדה">⬇</button>'+
+          (f.source==='העלאה'?'<button type="button" class="fdel" data-fdel="'+esc(f.id)+'" title="הסרת הקובץ">✕</button>':'')+'</li>';}).join('')+'</ul>'
       :'<p class="hint">אין עדיין מסמכים בענן לעובד/ת הזה/ו.</p>')+
     (legacy.length?'<p class="hint">רשומים בתיקיות אבל עוד לא עלו לענן: '+legacy.map(function(d){return esc(typeof d==='object'?(d.file||d.dtype):d);}).join(' · ')+'</p>':'')+
     '<div class="fup">'+(L.length>1?'<button class="fbtn" id="cfAll" type="button">⬇ הורדת כל המסמכים ('+L.length+')</button>':'')+
@@ -3027,7 +3037,7 @@ function open(id){
   }
   var h='<div class="statusline">'+pState(e)+'<button class="pill" id="btnToggleActive" type="button" style="cursor:pointer;border:1px solid #bbb;background:#fff">'+(e.state==='לא פעיל'?'↩ החזר לפעיל':'➖ סמן כלא פעיל')+'</button>'+pFlags(e)+
     (e.ext?'':'<span class="pill '+(e.s101==='יש'?'p-ok':'p-crit')+'">טופס 101 '+(e.s101==='יש'?'✓':'חסר')+'</span>')+
-    pensTag(e)+'</div>';
+    '</div>';   /* מצב הפנסיה — בריבוע שבכותרת (בלי כפילות, 14.11.2026) */
   if(raw.manual)h+='<div class="statusline"><span class="hint">נוסף ידנית'+(raw.manual_by?' על ידי '+esc(raw.manual_by):'')+(raw.manual_at?' · '+esc(fmtD(String(raw.manual_at).slice(0,10))):'')+'</span>'+
     '<button class="btn" id="mNeEdit" type="button">✎ תיקון פרטים</button><button class="btn ghost" id="mNeDel" type="button">נוסף בטעות — למחוק</button></div>';
   var _h0=h.length;   /* 14.11.2026 (איילת): ריבוע הפנסיה — בכותרת, משמאל לשם העובד (היה שם מקום ריק) */
@@ -3152,7 +3162,7 @@ function open(id){
       ['','none','missing'].map(function(v){return '<option value="'+v+'"'+((m.shift||'')===v?' selected':'')+'>'+SHIFT_HE[v]+'</option>';}).join('')+'</select>'+
       (m.shift==='none'?'<input type="text" id="mShiftWhy" placeholder="למה? (בעלים, עובד חוץ…)" value="'+esc(m.shift_why||'')+'" aria-label="סיבה">':'')+
       ((m.by||{}).shift?'<span class="mkby">'+esc(m.by.shift.who||'')+' · '+esc(fmtD(m.by.shift.at))+'</span>':'')+'</div>'+
-    '<div class="fieldrow wide"><label for="mNote">הערה</label><textarea id="mNote" placeholder="הערה חופשית…">'+esc(m.note||'')+'</textarea></div>'+
+    '<div class="fieldrow wide"><label for="mNote">הערה</label><textarea id="mNote" rows="2" placeholder="הערה חופשית…">'+esc(m.note||'')+'</textarea></div>'+
     '<details class="more"><summary>עוד הגדרות</summary>'+
       '<div class="fieldrow wide"><label>סוג העסקה</label><div class="docgrid" style="flex:1 1 100%">'+
         '<label><input type="checkbox" id="mIntern"'+(e.intern?' checked':'')+'>מתמחה</label>'+
