@@ -1622,7 +1622,6 @@ function bc101Merge(D,L){ var M={}; (L||[]).forEach(function(b){ if(b&&b.emps)Ob
   D.employees.forEach(function(e){ var b=M[String(e.id)]; if(!b||b.err)return;
     ['phone','email','addr','birth','gender'].forEach(function(k){ if(b[k])e[k]=b[k]; });
     if(b.tz&&!String(e.tz||'').trim())e.tz=b.tz;   /* ת"ז מה-101 — רק כשחסרה בפנקס (איילת 14.11: «ת"ז חשוב שיהיה לכולם») */
-    if(b.zip&&e.addr&&String(e.addr).indexOf(b.zip)<0)e.addr+=' '+b.zip;
     e.b101={d:b.d||'',extra:b.extra,second:b.second,oleh:b.oleh,soldier:b.soldier,taxreq:b.taxreq,aliyah:b.aliyah||'',
       marital:b.marital||'',resident:b.resident||'',kibbutz:b.kibbutz||'',hmo:b.hmo||'',income:b.income||'',credits:b.credits||'',tel:(b.tel&&b.tel!==b.mobile)?b.tel:''}; }); }
 var booted=false;
