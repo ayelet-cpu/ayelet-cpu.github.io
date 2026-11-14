@@ -1098,6 +1098,15 @@ details.pfacts{margin:0}
 #dbody .cardsec .mkpanel .fieldrow>span{flex-wrap:nowrap}
 #dbody .cardsec .mkpanel .fieldrow>span>select,#dbody .cardsec .mkpanel .fieldrow>span>input[type=date]{width:auto;flex:0 0 auto}
 #dbody .dcol>*{margin-top:0 !important;margin-bottom:0 !important}
+/* נתוני המפתח בכרטיס — אריחים ברורים ומודגשים (איילת 14.11) */
+#dbody .facts.kfacts{display:flex !important;flex-wrap:wrap;gap:8px;background:none !important;border:0 !important;padding:0 !important}
+#dbody .kfacts>span{display:flex !important;flex-direction:column;align-items:flex-start;gap:4px;background:var(--surface) !important;border:1px solid var(--line) !important;
+  border-radius:12px !important;padding:10px 14px !important;font-size:17px !important;font-weight:700;color:var(--ink);line-height:1.35}
+#dbody .kfacts>span>i{flex:none !important;font-size:13px !important;font-weight:600 !important;color:var(--ink-2) !important}
+#dbody .kfacts>span b{color:var(--warn)}
+#dbody .kfacts>span{flex:1 1 180px}
+#dbody .kfacts>span.wide{flex-basis:100%}
+#dbody .kfacts .sub{font-size:13.5px;font-weight:400;color:var(--sub);margin:0}
 </style>
 </head>
 <body>
@@ -1456,7 +1465,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261114-7';
+var PK_VER='20261114-8';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -3130,12 +3139,13 @@ function open(id){
   F('תלוש '+SLIP_N,e.slip?'יש':'<b>אין</b>');
   F('נוכחות '+ATT_HE,(e.worked_sept?(e.sept_days+' ימים · '+(e.sept_hours||0)+' ש׳'):(e.global?'לא מחתים':'<b>לא החתים</b>'))+
     (e.sept_roles&&e.sept_roles.length>1?'<div class="sub">'+e.sept_roles.map(function(r){return esc(r.role)+' '+r.days;}).join(' · ')+'</div>':''));
-  if(e.rate)F('תעריף',esc(e.rate));
+  if(e.rate){ var _r=String(e.rate), _ri=_r.indexOf(' (');   /* 14.11.2026 (איילת: «הנתונים האלה מאוד חשובים — ברור ומודגש»): הסכום גדול, ההסבר קטן מתחת */
+    FA.push('<span class="wide"><i>תעריף</i>'+esc(_ri>0?_r.slice(0,_ri):_r)+(_ri>0?'<div class="sub">'+esc(_r.slice(_ri+2).replace(/\)$/,''))+'</div>':'')+'</span>'); }
   if(e.slip){
     if(e.kahal)F('השתלמות',(e.kahal_ytd||0).toLocaleString('he-IL')+' ₪');
     if(e.sev_ytd)F('פיצויים',(e.sev_ytd||0).toLocaleString('he-IL')+' ₪');
   }
-  h+='<div class="facts">'+FA.join('')+'</div>';
+  h+='<div class="facts kfacts">'+FA.join('')+'</div>';
   if(PA.length)h+='<details class="pfacts cardsec" data-fk="pers"><summary>👤 פרטים אישיים ופרטי טופס 101</summary><div class="facts">'+PA.join('')+'</div></details>';
   /* marking */
   var docs=m.docs||[];
