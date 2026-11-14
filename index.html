@@ -1048,7 +1048,7 @@ section.act .allgood,.act table{font-size:14.5px}
     </div>
   </div>
   <div class="tabsbar">
-    <div class="jump" id="jump"><input type="search" id="jumpQ" placeholder="🔎 חיפוש עובד/ת…" aria-label="חיפוש עובד" autocomplete="off"><div class="jumpres" id="jumpRes" hidden></div></div>
+    <div class="jump" id="jump"><input type="search" id="jumpQ" placeholder="🔎 חיפוש עובד/ת…" aria-label="חיפוש עובד" autocomplete="off" name="pk-emp-find" readonly onfocus="this.removeAttribute('readonly')"><div class="jumpres" id="jumpRes" hidden></div></div>
     <nav class="tabs" role="tablist">
       <button role="tab" data-tab="todo" aria-selected="true">לטיפול<span class="c" id="c-todo"></span></button>
       <button role="tab" data-tab="pens" aria-selected="false">פנסיה<span class="c" id="c-pens"></span></button>
@@ -1306,7 +1306,10 @@ section.act .allgood,.act table{font-size:14.5px}
 .pktoast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .pktoast button{font:inherit;font-weight:800;margin-inline-start:10px;background:transparent;border:0;color:var(--accent-soft);text-decoration:underline;cursor:pointer}
 button.ps{font:inherit;cursor:pointer;background:var(--surface)}
-.ptrack .ptedit{min-width:220px}
+.ptrack .pted{display:flex;gap:5px;align-items:center}
+.ptrack .pted select.pstage{width:118px;flex:0 0 auto;margin:0}.ptrack .pted input.pnote{flex:1 1 auto;width:130px;min-width:90px;margin:0}
+.ptrack .pdone{color:var(--muted);font-size:12.5px}.ptrack .pwait{color:#8A6400;font-size:12.5px}
+.ptrack td.ptactc{white-space:nowrap}
 .ptrack .chips button b{font-variant-numeric:tabular-nums;margin-inline-start:3px}
 .ptrack .chips button.crit{border-color:var(--crit,#C0392B)}.ptrack .chips button.crit b{color:var(--crit,#C0392B)}
 .ptrack .chips button.warn{border-color:#B8860B}.ptrack .chips button.warn b{color:#B8860B}
@@ -1317,10 +1320,10 @@ button.ps{font:inherit;cursor:pointer;background:var(--surface)}
 .ptrack .pbasis .pill{display:inline-block;margin:0 0 3px}
 .kitsec .kitchips .dk{display:inline-block;margin-inline-end:8px;font-size:12.5px}.kitsec .dk.ok{color:var(--ok)}.kitsec .dk.no{color:var(--crit,#C0392B);font-weight:600}
 .kitsec .pp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.ptrack .ptacts{display:flex;flex-wrap:nowrap;gap:5px;margin-top:5px}
+.ptrack .ptacts{display:flex;flex-wrap:nowrap;gap:5px}
 .ptrack .ptacts .tlb{padding:3px 9px;font-size:12px;white-space:nowrap}
-.ptrack td.pdocs{white-space:normal;min-width:330px}
-@media (max-width:760px){.ptrack .ptacts{flex-wrap:wrap}.ptrack td.pdocs{min-width:220px}}
+.ptrack td.pdocs{white-space:normal;min-width:170px}
+@media (max-width:760px){.ptrack .ptacts{flex-wrap:wrap}.ptrack td.pdocs{min-width:150px}}
 .tlsum .pstrip{border:0;margin:0;padding:10px 14px;background:transparent}
 .tlsum .pstrip .ps{cursor:pointer}
 .tlsum>header .pnote{font-size:12.5px;color:var(--sub)}
@@ -2047,27 +2050,37 @@ function pensTrack(A){
       return (p[0]==='noform'?'<span class="chsep" aria-hidden="true"></span>':'')+'<button type="button" class="'+(n?p[2]:'')+'" data-ptf="'+p[0]+'" aria-pressed="'+(PTF===p[0])+'">'+esc(p[1])+' <b>'+n+'</b></button>';}).join('')+
     '</div><span class="pasof">נכון ל־'+pmLabel(NOWM)+'</span></header>';
   if(!rows.length)return h+'<div class="empty">אין עובדים בסינון הזה.</div></section>';
-  h+='<div class="scroll"><table><thead><tr><th>עובד/ת</th><th>מתי נפתחת</th><th>טופס פרטי פנסיה</th><th>חודש פתיחה</th><th>נפתחה</th><th>מצב ומה נאמר</th><th>מסמכים <span style="font-weight:400">(לחיצה = התקבל)</span></th></tr></thead><tbody>';
+  h+='<div class="scroll"><table><thead><tr><th>עובד/ת</th><th>מתי נפתחת</th><th>חודש פתיחה</th><th>מה חסר לפנסיה <span style="font-weight:400">(לחיצה = התקבל)</span></th><th>מצב ומה נאמר</th><th></th></tr></thead><tbody>';
   rows.forEach(function(e){
     var mt=(e.pform&&e.pform.meta)||{};
     var lateBy=(e.pmonth&&!e.pens_open)?NOWM-pmNum(e):0;
     /* איילת 12.11.2026: «בשכר רביעי משלמים רטרו פנסיה, אז האיחור הוא רק מהחודש» — מי שיש לו קרן פעילה: לא סופרים חודשי איחור, נפתחת בשכר הנוכחי עם רטרו */
     var due=e.pens_open?'':(e.due==='עבר'&&e.pension==='פעילה'?' <span class="pill p-warn" title="קרן פעילה: נפתחת בשכר הזה, עם תשלום רטרואקטיבי">לפתוח בשכר '+esc(pmLabel(NOWM))+' · כולל רטרו</span>':e.due==='עבר'?' <span class="pill p-crit">באיחור'+(lateBy>0?' '+lateBy+' ח׳':'')+'</span>':(e.due==='עכשיו'?' <span class="pill p-warn">החודש</span>':(e.due==='קרוב'?' <span class="pill p-warn">חודש הבא</span>':'')));
     var pk=(e.todo==='פנסיה באיחור'||e.todo==='לפתוח פנסיה'||e.todo==='פנסיה בחודש הבא')?e.todo:'';
-    var acts=(e.missing&&e.missing.length?'<button class="tlb" data-ask="'+e.id+'" type="button" title="מעתיק הודעה מוכנה לוואטסאפ">📋 בקשת מסמכים</button>':'')+
-      (pk?(pensNoteOf(e)?'<span class="dnote">📝 יש הערה ב'+esc(nlabel(NDEF.y,NDEF.m))+'</span>':'<button class="tlb" data-pnote="'+e.id+'" type="button" title="מוסיף הערת «פנסיה» לחשבת השכר — רק אם לוחצים">📝 הערה לחשבת</button>')+
+    /* 14.11.2026 (איילת: «תראה איזה בלאגן יש בלשונית הפנסיה»): בעמודת המסמכים רק מה שצריך לפנסיה של העובד הזה —
+       קרן קודמת פעילה: קוביות + אישור קרן · אין קרן קודמת: לא צריך מסמכים (ברירת מחדל בשכר 7) · לא ידוע: רק טופס «פרטי פנסיה».
+       101 ואישור ניהול חשבון — בלשונית «טופס 101 ומסמכים». «נפתחה» — באותה עמודה של חודש הפתיחה. */
+    var kitF=!!((kitOf(e)||{}).m&8), noFund=(e.pension==='אין'||e.pension==='אין פנסיה פעילה'), actF=e.pension==='פעילה';
+    var docs, needAsk=[];
+    if(e.pens_open)docs='<span class="pdone">הפנסיה נפתחה — אין מה להשלים</span>';
+    else if(actF){ docs=dk(e,'טופס קוביות','קוביות')+dk(e,'אישור קרן פנסיה פעילה','אישור קרן');
+      [['טופס קוביות','טופס קוביות (מהקרן)'],['אישור קרן פנסיה פעילה','אישור מהקרן שהפנסיה פעילה']].forEach(function(t){ if(!(e.dtypes.indexOf(t[0])>=0||(e.ds&&e.ds[t[0]]==='got')))needAsk.push(t[1]); }); }
+    else if(noFund)docs='<span class="pdone">לא צריך מסמכים — קרן ברירת מחדל</span>';
+    else if(e.pform||kitF)docs='<span class="pwait">'+(kitF&&!e.pform?'מילא/ה טופס בבטר צ׳אנס — לבדוק שם אם יש קרן פעילה':'לסמן בכרטיס אם יש קרן פעילה')+'</span>';
+    else { docs='<span class="dk no">✗ טופס פרטי פנסיה</span>'; needAsk.push('טופס «פרטי פנסיה» באפליקציית Better Chains (האם יש לך קרן פנסיה פעילה)'); }
+    var pk=(e.todo==='פנסיה באיחור'||e.todo==='לפתוח פנסיה'||e.todo==='פנסיה בחודש הבא')?e.todo:'';
+    var acts=(needAsk.length?'<button class="tlb" data-pask="'+e.id+'" data-need="'+esc(needAsk.join('|'))+'" type="button" title="מעתיק הודעה מוכנה לוואטסאפ — רק מה שחסר לפנסיה">📋 בקשה</button>':'')+
+      (pk?(pensNoteOf(e)?'<span class="dnote">📝 יש הערה ב'+esc(nlabel(NDEF.y,NDEF.m))+'</span>':'<button class="tlb" data-pnote="'+e.id+'" type="button" title="מוסיף הערת «פנסיה» לחשבת השכר — רק אם לוחצים">📝 לחשבת</button>')+
         '<button class="tlb done" data-done="'+e.id+'" data-kind="'+esc(pk)+'" type="button">✓ טופל</button>':'');
     h+='<tr data-id="'+e.id+'" tabindex="0">'+
       '<td class="pn"><b>'+esc(e.name)+'</b>'+(e.newhire?' <span class="pill p-acc">חדש/ה</span>':'')+'<em>'+esc(e.dept)+(e.start?' · החל '+esc(fmtD(e.start)):'')+'</em></td>'+
       '<td class="wrap pbasis">'+pensBasis(e)+'</td>'+
-      '<td class="wrap">'+(e.pform?esc(pformLine(e.pform))+'<em style="display:block;font-style:normal;font-size:11.5px;color:var(--muted)">'+esc(mt.form_date||mt.date||'')+'</em>':(((kitOf(e)||{}).m&8)?'<span class="dk ok" title="העובד מילא את הטופס בבטר צ׳אנס; התשובות שלו עוד לא נקראו לפנקס">✓ מולא בבטר צ׳אנס</span>':'<span style="color:var(--muted)">—</span>'))+'</td>'+
-      '<td>'+(e.pens_open?'—':esc(e.pmonth_he||'חסר תאריך התחלה'))+due+'</td>'+
-      '<td>'+(e.pens_open?'<span class="pill p-ok">✓ '+esc(e.opened_date?fmtD(e.opened_date):(e.opened_month||'מופרש'))+'</span>':'—')+'</td>'+
-      '<td class="wrap ptedit">'+pstageSel(e)+
+      '<td>'+(e.pens_open?'<span class="pill p-ok">✓ נפתחה '+esc(e.opened_date?fmtD(e.opened_date):(e.opened_month||''))+'</span>':esc(e.pmonth_he||'חסר תאריך התחלה')+due)+'</td>'+
+      '<td class="pdocs">'+docs+(e.pform&&!e.pens_open?'<em class="pinfo" title="מה שהעובד מילא בטופס פרטי פנסיה">טופס: '+esc(pformLine(e.pform))+(mt.form_date||mt.date?' · '+esc(mt.form_date||mt.date):'')+'</em>':'')+'</td>'+
+      '<td class="ptedit"><div class="pted">'+pstageSel(e)+
         '<input type="text" class="pnote" data-pt="note" data-emp="'+e.id+'" value="'+esc(e.talked_note||'')+'" placeholder="מה נאמר…" aria-label="מה נאמר">'+
-        ((pstageInfo(e)||e.talked_at)?'<em class="pinfo">'+esc(pstageInfo(e)||('דיברנו '+fmtD(e.talked_at)))+'</em>':'')+'</td>'+
-      '<td class="pdocs">'+dk(e,'טופס 101','101')+dk(e,'טופס קוביות','קוביות')+dk(e,'אישור קרן פנסיה פעילה','אישור קרן')+dk(e,'אישור ניהול חשבון','ניהול חשבון')+
-        '<span class="dk '+(e.pform?'ok':'no')+'">'+(e.pform?'✓':'✗')+' פרטי פנסיה</span>'+(acts?'<div class="ptacts">'+acts+'</div>':'')+'</td></tr>';
+        '</div>'+((pstageInfo(e)||e.talked_at)?'<em class="pinfo">'+esc(pstageInfo(e)||('דיברנו '+fmtD(e.talked_at)))+'</em>':'')+'</td>'+
+      '<td class="ptactc">'+(acts?'<div class="ptacts">'+acts+'</div>':'')+'</td></tr>';
   });
   return h+'</tbody></table></div></section>';
 }
@@ -3176,6 +3189,13 @@ function todoClick(ev){
     toast('✓ '+esc(nm)+' — סומן «טופל»',function(){ if(prev)MARKS[id]=JSON.parse(prev); else delete MARKS[id]; PEND[id]=1; DIRTY=true; save(); render(); });
     return;}
   var tr=ev.target.closest('[data-id]'); if(tr)open(+tr.dataset.id);}
+document.getElementById('pensView').addEventListener('click',function(ev){
+  var b=ev.target.closest('button[data-pask]'); if(!b)return; ev.stopPropagation();
+  var e=E.filter(function(x){return x.id===+b.dataset.pask;})[0]; if(!e)return;
+  var txt='היי '+String(e.name).split(' ')[0]+', כדי לפתוח לך פנסיה חסר לנו:\n'+b.dataset.need.split('|').map(function(t){return '• '+t;}).join('\n')+'\nתודה!';
+  function okc(){ toast('📋 ההודעה ל'+esc(e.name)+' הועתקה — אפשר להדביק בוואטסאפ'); }
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(okc,function(){prompt('העתיקי:',txt);}); else prompt('העתיקי:',txt);
+},true);
 document.getElementById('docsView').addEventListener('click',function(ev){
   var a=ev.target.closest('button[data-kitask]'), b=ev.target.closest('button[data-kitsent]'); if(!a&&!b)return; ev.stopPropagation();
   var id=+(a||b).dataset[a?'kitask':'kitsent'], e=eff(E.filter(function(x){return x.id===id;})[0]); if(!e)return;
