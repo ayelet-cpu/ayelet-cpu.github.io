@@ -1059,6 +1059,25 @@ section.act .allgood,.act table{font-size:14.5px}
 #dbody .mkpair .fieldrow label{flex:0 0 auto;min-width:0;width:auto}
 #dbody .mkpair .fieldrow select{flex:1 1 auto;min-width:0;width:auto}
 #dbody .mkpair .fieldrow[hidden]+.fieldrow{grid-column:1}
+/* חץ אחיד לכל מה שנפתח: ◂ סגור, ▾ פתוח */
+details>summary{list-style:none}
+details>summary::-webkit-details-marker{display:none}
+details.cfold>summary,details.pfacts>summary,details.mkfold>summary,details.ptmore>summary,details.cmpdepts>summary,details.colpick>summary{display:flex;align-items:center;gap:8px;cursor:pointer}
+details.cfold>summary::before,details.pfacts>summary::before,details.mkfold>summary::before,details.ptmore>summary::before,details.cmpdepts>summary::before,details.colpick>summary::before{
+  content:"◀";display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;flex:0 0 24px;border-radius:7px;
+  background:var(--accent);color:#fff;font-size:11px;font-weight:700}
+details[open].cfold>summary::before,details[open].pfacts>summary::before,details[open].mkfold>summary::before,details[open].ptmore>summary::before,details[open].cmpdepts>summary::before,details[open].colpick>summary::before{content:"▼"}
+.mkpanel details.more>summary::before{content:"◀";display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;background:var(--accent);color:#fff;font-size:11px;margin-inline-end:6px}
+.mkpanel details.more[open]>summary::before{content:"▼"}
+details.cfold>summary h3{margin:0 !important}
+/* «לחצי לפתיחה» — שיהיה ברור שיש שם מידע (איילת 14.11) */
+details.pfacts>summary::after,details.cfold>summary::after,details.mkfold>summary::after{content:"לחצי לפתיחה";margin-inline-start:auto;font-size:12.5px;font-weight:400;color:var(--sub);white-space:nowrap}
+details[open].pfacts>summary::after,details[open].cfold>summary::after,details[open].mkfold>summary::after{content:"סגירה"}
+details.cfold>summary .cfhint{margin-inline-start:0}
+details.mkfold>summary{width:auto !important;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:14px;color:var(--ink-2)}
+details.mkfold[open]>summary{margin-bottom:6px}
+details.cfold>summary .cfhint{font-size:13px;color:var(--sub);margin-inline-start:auto}
+details.cfold[open]>summary{margin-bottom:6px}
 #dbody #mNote{min-height:0;field-sizing:content;max-height:160px}
 details.pfacts{margin:0}
 </style>
@@ -1419,7 +1438,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261114-3';
+var PK_VER='20261114-6';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -2979,11 +2998,12 @@ function notesByMonth(e){
     g(2026,mm).items.push('<li class="ev"><span class="m">'+esc(v.topic||'')+' · מהאקסל</span><br>'+esc(v.detail||'—')+'</li>'); });
   var ks=Object.keys(groups).map(Number).sort(function(a,b){return b-a;}), n=0;
   ks.forEach(function(k){n+=groups[k].items.length;});
-  var s='<div class="sec"><h3>הערות שכר לפי חודש ('+n+')</h3>';
+  var last=ks.length?nlabel(groups[ks[0]].y,groups[ks[0]].m):'';
+  var s='<div class="sec">'+(n?'<details class="cfold"><summary><h3>הערות שכר לפי חודש ('+n+')</h3><span class="cfhint">האחרונה: '+esc(last)+'</span></summary>':'<h3>הערות שכר לפי חודש (0)</h3>');
   if(!n)s+='<p class="hint">אין עדיין הערות שכר לעובד/ת.</p>';
   ks.forEach(function(k){ var G=groups[k];
     s+='<div class="nmgrp"><div class="nmhd">'+esc(nlabel(G.y,G.m))+'<span>'+G.items.length+'</span></div><ul class="list">'+G.items.join('')+'</ul></div>'; });
-  return s+'<div class="mkfoot" style="margin-top:8px"><button class="btn" id="mAddNote" type="button">➕ הערת שכר</button></div></div>';
+  return s+(n?'</details>':'')+'<div class="mkfoot" style="margin-top:8px"><button class="btn" id="mAddNote" type="button">➕ הערת שכר</button></div></div>';
 }
 function allEmpFiles(e){
   var L=(e.cfiles||[]).slice(), seen={};
@@ -3168,7 +3188,8 @@ function open(id){
       if(m.status)rows.push('<div class="mkrow"><span>סטטוס: <b>'+esc(m.status)+'</b>'+who('status')+'</span><button class="btn ghost" type="button" data-mkundo="status">↩ לתקן — לפי הנתונים</button></div>');
       if(m.contract)rows.push('<div class="mkrow"><span>חוזה: <b>'+(m.contract==='yes'?'יש חוזה':'לא צריך חוזה'+(m.contract_why?' — '+esc(m.contract_why):''))+'</b>'+who('contract')+'</span><button class="btn ghost" type="button" data-mkundo="contract">↩ לתקן — לפי הנתונים</button></div>');
       Object.keys(m.done||{}).forEach(function(k){ if(m.done[k])rows.push('<div class="mkrow"><span>טופל: <b>'+esc(DONE_HE[k]||k)+'</b>'+who('done_'+k)+'</span><button class="btn ghost" type="button" data-mkundo="done_'+esc(k)+'">↩ לבטל «טופל»</button></div>'); });
-      return rows.length?'<div class="mkbox"><span class="cap">סימונים שגוברים על הנתונים</span>'+rows.join('')+'</div>':''; })()+
+      /* 14.11.2026 (איילת: «למה זה מעניין את המנהלים?»): רק לאיילת ולטלי, ומקופל */
+      return rows.length&&cmpCanReady()?'<details class="mkfold"><summary>סימונים ידניים שגוברים על הנתונים ('+rows.length+')</summary><div class="mkbox">'+rows.join('')+'</div></details>':''; })()+
     '<div class="fieldrow wide"><label for="mShift">שיפט</label><select id="mShift">'+
       ['','none','missing'].map(function(v){return '<option value="'+v+'"'+((m.shift||'')===v?' selected':'')+'>'+SHIFT_HE[v]+'</option>';}).join('')+'</select>'+
       (m.shift==='none'?'<input type="text" id="mShiftWhy" placeholder="למה? (בעלים, עובד חוץ…)" value="'+esc(m.shift_why||'')+'" aria-label="סיבה">':'')+
