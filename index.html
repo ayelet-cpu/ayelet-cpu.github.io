@@ -1886,6 +1886,8 @@ function pPens(e){
 }
 /* 14.11.2026 (איילת: «לא צריך לרשום לפי נתונים יש — רק יש או אין»): בבחירות שבכרטיס מוצג הערך עצמו.
    בלי סימון ידני — הערך מהנתונים נבחר (ואין אפשרות כפולה שלו); עם סימון — האפשרות הראשונה מבטלת אותו. */
+function isoD(v){ v=String(v||'').trim(); if(/^\d{4}-\d{2}-\d{2}/.test(v))return v.slice(0,10);
+  var m=v.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/); return m?m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2):''; }
 function mkOpts(cur,dataVal,dataLabel,list){
   var h=cur?'<option value="">↩ לבטל את הסימון</option>':'<option value="" selected>'+esc(dataLabel)+'</option>';
   return h+list.filter(function(o){return cur||o[0]!==dataVal;}).map(function(o){return '<option value="'+esc(o[0])+'"'+(cur===o[0]?' selected':'')+'>'+esc(o[1])+'</option>';}).join(''); }
@@ -3051,10 +3053,11 @@ function open(id){
         '<div class="fieldrow"><label for="m101">טופס 101</label><select id="m101">'+
           mkOpts(m.f101||'',e.s101==='יש'?'יש':'חסר',e.s101==='יש'?'יש':'אין',[['יש','יש'],['חסר','אין']])+'</select></div>')+
     '<div class="fieldrow"><label for="mBirth">תאריך לידה</label><span>'+
-      '<input type="date" id="mBirth" value="'+esc(m.birth&&/^\d{4}-\d{2}-\d{2}$/.test(m.birth)?m.birth:'')+'" aria-label="תאריך לידה">'+
-      '<select id="mGender" aria-label="מין">'+
-        [['','מין לא ידוע — לפי 21'],['M','זכר — מגיל 21'],['F','נקבה — מגיל 20']].map(function(pr){
-          return '<option value="'+pr[0]+'"'+((m.gender||'')===pr[0]?' selected':'')+'>'+esc(pr[1])+'</option>';}).join('')+
+      /* 14.11.2026 (איילת: «איך אתה לא יודע את הנתונים האלה?? הכל רשום ב-101»): השדות הציגו רק סימון ידני — עכשיו מוצג מה שנקלט מה-101 (e.birth / e.gender), וסימון ידני גובר */
+      '<input type="date" id="mBirth" value="'+esc(isoD(e.birth))+'" aria-label="תאריך לידה">'+
+      '<select id="mGender" aria-label="מין" title="קובע מאיזה גיל נפתחת פנסיה: נקבה 20, זכר 21">'+
+        [['','מין — לא ידוע'],['M','זכר'],['F','נקבה']].map(function(pr){
+          return '<option value="'+pr[0]+'"'+((e.gender==='F'||e.gender==='M'?e.gender:'')===pr[0]?' selected':'')+'>'+esc(pr[1])+'</option>';}).join('')+
       '</select></span></div>'+
     (function(){var t = e.birth
         ? (e.age_defer?'קטין/ה — הפתיחה נדחית לגיל '+e.age_thr+' ('+esc(e.age_gate)+'), ואין דרישת מסמכים עד אז.':'')
