@@ -1080,6 +1080,24 @@ details.cfold>summary .cfhint{font-size:13px;color:var(--sub);margin-inline-star
 details.cfold[open]>summary{margin-bottom:6px}
 #dbody #mNote{min-height:0;field-sizing:content;max-height:160px}
 details.pfacts{margin:0}
+/* כרטיס עובד — נושא אחד מתחת לשני, כל נושא נפתח (איילת 14.11) */
+#dbody{grid-template-columns:minmax(0,1fr) !important}
+#dbody .dcol{gap:10px}
+#dbody .cardsec{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--surface)}
+#dbody .cardsec>summary h3,#dbody details.pfacts.cardsec>summary{font-size:15px;font-weight:700;color:var(--ink)}
+#dbody details.cardsec[open]>summary{margin-bottom:10px}
+#dbody .cardsec .sec{margin:0}
+#dbody .cardsec .mkpanel{margin-bottom:10px}
+#dbody .cardsec>.sec>h3{font-size:15px}
+#dbody .cardsec summary h3{font-size:15px;font-weight:700;color:var(--ink)}
+#dbody .cardsec summary .cfhint{margin-inline-start:6px;font-weight:400}
+#dbody details.pfacts.cardsec>summary{border:0;padding:0;background:none;width:auto}
+#dbody .cardsec .mkpanel{display:block}
+#dbody .cardsec .mkpanel .fieldrow{display:flex;flex-wrap:wrap;align-items:center}
+#dbody .cardsec .mkpanel .fieldrow>span{flex:0 1 auto}
+#dbody .cardsec .mkpanel .fieldrow>span{flex-wrap:nowrap}
+#dbody .cardsec .mkpanel .fieldrow>span>select,#dbody .cardsec .mkpanel .fieldrow>span>input[type=date]{width:auto;flex:0 0 auto}
+#dbody .dcol>*{margin-top:0 !important;margin-bottom:0 !important}
 </style>
 </head>
 <body>
@@ -1438,7 +1456,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261114-6';
+var PK_VER='20261114-7';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -1764,7 +1782,7 @@ function flush(){
     .saveMarks(JSON.stringify(payload));
 }
 function GAS(){return (typeof google!=='undefined')&&google.script&&google.script.run;}
-var JUSTSAVED=0;
+var JUSTSAVED=0, CARDF={}, CARDF_ID=null;   /* אילו נושאים פתוחים בכרטיס — נשמר בין רענונים של אותו עובד */
 function mk(id){if(!MARKS[id])MARKS[id]={};return MARKS[id];}
 function touch(id){mk(id).u=new Date().toISOString().slice(0,10);DIRTY=true;PEND[id]=1;}
 /* 30.10.2026 (איילת): כל סימון קובע (עזב/פעיל/טופל/שיפט) — נשאל «בטוחה?», ונשמר מי ומתי, כדי שיהיה ברור בכרטיס ואפשר לתקן */
@@ -2999,7 +3017,7 @@ function notesByMonth(e){
   var ks=Object.keys(groups).map(Number).sort(function(a,b){return b-a;}), n=0;
   ks.forEach(function(k){n+=groups[k].items.length;});
   var last=ks.length?nlabel(groups[ks[0]].y,groups[ks[0]].m):'';
-  var s='<div class="sec">'+(n?'<details class="cfold"><summary><h3>הערות שכר לפי חודש ('+n+')</h3><span class="cfhint">האחרונה: '+esc(last)+'</span></summary>':'<h3>הערות שכר לפי חודש (0)</h3>');
+  var s='<div class="sec">'+(n?'<details class="cfold" data-fk="notes"><summary><h3>📝 הערות שכר ('+n+')</h3><span class="cfhint">האחרונה: '+esc(last)+'</span></summary>':'<h3>הערות שכר לפי חודש (0)</h3>');
   if(!n)s+='<p class="hint">אין עדיין הערות שכר לעובד/ת.</p>';
   ks.forEach(function(k){ var G=groups[k];
     s+='<div class="nmgrp"><div class="nmhd">'+esc(nlabel(G.y,G.m))+'<span>'+G.items.length+'</span></div><ul class="list">'+G.items.join('')+'</ul></div>'; });
@@ -3012,11 +3030,11 @@ function allEmpFiles(e){
     .forEach(function(n){ (window.PK?PK.byNote(n.id):[]).forEach(function(f){ if(!seen[f.id]&&!(f.path&&seen[f.path])){seen[f.id]=1;if(f.path)seen[f.path]=1;L.push(f);} }); });
   return L.sort(function(a,b){return String((b.meta||{}).date||b.created_at).localeCompare(String((a.meta||{}).date||a.created_at));});
 }
-function docsBox(e){
+function docsBox(e,bare){
   var L=allEmpFiles(e);
   var legacy=(e.docs||[]).filter(function(d){return !(d&&typeof d==='object'&&d.path&&window.PK&&PK.bySource(d.path));});
   var opts=DOCTYPES.concat(['פרטי פנסיה','הסכם עבודה','תלוש שכר','אחר']);
-  return '<div class="sec"><h3>📁 כל המסמכים של העובד/ת ('+L.length+')</h3>'+
+  return '<div class="sec">'+(bare?'':'<h3>📁 כל המסמכים של העובד/ת ('+L.length+')</h3>')+
     /* 14.11.2026 (איילת: «אפשר עוד לצמצם, תחשוב חכם», Impeccable): שורה אחת למסמך. מה שלא משנה החלטה (שם הקובץ, גודל, מקור) — בריחוף */
     (L.length?'<ul class="flist fcomp" id="cfList">'+L.map(function(f){
         var src=f.kind==='note'?'מהערת שכר':(f.kind==='pension_form'?'טופס פרטי פנסיה':(f.source&&f.source!=='העלאה'?'מהתיקייה':'הועלה'));
@@ -3118,7 +3136,7 @@ function open(id){
     if(e.sev_ytd)F('פיצויים',(e.sev_ytd||0).toLocaleString('he-IL')+' ₪');
   }
   h+='<div class="facts">'+FA.join('')+'</div>';
-  if(PA.length)h+='<details class="pfacts"><summary>👤 פרטים אישיים ופרטי טופס 101</summary><div class="facts">'+PA.join('')+'</div></details>';
+  if(PA.length)h+='<details class="pfacts cardsec" data-fk="pers"><summary>👤 פרטים אישיים ופרטי טופס 101</summary><div class="facts">'+PA.join('')+'</div></details>';
   /* marking */
   var docs=m.docs||[];
   function chip(t){
@@ -3132,9 +3150,12 @@ function open(id){
   }
   var dNeed=DOCTYPES.filter(function(t){return e.ds[t]==='need';});
   var dGot=DOCTYPES.filter(function(t){return e.ds[t]!=='need'&&(e.ds[t]||(e.dpath&&e.dpath[t]));});
-  var dRest=DOCTYPES.filter(function(t){return dNeed.indexOf(t)<0&&dGot.indexOf(t)<0;});
+  var _fl=allEmpFiles(e), _ft=_fl.map(function(f){return f.dtype;});
+  var dHid=dGot.filter(function(t){var fp=e.dpath&&e.dpath[t]; return (fp&&window.PK&&PK.bySource(fp.p))||_ft.indexOf(t)>=0;});
+  dGot=dGot.filter(function(t){return dHid.indexOf(t)<0;});
+  var dRest=DOCTYPES.filter(function(t){return dNeed.indexOf(t)<0&&dGot.indexOf(t)<0&&dHid.indexOf(t)<0;}).concat(dHid);
   var dOn=dNeed.concat(dGot,dRest), dOff=[];
-  var hm='<div class="mkpanel"><h3>סימון</h3>'+
+  var hm='<div class="mkpanel">'+
     (e.ext
       ? '<p class="hint">'+esc(e.extlbl)+' — אין פנסיה, אין טופס 101 ואין דרישת מסמכים.</p>'
       /* 14.11.2026 (איילת: «אם כבר יש פנסיה — לא מעניין ולא רלוונטי אם יש פנסיה קודמת»): כשהפנסיה נפתחה השדה מוסתר (נשאר בדף כדי שהשמירה תעבוד) */
@@ -3167,9 +3188,10 @@ function open(id){
         ? (e.age_defer?'קטין/ה — הפתיחה נדחית לגיל '+e.age_thr+' ('+esc(e.age_gate)+'), ואין דרישת מסמכים עד אז.':'')
         : 'בלי תאריך לידה כלל הגיל לא פועל, וקטין עלול להופיע כ«פנסיה באיחור».';
       return t?'<p class="hint">'+t+'</p>':'';})()+
-    (e.ext?'':
-      '<div class="fieldrow wide" style="align-items:flex-start"><label>מסמכים</label><div class="docgrid" style="flex:1 1 100%">'+
-        (dNeed.concat(dGot).length?dNeed.concat(dGot).map(chip).join(''):'<span class="hint" style="margin:0">אין מסמכים שנדרשים או שהתקבלו</span>')+
+    '</div>';
+  var hd=(e.ext?'':
+      '<div class="fieldrow wide" style="align-items:flex-start"><label>נדרש / סומן</label><div class="docgrid" style="flex:1 1 100%">'+
+        (dNeed.concat(dGot).length?dNeed.concat(dGot).map(chip).join(''):'<span class="hint" style="margin:0">אין מסמכים שחסרים</span>')+
       '</div></div>'+
       '<details class="mkfold docmore"><summary>＋ מסמך אחר ('+dRest.length+')</summary><div class="docgrid">'+dRest.map(chip).join('')+'</div>'+
         '<p class="doclegend">לחיצה מחליפה: נדרש ← התקבל ← ריק · <b>📎 = קיים קובץ, לחיצה פותחת אותו</b></p></details>'+
@@ -3181,8 +3203,9 @@ function open(id){
           out+='<p class="doclegend missing"><b>חסר:</b> '+ord.map(function(r){
             return esc(rs[r].join(' · '))+(r?' <span class="why">— '+esc(r)+'</span>':'');}).join('<br>')+'</p>';
         }
-        return out;
-      })())+
+        return out+(e.missing.length?'<div class="mkfoot"><button class="btn" id="mAsk" type="button">בקשת מסמכים</button></div>':'');
+      })());
+  var hs='<div class="mkpanel">'+
     (function(){ var by=m.by||{}, rows=[];
       function who(k){ var b=by[k]; return b?' <span class="mkby">'+esc(b.who||'')+(b.at?' · '+esc(fmtD(b.at)):'')+'</span>':''; }
       if(m.status)rows.push('<div class="mkrow"><span>סטטוס: <b>'+esc(m.status)+'</b>'+who('status')+'</span><button class="btn ghost" type="button" data-mkundo="status">↩ לתקן — לפי הנתונים</button></div>');
@@ -3209,14 +3232,18 @@ function open(id){
     '</details>'+
     '<div class="mkfoot"><span class="hint savedmsg'+((Date.now()-JUSTSAVED<4000)?' on':'')+'" id="mSaved">'+
       ((Date.now()-JUSTSAVED<4000)?'✓ נשמר':'נשמר מיד')+'</span>'+
-      (e.missing.length?'<button class="btn" id="mAsk" type="button">בקשת מסמכים</button>':'')+
       '<button class="btn ghost" id="mReset" type="button">ניקוי</button></div></div>';
-  if(!e.ext)h+=pformBox(e);
-  h+=docsBox(e);
-  if((e.f101||[]).length)h+='<div class="sec"><h3>מקור טופס 101</h3><ul class="list">'+
-     e.f101.map(function(f){return '<li><span class="m">'+esc(f.src)+' · '+esc(f.month)+'</span><br>'+esc(f.text)+'</li>';}).join('')+'</ul></div>';
-  h+=notesByMonth(e);
-  document.getElementById('dbody').innerHTML='<div class="dcol">'+h+'</div><div class="dcol">'+hm+'</div>';
+  function fold(k,t,hint,body){return '<details class="cfold cardsec" data-fk="'+k+'"><summary><h3>'+t+'</h3>'+(hint?'<span class="cfhint">'+hint+'</span>':'')+'</summary>'+body+'</details>';}
+  var f101s=(e.f101||[]).length?'<div class="sec"><h3>מקור טופס 101</h3><ul class="list">'+
+     e.f101.map(function(f){return '<li><span class="m">'+esc(f.src)+' · '+esc(f.month)+'</span><br>'+esc(f.text)+'</li>';}).join('')+'</ul></div>':'';
+  h+=fold('pens','🏦 פנסיה',esc(e.ext?'אין פנסיה':(e.todo||(e.pens_open?'נפתחה':''))),hm+(e.ext?'':pformBox(e)));
+  h+=fold('docs','📁 מסמכים',esc(_fl.length+' קבצים'+(e.missing.length?' · חסר: '+e.missing.join(', '):'')),(hd?'<div class="mkpanel">'+hd+'</div>':'')+docsBox(e,true)+f101s);
+  h+='<div class="cardsec">'+notesByMonth(e)+'</div>';
+  h+=fold('set','⚙️ סימונים והגדרות',esc([m.note?'יש הערה':'',m.shift?SHIFT_HE[m.shift]:''].filter(Boolean).join(' · ')),hs);
+  if(CARDF_ID!==id){CARDF={};CARDF_ID=id;}
+  document.getElementById('dbody').innerHTML='<div class="dcol">'+h+'</div>';
+  document.querySelectorAll('#dbody details[data-fk]').forEach(function(d){ if(CARDF[d.dataset.fk])d.open=true;
+    d.addEventListener('toggle',function(){CARDF[d.dataset.fk]=d.open;}); });
   wire(id);
   drawer.classList.add('on');scrim.classList.add('on');drawer.setAttribute('aria-hidden','false');
   document.getElementById('dclose').focus();
