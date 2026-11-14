@@ -1482,7 +1482,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261114-12';
+var PK_VER='20261114-13';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -1723,7 +1723,10 @@ function bc101Merge(D,L){ var M={}; (L||[]).forEach(function(b){ if(b&&b.emps)Ob
     e.b101={d:b.d||'',extra:b.extra,second:b.second,oleh:b.oleh,soldier:b.soldier,taxreq:b.taxreq,aliyah:b.aliyah||'',
       marital:b.marital||'',resident:b.resident||'',kibbutz:b.kibbutz||'',hmo:b.hmo||'',income:b.income||'',credits:b.credits||'',tel:(b.tel&&b.tel!==b.mobile)?b.tel:''}; }); }
 /* צילום שיפט מבקרת השכר (איילת 14.11.2026): <rest>/shift.json → e.shiftp, מוצג בריחוף על «פירוט שיפט» */
-function shiftMerge(D,L){ var M={}; (L||[]).forEach(function(b){ if(b&&b.emps)Object.keys(b.emps).forEach(function(k){ M[k]=Object.assign({month:b.month},b.emps[k]); }); });
+function shiftMerge(D,L){ var M={}; (L||[]).forEach(function(b){ if(b&&b.emps)Object.keys(b.emps).forEach(function(k){ var x=b.emps[k], o=M[k];
+    /* עובד שעבד בשתי מסעדות (למשל מארחת אסא במשמרות בצ'אקולי) — שני הדפים יחד */
+    if(o&&o.month===b.month&&String((o.c||[]).join())===String((x.c||[]).join())){ o.d=o.d.concat(x.d||[]); o.s=o.s.concat(x.s||[]); }
+    else if(!o) M[k]=Object.assign({month:b.month},x); }); });
   D.employees.forEach(function(e){ if(M[String(e.id)])e.shiftp=M[String(e.id)]; }); }
 var booted=false;
 function boot(){
