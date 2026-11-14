@@ -135,6 +135,10 @@ aside.drawer{position:fixed;inset-block:0;inset-inline-end:0;width:min(470px,94v
 aside.drawer.on{transform:translateX(0);visibility:visible;pointer-events:auto}
 .dhead{padding:18px 20px 14px;padding-inline-start:58px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:2}
 .dhead h2{margin:0 0 3px;font-size:19px;font-weight:800}
+.dpens{position:absolute;inset-inline-end:20px;top:12px;max-width:min(48%,420px)}
+.dpens .callout{padding:8px 13px}.dpens .callout .big{font-size:20px}.dpens .callout div{font-size:12.5px}
+.dpens:empty{display:none}
+@media (max-width:760px){.dpens{position:static;max-width:none;margin-top:10px}}
 .dclose{position:absolute;inset-block-start:14px;inset-inline-start:16px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:8px;width:30px;height:30px;font-size:16px;cursor:pointer;color:var(--ink-2);line-height:1}
 .dbody{padding:16px 20px 72px;display:flex;flex-direction:column;gap:18px}
@@ -1198,7 +1202,7 @@ section.act .allgood,.act table{font-size:14.5px}
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" aria-hidden="true" aria-label="כרטיס עובד">
   <div class="dhead"><button class="dclose" id="dclose" type="button" aria-label="סגירה">×</button>
-    <h2 id="dname"></h2><div class="stamp" id="dsub"></div></div>
+    <h2 id="dname"></h2><div class="stamp" id="dsub"></div><div class="dpens" id="dpens"></div></div>
   <div class="dbody" id="dbody"></div>
 </aside>
 
@@ -2996,6 +3000,7 @@ function open(id){
     pensTag(e)+'</div>';
   if(raw.manual)h+='<div class="statusline"><span class="hint">נוסף ידנית'+(raw.manual_by?' על ידי '+esc(raw.manual_by):'')+(raw.manual_at?' · '+esc(fmtD(String(raw.manual_at).slice(0,10))):'')+'</span>'+
     '<button class="btn" id="mNeEdit" type="button">✎ תיקון פרטים</button><button class="btn ghost" id="mNeDel" type="button">נוסף בטעות — למחוק</button></div>';
+  var _h0=h.length;   /* 14.11.2026 (איילת): ריבוע הפנסיה — בכותרת, משמאל לשם העובד (היה שם מקום ריק) */
   if(e.ext){
     h+='<div class="callout calm"><span class="cap">סוג העסקה</span><span class="big">'+esc(e.extlbl)+'</span>'+
        '<div style="font-size:12.5px;margin-top:4px">'+(e.invoice?'נותן שירות מול חשבונית':'מועסק דרך חברת כוח אדם')+' — אין פנסיה, אין טופס 101 ואין דרישת מסמכים.</div></div>';
@@ -3012,6 +3017,7 @@ function open(id){
        return '<div class="pfline" style="font-size:12.5px;margin-top:4px">בטופס בבטר צ׳אנס ('+esc(fmtD(f.d))+'): <b>'+(f.a==='y'?'יש קרן פעילה'+(f.fund?' · '+esc(f.fund):''):'אין קרן פעילה')+'</b>'+
          (f.a==='y'?(f.files?' · '+f.files+' קבצים צורפו':' · בלי קבצים'):'')+(diff?' <span class="pill p-warn">שונה ממה שרשום — לעדכן «פנסיה קודמת»</span>':'')+'</div>'; })()+'</div>';
   }
+  document.getElementById('dpens').innerHTML=h.slice(_h0); h=h.slice(0,_h0);
   var FA=[];
   function F(l,v){ if(v)FA.push('<span><i>'+l+'</i>'+v+'</span>'); }
   F('מחלקה',esc(e.dept));
