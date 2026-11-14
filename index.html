@@ -1261,15 +1261,15 @@ details.docmore .docgrid{margin-top:6px}
 .ptrack .chips button{font:inherit;font-size:12.5px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);cursor:pointer}
 .ptrack .chips button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .ptrack .scroll{overflow-x:auto}
-.ptrack table{width:100%;border-collapse:collapse;font-size:13px}
-.ptrack th,.ptrack td{padding:7px 10px;border-bottom:1px solid var(--line-2);text-align:start;vertical-align:top;white-space:nowrap}
-.ptrack th{font-size:12px;color:var(--muted);font-weight:700;background:var(--surface-2);position:sticky;top:0}
+.ptrack table{width:100%;border-collapse:collapse;font-size:14.5px}
+.ptrack th,.ptrack td{padding:11px 12px;border-bottom:1px solid var(--line-2);text-align:start;vertical-align:top;white-space:nowrap}
+.ptrack th{font-size:13px;color:var(--muted);font-weight:700;background:var(--surface-2);position:sticky;top:0}
 .ptrack tr[data-id]{cursor:pointer}
 .ptrack tr[data-id]:hover td{background:var(--accent-soft)}
 .ptrack td.wrap{white-space:normal;min-width:160px}
-.ptrack .dk{display:inline-block;margin-inline-end:6px;font-size:12px}
+.ptrack .dk{display:inline-block;margin-inline-end:8px;font-size:14px}
 .ptrack .dk.ok{color:var(--ok)}.ptrack .dk.no{color:var(--muted)}
-.ptrack .pn em{display:block;font-style:normal;font-size:11.5px;color:var(--muted)}
+.ptrack .pn b{font-size:15.5px}.ptrack .pn em{display:block;font-style:normal;font-size:13px;color:var(--sub);margin-top:2px}
 .ptrack .empty{padding:16px;color:var(--muted)}
 /* ---- לטיפול: רשימה אחת (26.10.2026) ---- */
 .topstrip{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;margin:14px 0 12px}
@@ -1311,14 +1311,14 @@ details.docmore .docgrid{margin-top:6px}
 .pktoast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .pktoast button{font:inherit;font-weight:800;margin-inline-start:10px;background:transparent;border:0;color:var(--accent-soft);text-decoration:underline;cursor:pointer}
 button.ps{font:inherit;cursor:pointer;background:var(--surface)}
-.ptrack .pfa{font-weight:700;font-size:13px}.ptrack .pfa.y{color:var(--ok)}.ptrack .pfa.n{color:var(--ink-2)}
+.ptrack .pfa{font-weight:700;font-size:14.5px}.ptrack .pfa.y{color:var(--ok)}.ptrack .pfa.n{color:var(--ink-2)}
 .ptrack .pfdiff{display:inline-block;margin-top:3px}
-.ptrack details.ptmore{margin-top:3px}.ptrack details.ptmore>summary{cursor:pointer;font-size:11.5px;color:var(--muted);list-style:none;width:max-content}
+.ptrack details.ptmore{margin-top:3px}.ptrack details.ptmore>summary{cursor:pointer;font-size:13px;color:var(--sub);list-style:none;width:max-content}
 .ptrack details.ptmore>summary::-webkit-details-marker{display:none}.ptrack details.ptmore>summary:hover{color:var(--accent-ink)}
 .ptrack details.ptmore[open]>summary{display:none}
 .ptrack .pted{display:flex;gap:5px;align-items:center;margin-top:3px}
 .ptrack .pted select.pstage{width:118px;flex:0 0 auto;margin:0}.ptrack .pted input.pnote{flex:1 1 auto;width:130px;min-width:90px;margin:0}
-.ptrack .pdone{color:var(--muted);font-size:12.5px}.ptrack .pwait{color:#8A6400;font-size:12.5px}
+.ptrack .pdone{color:var(--sub);font-size:14px}.ptrack .pwait{color:#8A6400;font-size:14px;font-weight:600}
 .ptrack td.ptactc{white-space:nowrap}
 .ptrack .chips button b{font-variant-numeric:tabular-nums;margin-inline-start:3px}
 .ptrack .chips button.crit{border-color:var(--crit,#C0392B)}.ptrack .chips button.crit b{color:var(--crit,#C0392B)}
@@ -1331,7 +1331,7 @@ button.ps{font:inherit;cursor:pointer;background:var(--surface)}
 .kitsec .kitchips .dk{display:inline-block;margin-inline-end:8px;font-size:12.5px}.kitsec .dk.ok{color:var(--ok)}.kitsec .dk.no{color:var(--crit,#C0392B);font-weight:600}
 .kitsec .pp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ptrack .ptacts{display:flex;flex-wrap:nowrap;gap:5px}
-.ptrack .ptacts .tlb{padding:3px 9px;font-size:12px;white-space:nowrap}
+.ptrack .ptacts .tlb{padding:6px 12px;font-size:13.5px;white-space:nowrap}
 .ptrack td.pdocs{white-space:normal;min-width:170px}
 @media (max-width:760px){.ptrack .ptacts{flex-wrap:wrap}.ptrack td.pdocs{min-width:150px}}
 .tlsum .pstrip{border:0;margin:0;padding:10px 14px;background:transparent}
@@ -1350,8 +1350,8 @@ button.ps{font:inherit;cursor:pointer;background:var(--surface)}
 @media (max-width:760px){.restbar{flex-wrap:wrap}.frow{grid-template-columns:1fr}.jump{width:100%;padding:6px 12px 0}.tabsbar nav.tabs{flex:1 1 100%}.ptrack>header .pasof{margin-inline-start:0}.jump input{width:100%}.jumpres{inset-inline:12px}}
 @media print{.jump{display:none}}
 .ptrack select.pstage,.ptrack input.pnote,.frow select.pstage,.frow input.pnote{font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);width:100%;margin-bottom:4px}
-.ptrack .pinfo,.frow .pinfo{display:block;font-style:normal;font-size:11.5px;color:var(--muted)}
-.ptrack button.dk{font:inherit;font-size:12px;border:1px solid transparent;background:transparent;border-radius:999px;padding:1px 6px;margin:0 0 2px;cursor:pointer}
+.ptrack .pinfo,.frow .pinfo{display:block;font-style:normal;font-size:13px;color:var(--sub);margin-top:2px}
+.ptrack button.dk{font:inherit;font-size:14px;border:1px solid transparent;background:transparent;border-radius:999px;padding:1px 6px;margin:0 0 2px;cursor:pointer}
 .ptrack button.dk.no{color:var(--muted)}.ptrack button.dk.ok{color:var(--ok)}
 .ptrack button.dk:not(:disabled):hover{border-color:var(--accent);color:var(--accent-ink)}
 .ptrack button.dk:disabled{cursor:default}
@@ -1615,7 +1615,9 @@ function inboxNotice(){ if(!PK.me||!PK.me.owner)return;
 function bc101Merge(D,L){ var M={}; (L||[]).forEach(function(b){ if(b&&b.emps)Object.keys(b.emps).forEach(function(k){ M[k]=b.emps[k]; }); });
   D.employees.forEach(function(e){ var b=M[String(e.id)]; if(!b||b.err)return;
     ['phone','email','addr','birth','gender'].forEach(function(k){ if(b[k])e[k]=b[k]; });
-    e.b101={d:b.d||'',extra:b.extra,second:b.second,oleh:b.oleh,soldier:b.soldier,taxreq:b.taxreq}; }); }
+    if(b.zip&&e.addr&&String(e.addr).indexOf(b.zip)<0)e.addr+=' '+b.zip;
+    e.b101={d:b.d||'',extra:b.extra,second:b.second,oleh:b.oleh,soldier:b.soldier,taxreq:b.taxreq,aliyah:b.aliyah||'',
+      marital:b.marital||'',resident:b.resident||'',kibbutz:b.kibbutz||'',hmo:b.hmo||'',income:b.income||'',credits:b.credits||'',tel:(b.tel&&b.tel!==b.mobile)?b.tel:''}; }); }
 var booted=false;
 function boot(){
   msg('טוענת…');
@@ -3022,6 +3024,14 @@ function open(id){
     if(_b.second)_w.push('אצלנו: משרה נוספת');
     F('עבודה נוספת',_w.join(' · '));
     var _o=[]; if(_b.soldier)_o.push('חייל/ת משוחרר/ת'); if(_b.oleh)_o.push('עולה חדש/ה'); if(_o.length)F('הצהרות ב-101',esc(_o.join(' · ')));
+    if(_b.tel)F('טלפון נוסף',esc(_b.tel));
+    if(_b.marital)F('מצב משפחתי',esc(_b.marital));
+    if(_b.hmo)F('קופת חולים',esc(_b.hmo));
+    if(_b.resident==='לא')F('תושב/ת ישראל','<b>לא</b>');
+    if(_b.kibbutz&&_b.kibbutz!=='לא')F('חבר/ת קיבוץ',esc(_b.kibbutz));
+    if(_b.aliyah)F('תאריך עלייה',esc(_b.aliyah));
+    if(_b.income)F('סוג ההכנסה אצלנו',esc(_b.income));
+    if(_b.credits)F('נקודות זיכוי שביקש/ה',esc(_b.credits.split(' | ').map(function(t){return t.replace(/^(\d{1,2} ?[אב]? ?)\.\s*/,'$1. ');}).join(' · ')));
     if(_b.d)F('טופס 101 אחרון','בטר צ׳אנס · '+esc(fmtD(_b.d))); }
   F('תחילת עבודה',e.start?esc(fmtD(e.start))+(e.months!=null?' · ותק '+e.months+' ח׳':''):'<b>חסר</b>');
   F('תלוש '+SLIP_N,e.slip?'יש':'<b>אין</b>');
