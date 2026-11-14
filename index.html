@@ -1306,7 +1306,12 @@ section.act .allgood,.act table{font-size:14.5px}
 .pktoast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .pktoast button{font:inherit;font-weight:800;margin-inline-start:10px;background:transparent;border:0;color:var(--accent-soft);text-decoration:underline;cursor:pointer}
 button.ps{font:inherit;cursor:pointer;background:var(--surface)}
-.ptrack .pted{display:flex;gap:5px;align-items:center}
+.ptrack .pfa{font-weight:700;font-size:13px}.ptrack .pfa.y{color:var(--ok)}.ptrack .pfa.n{color:var(--ink-2)}
+.ptrack .pfdiff{display:inline-block;margin-top:3px}
+.ptrack details.ptmore{margin-top:3px}.ptrack details.ptmore>summary{cursor:pointer;font-size:11.5px;color:var(--muted);list-style:none;width:max-content}
+.ptrack details.ptmore>summary::-webkit-details-marker{display:none}.ptrack details.ptmore>summary:hover{color:var(--accent-ink)}
+.ptrack details.ptmore[open]>summary{display:none}
+.ptrack .pted{display:flex;gap:5px;align-items:center;margin-top:3px}
 .ptrack .pted select.pstage{width:118px;flex:0 0 auto;margin:0}.ptrack .pted input.pnote{flex:1 1 auto;width:130px;min-width:90px;margin:0}
 .ptrack .pdone{color:var(--muted);font-size:12.5px}.ptrack .pwait{color:#8A6400;font-size:12.5px}
 .ptrack td.ptactc{white-space:nowrap}
@@ -2050,7 +2055,7 @@ function pensTrack(A){
       return (p[0]==='noform'?'<span class="chsep" aria-hidden="true"></span>':'')+'<button type="button" class="'+(n?p[2]:'')+'" data-ptf="'+p[0]+'" aria-pressed="'+(PTF===p[0])+'">'+esc(p[1])+' <b>'+n+'</b></button>';}).join('')+
     '</div><span class="pasof">נכון ל־'+pmLabel(NOWM)+'</span></header>';
   if(!rows.length)return h+'<div class="empty">אין עובדים בסינון הזה.</div></section>';
-  h+='<div class="scroll"><table><thead><tr><th>עובד/ת</th><th>מתי נפתחת</th><th>חודש פתיחה</th><th>מה חסר לפנסיה <span style="font-weight:400">(לחיצה = התקבל)</span></th><th>מצב ומה נאמר</th><th></th></tr></thead><tbody>';
+  h+='<div class="scroll"><table><thead><tr><th>עובד/ת</th><th>מתי נפתחת</th><th>חודש פתיחה</th><th>מה חסר לפנסיה <span style="font-weight:400">(לחיצה = התקבל)</span></th><th>טופס פרטי פנסיה <span style="font-weight:400">(בטר צ׳אנס)</span></th><th></th></tr></thead><tbody>';
   rows.forEach(function(e){
     var mt=(e.pform&&e.pform.meta)||{};
     var lateBy=(e.pmonth&&!e.pens_open)?NOWM-pmNum(e):0;
@@ -2060,7 +2065,8 @@ function pensTrack(A){
     /* 14.11.2026 (איילת: «תראה איזה בלאגן יש בלשונית הפנסיה»): בעמודת המסמכים רק מה שצריך לפנסיה של העובד הזה —
        קרן קודמת פעילה: קוביות + אישור קרן · אין קרן קודמת: לא צריך מסמכים (ברירת מחדל בשכר 7) · לא ידוע: רק טופס «פרטי פנסיה».
        101 ואישור ניהול חשבון — בלשונית «טופס 101 ומסמכים». «נפתחה» — באותה עמודה של חודש הפתיחה. */
-    var kitF=!!((kitOf(e)||{}).m&8), noFund=(e.pension==='אין'||e.pension==='אין פנסיה פעילה'), actF=e.pension==='פעילה';
+    var kitF=!!((kitOf(e)||{}).m&8), noFund=(e.pension==='אין'||e.pension==='אין פנסיה פעילה'), actF=e.pension==='פעילה', pf=pfOf(e);
+    if(!noFund&&!actF&&pf){ if(pf.a==='y')actF=true; else if(pf.a==='n')noFund=true; }
     var docs, needAsk=[];
     if(e.pens_open)docs='<span class="pdone">הפנסיה נפתחה — אין מה להשלים</span>';
     else if(actF){ docs=dk(e,'טופס קוביות','קוביות')+dk(e,'אישור קרן פנסיה פעילה','אישור קרן');
@@ -2077,9 +2083,10 @@ function pensTrack(A){
       '<td class="wrap pbasis">'+pensBasis(e)+'</td>'+
       '<td>'+(e.pens_open?'<span class="pill p-ok">✓ נפתחה '+esc(e.opened_date?fmtD(e.opened_date):(e.opened_month||''))+'</span>':esc(e.pmonth_he||'חסר תאריך התחלה')+due)+'</td>'+
       '<td class="pdocs">'+docs+(e.pform&&!e.pens_open?'<em class="pinfo" title="מה שהעובד מילא בטופס פרטי פנסיה">טופס: '+esc(pformLine(e.pform))+(mt.form_date||mt.date?' · '+esc(mt.form_date||mt.date):'')+'</em>':'')+'</td>'+
-      '<td class="ptedit"><div class="pted">'+pstageSel(e)+
+      '<td class="ptedit wrap">'+pfCell(e)+
+        '<details class="ptmore"'+(((MARKS[e.id]||{}).pstage||e.talked_note)?' open':'')+'><summary>✎ הערה שלי</summary><div class="pted">'+pstageSel(e)+
         '<input type="text" class="pnote" data-pt="note" data-emp="'+e.id+'" value="'+esc(e.talked_note||'')+'" placeholder="מה נאמר…" aria-label="מה נאמר">'+
-        '</div>'+((pstageInfo(e)||e.talked_at)?'<em class="pinfo">'+esc(pstageInfo(e)||('דיברנו '+fmtD(e.talked_at)))+'</em>':'')+'</td>'+
+        '</div>'+((pstageInfo(e)||e.talked_at)?'<em class="pinfo">'+esc(pstageInfo(e)||('דיברנו '+fmtD(e.talked_at)))+'</em>':'')+'</details></td>'+
       '<td class="ptactc">'+(acts?'<div class="ptacts">'+acts+'</div>':'')+'</td></tr>';
   });
   return h+'</tbody></table></div></section>';
@@ -2251,6 +2258,19 @@ var KIT_F=[[1,'טופס 101'],[2,'קוד אתי'],[4,'מניעת הטרדה מי
 function kitData(){ if(!window.PK)return null; var rc=PK.rc(REST), it=PK.items().filter(function(x){return x.kind==='kit'&&x.id==='kit_'+rc&&!x.deleted;})[0]; return it&&it.data&&it.data.emps?it.data:null; }
 function kitOf(e){ var d=kitData(); if(!d)return null; var need=d.need||63, m=d.emps[String(e.id)]; return {need:need, m:(m==null?null:m), miss:(m==null?need:(need&~m))}; }
 function kitReq(e){ if(!window.PK)return null; var id='kitreq_'+PK.rc(REST)+'_'+e.id; return PK.items().filter(function(x){return x.id===id&&!x.deleted;})[0]||null; }
+/* 14.11.2026 (איילת: «מצב ומה נאמר — זה לא אתה רואה בבטר צ'אנס?»): התשובות של טופס «פרטי פנסיה של עובד» מבטר צ'אנס —
+   pinkas_items kind='kit' id 'kitpf_<rest>': data.emps[מספר עובד]={d:תאריך מילוי, a:'y'|'n'|'', fund:שם הקרן, files:כמה קבצים צורפו}. מתעדכן במשימת הבוקר. לא משנה לבד את «פנסיה קודמת». */
+function pfData(){ if(!window.PK)return null; var rc=PK.rc(REST), it=PK.items().filter(function(x){return x.id==='kitpf_'+rc&&!x.deleted;})[0]; return it&&it.data&&it.data.emps?it.data:null; }
+function pfOf(e){ var d=pfData(); return d?(d.emps[String(e.id)]||null):null; }
+function pfCell(e){ var f=pfOf(e), kitF=!!((kitOf(e)||{}).m&8), noFund=(e.pension==='אין'||e.pension==='אין פנסיה פעילה'), h;
+  if(f&&(f.a==='y'||f.a==='n')){
+    h='<span class="pfa '+(f.a==='y'?'y':'n')+'">'+(f.a==='y'?'יש קרן פעילה':'אין קרן פעילה')+'</span>'+
+      '<em class="pinfo">מילא/ה '+esc(fmtD(f.d))+(f.a==='y'&&f.fund?' · '+esc(f.fund):'')+(f.a==='y'?(f.files?' · '+f.files+' קבצים צורפו':' · בלי קבצים'):'')+'</em>';
+    if(!e.pens_open&&((f.a==='y'&&e.pension!=='פעילה')||(f.a==='n'&&e.pension==='פעילה')))
+      h+='<span class="pill p-warn pfdiff" title="מה שהעובד ענה בטופס שונה ממה שרשום בפנקס — לבדוק ולעדכן בכרטיס">בפנקס רשום: '+esc(e.pension==='פעילה'?'קרן פעילה':noFund?'אין קרן':'לא ידוע')+'</span>'; }
+  else if(f||kitF)h='<span class="pwait">מילא/ה'+(f&&f.d?' '+esc(fmtD(f.d)):'')+' — בלי תשובה על קרן</span>';
+  else h='<span class="pdone">לא מילא/ה</span>';
+  return h; }
 function kitMissNames(k){ return KIT_F.filter(function(f){return k.miss&f[0];}).map(function(f){return f[1];}); }
 function kitText(e){ var k=kitOf(e), L=kitMissNames(k), c=(typeof ctrOf==='function')?ctrOf(e):null;
   return 'היי '+String(e.name).split(' ')[0]+', כדי להשלים את הקליטה שלך חסרים לנו כמה טפסים באפליקציית Better Chains:\n'+L.map(function(t){return '• '+t;}).join('\n')+
@@ -3250,6 +3270,7 @@ document.getElementById('pensView').addEventListener('click',function(ev){
   var c=ev.target.closest('button[data-ptf]'); if(!c)return; ev.stopPropagation(); PTF=c.dataset.ptf; renderPens();},true);
 ['pensView','docsView'].forEach(function(vid){
   document.getElementById(vid).addEventListener('click',function(ev){
+    if(ev.target.closest('.ptmore'))return;
     var tr=ev.target.closest('[data-id]'); if(tr)open(+tr.dataset.id);});
   document.getElementById(vid).addEventListener('keydown',function(ev){
     if(ev.key==='Enter'){var tr=ev.target.closest('[data-id]'); if(tr)open(+tr.dataset.id);}});});
