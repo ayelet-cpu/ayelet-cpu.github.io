@@ -1107,6 +1107,17 @@ details.pfacts{margin:0}
 #dbody .kfacts>span{flex:1 1 180px}
 #dbody .kfacts>span.wide{flex-basis:100%}
 #dbody .shiftpill{cursor:help;border:1px dashed var(--line);background:var(--surface);color:var(--ink-2)}
+#dbody .statusline{position:relative}
+#dbody .shpop{display:none;position:absolute;top:calc(100% + 4px);inset-inline:0;z-index:30;max-height:62vh;overflow:auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.18);padding:10px 12px;text-align:start;cursor:default;font-weight:400}
+#dbody .shiftpill:hover .shpop,#dbody .shiftpill:focus-within .shpop,#dbody .shiftpill:focus .shpop{display:block}
+#dbody .shpop .shhd{font-size:14px;margin-bottom:6px;color:var(--ink)}
+#dbody .shpop .shhd span{font-size:12.5px;color:var(--sub)}
+#dbody .shpop table{width:100%;border-collapse:collapse;font-size:13px}
+#dbody .shpop th{position:sticky;top:-10px;background:var(--surface-2);font-weight:700;text-align:start;padding:4px 6px;border-bottom:1px solid var(--line)}
+#dbody .shpop td{padding:3px 6px;border-bottom:1px solid var(--line-2);white-space:nowrap}
+#dbody .shpop tr.shs td{font-weight:700;background:var(--surface-2)}
+#dbody .shpop .shsrc{font-size:12px;color:var(--sub);margin-top:6px}
 #dbody h4.fgrp{margin:12px 0 6px;font-size:14px;font-weight:700;color:var(--ink-2)}
 #dbody h4.fgrp:first-child{margin-top:0}
 #dbody .kfacts .slips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
@@ -1471,7 +1482,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261114-11';
+var PK_VER='20261114-12';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -1711,6 +1722,9 @@ function bc101Merge(D,L){ var M={}; (L||[]).forEach(function(b){ if(b&&b.emps)Ob
     if(b.tz&&!String(e.tz||'').trim())e.tz=b.tz;   /* ת"ז מה-101 — רק כשחסרה בפנקס (איילת 14.11: «ת"ז חשוב שיהיה לכולם») */
     e.b101={d:b.d||'',extra:b.extra,second:b.second,oleh:b.oleh,soldier:b.soldier,taxreq:b.taxreq,aliyah:b.aliyah||'',
       marital:b.marital||'',resident:b.resident||'',kibbutz:b.kibbutz||'',hmo:b.hmo||'',income:b.income||'',credits:b.credits||'',tel:(b.tel&&b.tel!==b.mobile)?b.tel:''}; }); }
+/* צילום שיפט מבקרת השכר (איילת 14.11.2026): <rest>/shift.json → e.shiftp, מוצג בריחוף על «פירוט שיפט» */
+function shiftMerge(D,L){ var M={}; (L||[]).forEach(function(b){ if(b&&b.emps)Object.keys(b.emps).forEach(function(k){ M[k]=Object.assign({month:b.month},b.emps[k]); }); });
+  D.employees.forEach(function(e){ if(M[String(e.id)])e.shiftp=M[String(e.id)]; }); }
 var booted=false;
 function boot(){
   msg('טוענת…');
@@ -1721,9 +1735,10 @@ function boot(){
     return Promise.all([Promise.all(rs.map(function(r){ return json('/storage/v1/object/authenticated/pinkas/'+r+'/app.json').catch(function(e){ if(e.status===400||e.status===404)return null; throw e; }); })),
                         PK.newList(rs),
                         /* 14.11.2026 (איילת: «שפרטי ה-101 יהיו מעודכנים אצלנו»): <rest>/bc101.json — מה שהעובד מילא בטופס 101 האחרון בבטר צ'אנס */
-                        Promise.all(rs.map(function(r){ return json('/storage/v1/object/authenticated/pinkas/'+r+'/bc101.json').catch(function(){ return null; }); }))])
+                        Promise.all(rs.map(function(r){ return json('/storage/v1/object/authenticated/pinkas/'+r+'/bc101.json').catch(function(){ return null; }); })),
+                        Promise.all(rs.map(function(r){ return json('/storage/v1/object/authenticated/pinkas/'+r+'/shift.json').catch(function(){ return null; }); }))])
       .then(function(x){ var D=mergePayloads(x[0]); if(!D.employees.length) throw new Error('נתוני העובדים עוד לא הועלו לענן');
-        bc101Merge(D,x[2]);
+        bc101Merge(D,x[2]); shiftMerge(D,x[3]);
         return addNew(D,x[1]).then(function(){ return PK.reload(); }).then(function(){ return D; }); });
   }).then(function(D){
     var m={}; D.employees.forEach(function(e){m[e.id]=e;}); window.__PK_EMP=m;
@@ -3113,7 +3128,15 @@ function open(id){
     (e.ext?'':'<span class="pill '+(e.s101==='יש'?'p-ok':'p-crit')+'">טופס 101 '+(e.s101==='יש'?'✓':'חסר')+'</span>')+
     (function(){ var t=['שיפט — '+ATT_HE+':', e.worked_sept?(e.sept_days+' ימים'+(e.sept_hours?' · '+e.sept_hours+' שעות':'')):(e.global?'גלובלי — לא מחתים':'לא החתים')];
       if(e.sept_roles&&e.sept_roles.length)t.push('לפי תפקיד: '+e.sept_roles.map(function(r){return r.role+' '+r.days+' ימים';}).join(' · '));
-      return '<span class="pill shiftpill" tabindex="0" title="'+esc(t.join(' · '))+'">🕒 פירוט שיפט</span>'; })()+
+      var sp=e.shiftp, pop='';
+      if(sp&&sp.c){ var C=sp.c, isum=C.indexOf('סיכום');
+        var cell=function(v,i){ return v==null?'':(i===isum&&typeof v==='number'?(Math.round(v*100)/100):v); };
+        pop='<div class="shpop" role="tooltip"><div class="shhd"><b>צילום שיפט — '+esc(nlabel(+sp.month.slice(0,4),+sp.month.slice(5)))+'</b> <span>'+esc(String(sp.h||'').replace(/^חודש:[^|]*\|\s*/,''))+'</span></div>'+
+          '<table><thead><tr>'+C.map(function(c){return '<th>'+esc(c)+'</th>';}).join('')+'</tr></thead><tbody>'+
+          (sp.d||[]).map(function(r){return '<tr>'+r.map(function(v,i){return '<td>'+esc(String(cell(v,i)))+'</td>';}).join('')+'</tr>';}).join('')+
+          (sp.s||[]).map(function(r){return '<tr class="shs"><td colspan="'+Math.max(1,isum)+'">'+esc(r[0]||'')+'</td><td>'+esc(String(cell(r[1],isum)))+'</td>'+(C.length-isum-1>0?'<td colspan="'+(C.length-isum-1)+'"></td>':'')+'</tr>';}).join('')+
+          '</tbody></table><div class="shsrc">מתוך בקרת השכר</div></div>'; }
+      return '<span class="pill shiftpill" tabindex="0"'+(pop?'':' title="'+esc(t.join(' · '))+'"')+'>🕒 פירוט שיפט'+pop+'</span>'; })()+
     '</div>';   /* מצב הפנסיה — בריבוע שבכותרת (בלי כפילות, 14.11.2026) */
   if(raw.manual)h+='<div class="statusline"><span class="hint">נוסף ידנית'+(raw.manual_by?' על ידי '+esc(raw.manual_by):'')+(raw.manual_at?' · '+esc(fmtD(String(raw.manual_at).slice(0,10))):'')+'</span>'+
     '<button class="btn" id="mNeEdit" type="button">✎ תיקון פרטים</button><button class="btn ghost" id="mNeDel" type="button">נוסף בטעות — למחוק</button></div>';
