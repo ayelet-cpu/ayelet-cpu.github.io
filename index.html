@@ -1181,7 +1181,7 @@ section.act .allgood,.act table{font-size:14.5px}
       <label>מין *<select id="ne_gender"><option value="">— לבחור —</option><option value="F">נקבה</option><option value="M">זכר</option></select></label>
       <label>תאריך תחילת עבודה *<input type="date" id="ne_start"></label>
       <label>טופס 101 *<select id="ne_s101"><option value="">— לבחור —</option><option value="יש">יש</option><option value="חסר">חסר</option></select></label>
-      <label>פנסיה קודמת<select id="ne_pension"><option value="">לא ידוע → שכר שביעי</option><option value="אין פנסיה פעילה">אין פנסיה פעילה → שכר שביעי</option><option value="פעילה">פעילה, יש אישור קרן תקף → שכר רביעי</option></select></label>
+      <label>פנסיה קודמת<select id="ne_pension"><option value="">אין → שכר שביעי</option><option value="אין פנסיה פעילה">אין פנסיה פעילה → שכר שביעי</option><option value="פעילה">פעילה, יש אישור קרן תקף → שכר רביעי</option></select></label>
       <label>מחלקה<input type="text" id="ne_dept" list="ne_depts" autocomplete="off"><datalist id="ne_depts"></datalist></label>
       <label>תפקיד<input type="text" id="ne_role" autocomplete="off"></label>
       <label>תעריף לשעה (₪)<input type="text" id="ne_rate" inputmode="decimal" autocomplete="off"></label>
@@ -1619,6 +1619,7 @@ function inboxNotice(){ if(!PK.me||!PK.me.owner)return;
 function bc101Merge(D,L){ var M={}; (L||[]).forEach(function(b){ if(b&&b.emps)Object.keys(b.emps).forEach(function(k){ M[k]=b.emps[k]; }); });
   D.employees.forEach(function(e){ var b=M[String(e.id)]; if(!b||b.err)return;
     ['phone','email','addr','birth','gender'].forEach(function(k){ if(b[k])e[k]=b[k]; });
+    if(b.tz&&!String(e.tz||'').trim())e.tz=b.tz;   /* ת"ז מה-101 — רק כשחסרה בפנקס (איילת 14.11: «ת"ז חשוב שיהיה לכולם») */
     if(b.zip&&e.addr&&String(e.addr).indexOf(b.zip)<0)e.addr+=' '+b.zip;
     e.b101={d:b.d||'',extra:b.extra,second:b.second,oleh:b.oleh,soldier:b.soldier,taxreq:b.taxreq,aliyah:b.aliyah||'',
       marital:b.marital||'',resident:b.resident||'',kibbutz:b.kibbutz||'',hmo:b.hmo||'',income:b.income||'',credits:b.credits||'',tel:(b.tel&&b.tel!==b.mobile)?b.tel:''}; }); }
@@ -2021,7 +2022,7 @@ function pensBasis(e){
   var t,c;
   if(e.pension==='פעילה'){t='שכר 4 · פנסיה קודמת פעילה';c='p-ok';}
   else if(e.pension==='אין פנסיה פעילה'||e.pension==='אין'){t='שכר 7 · אין פנסיה קודמת';c='p-idle';}
-  else {t='שכר 7 · פנסיה קודמת לא ידועה';c='p-warn';}
+  else {t='שכר 7 · אין פנסיה קודמת';c='p-idle';}
   var s='<span class="pill '+c+'">'+esc(t)+'</span>';
   if(e.age_defer)s+='<span class="pill p-acc">דחייה עד גיל '+e.age_thr+' ('+esc(e.age_gate)+')</span>';
   return s;
@@ -2108,9 +2109,7 @@ function pensTrack(A){
     if(e.pens_open)docs='<span class="pdone">הפנסיה נפתחה — אין מה להשלים</span>';
     else if(actF){ docs=dk(e,'טופס קוביות','קוביות')+dk(e,'אישור קרן פנסיה פעילה','אישור קרן');
       [['טופס קוביות','טופס קוביות (מהקרן)'],['אישור קרן פנסיה פעילה','אישור מהקרן שהפנסיה פעילה']].forEach(function(t){ if(!(e.dtypes.indexOf(t[0])>=0||(e.ds&&e.ds[t[0]]==='got')))needAsk.push(t[1]); }); }
-    else if(noFund)docs='<span class="pdone">לא צריך מסמכים — קרן ברירת מחדל</span>';
-    else if(e.pform||kitF)docs='<span class="pwait">'+(kitF&&!e.pform?'מילא/ה טופס בבטר צ׳אנס — לבדוק שם אם יש קרן פעילה':'לסמן בכרטיס אם יש קרן פעילה')+'</span>';
-    else { docs='<span class="dk no">✗ טופס פרטי פנסיה</span>'; needAsk.push('טופס «פרטי פנסיה» באפליקציית Better Chains (האם יש לך קרן פנסיה פעילה)'); }
+    else docs='<span class="pdone">לא צריך מסמכים — קרן ברירת מחדל</span>';
     /* 14.11.2026: הקבצים שהעובד צירף לטופס הפנסיה בבטר צ'אנס הורדו לכרטיס (סוג «מסמכי פנסיה מבטר צ׳אנס») — לא מסמנים לבד «התקבל», רק מראים שיש מה לפתוח */
     if(!e.pens_open&&window.PK&&PK.byEmp(e.id).some(function(f){return f.dtype==='מסמכי פנסיה מבטר צ׳אנס';}))docs+='<em class="pinfo pbcf">📎 יש קבצים מהטופס בכרטיס — לפתוח ולסמן</em>';
     var pk=(e.todo==='פנסיה באיחור'||e.todo==='לפתוח פנסיה'||e.todo==='פנסיה בחודש הבא')?e.todo:'';
@@ -2308,7 +2307,7 @@ function pfCell(e){ var f=pfOf(e), kitF=!!((kitOf(e)||{}).m&8), noFund=(e.pensio
       '<em class="pinfo">מילא/ה '+esc(fmtD(f.d))+(f.a==='y'&&f.fund?' · '+esc(f.fund):'')+(f.a==='y'?(f.files?' · '+f.files+' קבצים צורפו':' · בלי קבצים'):'')+'</em>';
     if(!e.pens_open&&((f.a==='y'&&e.pension!=='פעילה')||(f.a==='n'&&e.pension==='פעילה')))
       h+='<span class="pill p-warn pfdiff" title="מה שהעובד ענה בטופס שונה ממה שרשום בפנקס — לבדוק ולעדכן בכרטיס">בפנקס רשום: '+esc(e.pension==='פעילה'?'קרן פעילה':noFund?'אין קרן':'לא ידוע')+'</span>'; }
-  else { var known=e.pension==='פעילה'?'<span class="pfa y">יש קרן פעילה</span>':noFund?'<span class="pfa n">אין קרן פעילה</span>':'<span class="pwait">לא ידוע</span>';
+  else { var known=e.pension==='פעילה'?'<span class="pfa y">יש קרן פעילה</span>':noFund?'<span class="pfa n">אין קרן פעילה</span>':'<span class="pfa n">אין קרן פעילה</span>';
     h=known+'<em class="pinfo">'+((f||kitF)?'מילא/ה טופס'+(f&&f.d?' '+esc(fmtD(f.d)):'')+' — בלי תשובה על קרן':(e.pension==='פעילה'||noFund?'רשום בפנקס · בלי טופס':'לא מילא/ה טופס'))+'</em>'; }
   return h; }
 function kitMissNames(k){ return KIT_F.filter(function(f){return k.miss&f[0];}).map(function(f){return f[1];}); }
@@ -3010,7 +3009,7 @@ function open(id){
      '<span class="big">'+esc(e.pens_open?(e.opened_date?fmtD(e.opened_date):(e.opened_month||'מופרש')):(e.pmonth_he||'חסר תאריך תחילת עבודה'))+'</span>'+
      (e.start?'<div style="font-size:12.5px;margin-top:4px">'+
        (e.pens_open?'הפרשה לקופ״ג מופיעה בתלוש '+SLIP_N:'<b>'+esc(e.wait)+'</b> מתחילת העבודה · '+
-        (e.foreign?'עובד זר — פתיחה אחרי חצי שנה':(e.pension==='פעילה'?'יש פנסיה קודמת פעילה':((e.pension==='אין פנסיה פעילה'||e.pension==='אין')?'אין פנסיה קודמת — לא צריך מסמכים':'הפנסיה הקודמת לא סומנה'))))+
+        (e.foreign?'עובד זר — פתיחה אחרי חצי שנה':(e.pension==='פעילה'?'יש פנסיה קודמת פעילה':((e.pension==='אין פנסיה פעילה'||e.pension==='אין')?'אין פנסיה קודמת — לא צריך מסמכים':'אין פנסיה קודמת — לא צריך מסמכים'))))+
        '</div>':'')+
      (function(){ var f=(typeof pfOf==='function')?pfOf(e):null; if(!f||(f.a!=='y'&&f.a!=='n'))return '';
        var diff=!e.pens_open&&((f.a==='y'&&e.pension!=='פעילה')||(f.a==='n'&&e.pension==='פעילה'));
@@ -3071,7 +3070,7 @@ function open(id){
       /* 14.11.2026 (איילת: «אם כבר יש פנסיה — לא מעניין ולא רלוונטי אם יש פנסיה קודמת»): כשהפנסיה נפתחה השדה מוסתר (נשאר בדף כדי שהשמירה תעבוד) */
       : '<div class="fieldrow"'+(e.pens_open?' hidden':'')+'><label for="mPens">פנסיה קודמת</label><select id="mPens">'+
           (function(){ var dv=e.foreign?'זר':e.pension==='פעילה'?'פעילה':(e.pension==='אין'||e.pension==='אין פנסיה פעילה')?'אין':'';
-            return mkOpts(m.pension||'',dv,dv==='פעילה'?'יש':dv==='אין'?'אין':dv==='זר'?'עובד זר':'לא ידוע',[['פעילה','יש'],['אין','אין'],['זר','עובד זר']]); })()+
+            return mkOpts(m.pension||'',dv,dv==='פעילה'?'יש':dv==='אין'?'אין':dv==='זר'?'עובד זר':'אין',[['פעילה','יש'],['אין','אין'],['זר','עובד זר']]); })()+
         '</select></div>'+
         '<div class="fieldrow"><label for="mOpened">הפנסיה נפתחה</label><span>'+
           '<input type="checkbox" id="mOpened"'+(e.pens_open?' checked':'')+'>'+
@@ -4721,7 +4720,7 @@ function nFormHtml(rest,y,m){
    במקום זה — בלשונית «לטיפול», בשורות הפנסיה: «📝 הערה לחשבת» — הערה נוצרת רק בלחיצה (nPensLine = הנוסח). */
 function nPensLine(e){
   function ok(t){return e.dtypes.indexOf(t)>=0?'✓':'✗';}
-  var basis=e.pension==='פעילה'?'פנסיה קודמת פעילה (שכר 4)':((e.pension==='אין פנסיה פעילה'||e.pension==='אין')?'אין פנסיה קודמת (שכר 7)':'פנסיה קודמת לא ידועה (שכר 7)');
+  var basis=e.pension==='פעילה'?'פנסיה קודמת פעילה (שכר 4)':((e.pension==='אין פנסיה פעילה'||e.pension==='אין')?'אין פנסיה קודמת (שכר 7)':'אין פנסיה קודמת (שכר 7)');
   return 'לפתוח פנסיה — תחילת עבודה '+(e.start?e.start.split('-').reverse().join('.'):'?')+' · '+basis+(e.pmonth_he?' · מועד הפתיחה '+e.pmonth_he:'')+
     ' · טופס קוביות '+ok('טופס קוביות')+(e.pension==='פעילה'?' · אישור קרן '+ok('אישור קרן פנסיה פעילה'):'');
 }
