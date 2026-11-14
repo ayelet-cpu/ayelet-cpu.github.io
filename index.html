@@ -1254,6 +1254,9 @@ section.act .allgood,.act table{font-size:14.5px}
 .ptrack>header h2{margin:0;font-size:16px}
 .ptrack .chips{display:flex;gap:6px;flex-wrap:wrap}
 .cmptab select.cmpcm{display:block;margin-top:4px;font:inherit;font-size:11.5px;color:var(--muted);border:1px dashed var(--line);border-radius:7px;background:transparent;padding:2px 4px;max-width:150px}
+details.mkfold{margin:6px 0 8px}details.mkfold>summary{cursor:pointer;font-size:12.5px;color:var(--sub);list-style:none;width:max-content;padding:3px 0}
+details.mkfold>summary::-webkit-details-marker{display:none}details.mkfold>summary:hover{color:var(--accent-ink)}details.mkfold[open]>summary{font-weight:700;color:var(--ink-2)}
+details.docmore .docgrid{margin-top:6px}
 .ptrack .ptfl{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:6px}.ptrack .ptfl select{font:inherit;font-size:13.5px;font-weight:700;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
 .ptrack .chips button{font:inherit;font-size:12.5px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);cursor:pointer}
 .ptrack .chips button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -1881,6 +1884,11 @@ function pPens(e){
   if(e.due==='עכשיו')return '<span class="pill p-warn">לפתוח עכשיו</span>';
   return '<span class="pill p-idle">בהמתנה</span>';
 }
+/* 14.11.2026 (איילת: «לא צריך לרשום לפי נתונים יש — רק יש או אין»): בבחירות שבכרטיס מוצג הערך עצמו.
+   בלי סימון ידני — הערך מהנתונים נבחר (ואין אפשרות כפולה שלו); עם סימון — האפשרות הראשונה מבטלת אותו. */
+function mkOpts(cur,dataVal,dataLabel,list){
+  var h=cur?'<option value="">↩ לבטל את הסימון</option>':'<option value="" selected>'+esc(dataLabel)+'</option>';
+  return h+list.filter(function(o){return cur||o[0]!==dataVal;}).map(function(o){return '<option value="'+esc(o[0])+'"'+(cur===o[0]?' selected':'')+'>'+esc(o[1])+'</option>';}).join(''); }
 function reasonFor(e,t){
   if(e.dsauto&&e.dsauto[t]){
     if(t==='טופס קוביות'||t==='אישור קרן פנסיה פעילה')return 'נדרש אוטומטית לפתיחת הפנסיה ב'+(e.pmonth_he||'מועד הפתיחה');
@@ -3025,23 +3033,21 @@ function open(id){
     (e.ext
       ? '<p class="hint">'+esc(e.extlbl)+' — אין פנסיה, אין טופס 101 ואין דרישת מסמכים.</p>'
       : '<div class="fieldrow"><label for="mPens">פנסיה קודמת</label><select id="mPens">'+
-          ['','פעילה','אין','זר'].map(function(v){
-            var lab={'':'(לפי הנתונים — '+e.pension_disp+')',
-                     'פעילה':'יש פנסיה פעילה → שכר רביעי',
-                     'אין':'אין פנסיה פעילה → שכר שביעי',
-                     'זר':'עובד זר → שכר שביעי'}[v];
-            return '<option value="'+v+'"'+((m.pension||'')===v?' selected':'')+'>'+esc(lab)+'</option>';}).join('')+
+          (function(){ var dv=e.foreign?'זר':e.pension==='פעילה'?'פעילה':(e.pension==='אין'||e.pension==='אין פנסיה פעילה')?'אין':'';
+            return mkOpts(m.pension||'',dv,dv==='פעילה'?'יש':dv==='אין'?'אין':dv==='זר'?'עובד זר':'לא ידוע',[['פעילה','יש'],['אין','אין'],['זר','עובד זר']]); })()+
         '</select></div>'+
         '<div class="fieldrow"><label for="mOpened">הפנסיה נפתחה</label><span>'+
           '<input type="checkbox" id="mOpened"'+(e.pens_open?' checked':'')+'>'+
           '<input type="date" id="mOpenedD" value="'+esc(m.opened_date&&/^\d{4}-\d{2}-\d{2}$/.test(m.opened_date)?m.opened_date:'')+'" aria-label="תאריך פתיחת הפנסיה"></span></div>'+
+        /* 14.11.2026 (איילת, אחרי ביקורת Impeccable על הכרטיס): המעקב הידני מקופל — פתוח רק אם כבר נכתב בו משהו */
+        '<details class="mkfold"'+((m.pstage||m.talked||m.talked_note)?' open':'')+'><summary>✎ מעקב ידני — שיחה עם העובד</summary>'+
         '<div class="fieldrow"><label for="mStage">מצב מעקב פנסיה</label>'+pstageSel(e,'mStage')+'</div>'+
         '<div class="fieldrow"><label for="mTalked">דיברנו עם העובד</label><span>'+
           '<input type="checkbox" id="mTalked"'+(m.talked?' checked':'')+'>'+
           '<input type="date" id="mTalkedD" value="'+esc(m.talked_at||'')+'" aria-label="תאריך השיחה"></span></div>'+
-        '<div class="fieldrow wide"><label for="mTalkedN">מה נאמר</label><textarea id="mTalkedN" placeholder="למשל: אמר שיש לו מיטב, ישלח אישור עד סוף השבוע…">'+esc(m.talked_note||'')+'</textarea></div>'+
+        '<div class="fieldrow wide"><label for="mTalkedN">מה נאמר</label><textarea id="mTalkedN" placeholder="למשל: אמר שיש לו מיטב, ישלח אישור עד סוף השבוע…">'+esc(m.talked_note||'')+'</textarea></div></details>'+
         '<div class="fieldrow"><label for="m101">טופס 101</label><select id="m101">'+
-          ['','יש','חסר'].map(function(v){return '<option value="'+v+'"'+((m.f101||'')===v?' selected':'')+'>'+(v===''?'(לפי הנתונים — '+e.s101+')':(v==='יש'?'✓ יש — הוגש (גם בלי עותק אצלנו)':'✗ חסר'))+'</option>';}).join('')+'</select></div>')+
+          mkOpts(m.f101||'',e.s101==='יש'?'יש':'חסר',e.s101==='יש'?'יש':'אין',[['יש','יש'],['חסר','אין']])+'</select></div>')+
     '<div class="fieldrow"><label for="mBirth">תאריך לידה</label><span>'+
       '<input type="date" id="mBirth" value="'+esc(m.birth&&/^\d{4}-\d{2}-\d{2}$/.test(m.birth)?m.birth:'')+'" aria-label="תאריך לידה">'+
       '<select id="mGender" aria-label="מין">'+
@@ -3054,8 +3060,10 @@ function open(id){
       return t?'<p class="hint">'+t+'</p>':'';})()+
     (e.ext?'':
       '<div class="fieldrow wide" style="align-items:flex-start"><label>מסמכים</label><div class="docgrid" style="flex:1 1 100%">'+
-        dOn.map(chip).join('')+
+        (dNeed.concat(dGot).length?dNeed.concat(dGot).map(chip).join(''):'<span class="hint" style="margin:0">אין מסמכים שנדרשים או שהתקבלו</span>')+
       '</div></div>'+
+      '<details class="mkfold docmore"><summary>＋ מסמך אחר ('+dRest.length+')</summary><div class="docgrid">'+dRest.map(chip).join('')+'</div>'+
+        '<p class="doclegend">לחיצה מחליפה: נדרש ← התקבל ← ריק · <b>📎 = קיים קובץ, לחיצה פותחת אותו</b></p></details>'+
       (function(){
         var out='';
         if(e.missing.length){
@@ -3064,7 +3072,7 @@ function open(id){
           out+='<p class="doclegend missing"><b>חסר:</b> '+ord.map(function(r){
             return esc(rs[r].join(' · '))+(r?' <span class="why">— '+esc(r)+'</span>':'');}).join('<br>')+'</p>';
         }
-        return out+'<p class="doclegend">לחיצה מחליפה: נדרש ← התקבל ← ריק · <b>📎 = קיים קובץ, לחיצה פותחת אותו</b></p>';
+        return out;
       })())+
     (function(){ var by=m.by||{}, rows=[];
       function who(k){ var b=by[k]; return b?' <span class="mkby">'+esc(b.who||'')+(b.at?' · '+esc(fmtD(b.at)):'')+'</span>':''; }
@@ -3085,10 +3093,9 @@ function open(id){
         '<label><input type="checkbox" id="mAgency"'+(e.agency?' checked':'')+'>חברת כוח אדם</label>'+
       '</div></div>'+
       '<div class="fieldrow wide"><label for="mStatus">סטטוס</label><select id="mStatus">'+
-        ['','פעיל','לא פעיל','עזב'].map(function(v){return '<option value="'+v+'"'+((m.status||'')===v?' selected':'')+'>'+(v===''?'(לפי הנתונים — '+e.state+')':v)+'</option>';}).join('')+'</select>'+
+        mkOpts(m.status||'',e.state,e.state,[['פעיל','פעיל'],['לא פעיל','לא פעיל'],['עזב','עזב']])+'</select>'+
         '<input type="text" id="mLast" placeholder="משמרת אחרונה" value="'+esc(m.left_last||'')+'" aria-label="משמרת אחרונה"></div>'+
-      '<div class="fieldrow wide"><label for="mDept">מחלקה</label><select id="mDept"><option value="">(לפי הנתונים — '+esc(e.dept)+')</option>'+
-        DEPTS.map(function(v){return '<option value="'+esc(v)+'"'+((m.dept||'')===v?' selected':'')+'>'+esc(v)+'</option>';}).join('')+'</select></div>'+
+      '<div class="fieldrow wide"><label for="mDept">מחלקה</label><select id="mDept">'+mkOpts(m.dept||'',e.dept,e.dept,DEPTS.map(function(v){return [v,v];}))+'</select></div>'+
     '</details>'+
     '<div class="mkfoot"><span class="hint savedmsg'+((Date.now()-JUSTSAVED<4000)?' on':'')+'" id="mSaved">'+
       ((Date.now()-JUSTSAVED<4000)?'✓ נשמר':'נשמר מיד')+'</span>'+
