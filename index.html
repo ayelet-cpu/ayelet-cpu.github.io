@@ -1795,7 +1795,13 @@ function eff(e){
   o.noslip=(o.rest==='הלנה'||o.rest==="נרו ביץ'");   /* אריאלה וטופול — מ-10.11.2026 נבנו מהתלושים, יש פנסיה ו«לברר אם עזב» */
   o.needs_pens_docs = o.active && !o.ext && !o.foreign && !o.pens_open && !o.noslip && lead<=2;
   o.ds={}; o.dsauto={};
-  if(o.needs_pens_docs)PENS_DOCS.forEach(function(t){if(t==='אישור קרן פנסיה פעילה'&&o.pension!=='פעילה')return;  /* מבקשים אישור קרן רק ממי שסימן שיש לו פנסיה פעילה */o.ds[t]='need';o.dsauto[t]=1;});
+  /* 14.11.2026 (איילת, כרטיס העובד דרש קוביות ממי שאין לו קרן): מי שאין לו קרן קודמת — קרן ברירת מחדל בשכר 7, בלי מסמכים.
+     קוביות + אישור קרן נדרשים רק ממי שיש לו קרן פעילה: רשום בפנקס, או — כשבפנקס לא ידוע — ענה «כן» בטופס בבטר צ'אנס. */
+  var pfa=''; try{ var pf0=(typeof pfOf==='function')?pfOf(o):null; pfa=pf0?pf0.a:''; }catch(_e){}
+  o.pf_a=pfa;
+  var knownNo=(o.pension==='אין'||o.pension==='אין פנסיה פעילה'||o.pension==='זר');
+  o.fund_act=(o.pension==='פעילה')||(!knownNo&&pfa==='y');
+  if(o.needs_pens_docs&&o.fund_act)PENS_DOCS.forEach(function(t){o.ds[t]='need';o.dsauto[t]=1;});
   if(o.s101!=='יש'&&o.active&&!o.ext){o.ds['טופס 101']='need';o.dsauto['טופס 101']=1;}
   o.dtypes.forEach(function(t){o.ds[t]='got';});           // קובץ בתיקייה / סימון ישן = התקבל
   o.dlock={}; e.dtypes.forEach(function(t){o.dlock[t]=1;});
@@ -2976,8 +2982,12 @@ function open(id){
      '<span class="big">'+esc(e.pens_open?(e.opened_date?fmtD(e.opened_date):(e.opened_month||'מופרש')):(e.pmonth_he||'חסר תאריך תחילת עבודה'))+'</span>'+
      (e.start?'<div style="font-size:12.5px;margin-top:4px">'+
        (e.pens_open?'הפרשה לקופ״ג מופיעה בתלוש '+SLIP_N:'<b>'+esc(e.wait)+'</b> מתחילת העבודה · '+
-        (e.foreign?'עובד זר — פתיחה אחרי חצי שנה':(e.pension==='פעילה'?'יש פנסיה קודמת פעילה':(e.pension==='אין פנסיה פעילה'?'אין פנסיה קודמת':'הפנסיה הקודמת לא סומנה'))))+
-       '</div>':'')+'</div>';
+        (e.foreign?'עובד זר — פתיחה אחרי חצי שנה':(e.pension==='פעילה'?'יש פנסיה קודמת פעילה':((e.pension==='אין פנסיה פעילה'||e.pension==='אין')?'אין פנסיה קודמת — לא צריך מסמכים':'הפנסיה הקודמת לא סומנה'))))+
+       '</div>':'')+
+     (function(){ var f=(typeof pfOf==='function')?pfOf(e):null; if(!f||(f.a!=='y'&&f.a!=='n'))return '';
+       var diff=!e.pens_open&&((f.a==='y'&&e.pension!=='פעילה')||(f.a==='n'&&e.pension==='פעילה'));
+       return '<div class="pfline" style="font-size:12.5px;margin-top:4px">בטופס בבטר צ׳אנס ('+esc(fmtD(f.d))+'): <b>'+(f.a==='y'?'יש קרן פעילה'+(f.fund?' · '+esc(f.fund):''):'אין קרן פעילה')+'</b>'+
+         (f.a==='y'?(f.files?' · '+f.files+' קבצים צורפו':' · בלי קבצים'):'')+(diff?' <span class="pill p-warn">שונה ממה שרשום — לעדכן «פנסיה קודמת»</span>':'')+'</div>'; })()+'</div>';
   }
   var FA=[];
   function F(l,v){ if(v)FA.push('<span><i>'+l+'</i>'+v+'</span>'); }
