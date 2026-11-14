@@ -1111,13 +1111,15 @@ details.pfacts{margin:0}
 #dbody .kfacts .slipbtn.shiftpill:hover,#dbody .kfacts .slipbtn.shiftpill:focus-within{background:var(--accent) !important;color:#fff}
 #dbody .kfacts .slipbtn.shiftpill .shpop span{border:0 !important;background:none !important;padding:0 !important;display:inline !important}
 #dbody .shpop{color:var(--ink);font-size:13px}
-#dbody .slippv{display:none;position:absolute;top:calc(100% + 4px);inset-inline:0;z-index:31;background:var(--surface);border:1px solid var(--line);border-radius:12px;
-  box-shadow:0 14px 40px rgba(0,0,0,.2);padding:8px;font-size:13px;font-weight:400;color:var(--ink)}
-#dbody .slippv.on{display:block}
-#dbody .slippvh{color:var(--sub);margin:0 4px 6px}
-#dbody .slippvb{height:min(70vh,760px);overflow:auto;text-align:center;color:var(--sub)}
-#dbody .slippvb iframe{width:100%;height:100%;border:0;border-radius:8px;background:#fff}
-#dbody .slippvb img{max-width:100%;height:auto}
+.cslip{display:none;position:fixed;top:3vh;bottom:3vh;left:50%;transform:translateX(-50%);width:min(780px,calc(100vw - 24px));z-index:99999;
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.3);padding:10px;flex-direction:column;color:var(--ink);font-size:13px}
+.cslip.on{display:flex}
+.cslipvh{display:flex;align-items:center;gap:10px;margin:0 4px 8px}
+.cslipvh b{font-size:15px}.cslipvh span{color:var(--sub);flex:1}
+.cslipvh button{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px}
+.cslipvb{flex:1;min-height:0;overflow:auto;text-align:center;color:var(--sub)}
+.cslipvb iframe{width:100%;height:100%;border:0;border-radius:8px;background:#fff}
+.cslipvb img{max-width:100%;height:auto}
 #dbody .kfacts>span{position:relative}
 #dbody .shpop{display:none;position:absolute;top:calc(100% + 4px);inset-inline:0;z-index:30;max-height:62vh;overflow:auto;
   background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.18);padding:10px 12px;text-align:start;cursor:default;font-weight:400}
@@ -1494,7 +1496,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261114-15';
+var PK_VER='20261114-17';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -3347,19 +3349,22 @@ function wire(id){
   document.querySelectorAll('#dbody [data-slipopen]').forEach(function(b){b.addEventListener('click',function(){var f=fFind(b.dataset.slipopen); if(f)PK.open(f,false);});});
   /* 14.11.2026 (איילת: «למה אם עומדים על התלוש לא רואים אותו? אלא רק כשלוחצים») — תצוגה מקדימה בריחוף */
   (function(){ var tile=document.querySelector('#dbody .kfacts .slips'); if(!tile)return; tile=tile.parentNode;
-    var pv=document.createElement('div'); pv.className='slippv'; tile.appendChild(pv);
+    document.querySelectorAll('.cslip').forEach(function(x){x.remove();});
+    var pv=document.createElement('div'); pv.className='cslip'; document.body.appendChild(pv);
+    pv.addEventListener('click',function(ev){ if(ev.target.closest('[data-pvx]')){ pv.classList.remove('on'); cur=null; } });
+    document.addEventListener('keydown',function(ev){ if(ev.key==='Escape')pv.classList.remove('on'); });
     var tmr=null, cur=null, inPv=false;
     function hide(){ clearTimeout(tmr); tmr=setTimeout(function(){ if(!inPv){ pv.classList.remove('on'); cur=null; } },250); }
     pv.addEventListener('mouseenter',function(){ inPv=true; clearTimeout(tmr); });
     pv.addEventListener('mouseleave',function(){ inPv=false; hide(); });
     tile.querySelectorAll('[data-slipopen]').forEach(function(b){
       b.addEventListener('mouseenter',function(){ clearTimeout(tmr); tmr=setTimeout(function(){ var id=b.dataset.slipopen; if(cur===id){ pv.classList.add('on'); return; }
-        var f=fFind(id); if(!f)return; cur=id; pv.innerHTML='<div class="slippvh">📄 '+esc(b.textContent.replace('📄','').trim())+' — לחיצה פותחת בגדול</div><div class="slippvb">טוענת…</div>'; pv.classList.add('on');
+        var f=fFind(id); if(!f)return; cur=id; pv.innerHTML='<div class="cslipvh"><b>📄 תלוש '+esc(b.textContent.replace('📄','').trim())+'</b><span>גלילה בתוך החלון · לחיצה על הכפתור פותחת בלשונית חדשה</span><button type="button" data-pvx aria-label="סגירה">✕</button></div><div class="cslipvb">טוענת…</div>'; pv.classList.add('on');
         var done=function(u){ if(cur!==id)return; var isImg=/^image\//.test(f.mime||'');
-          pv.querySelector('.slippvb').innerHTML=isImg?'<img alt="תלוש" src="'+u+'">':'<iframe title="תלוש" src="'+u+'#toolbar=0&navpanes=0&view=FitH"></iframe>'; };
+          pv.querySelector('.cslipvb').innerHTML=isImg?'<img alt="תלוש" src="'+u+'">':'<iframe title="תלוש" src="'+u+'#toolbar=0&navpanes=0&view=FitH"></iframe>'; };
         if(SLIPURL[id])return done(SLIPURL[id]);
         PK.blob(f).then(function(bl){ SLIPURL[id]=URL.createObjectURL(new Blob([bl],{type:f.mime||bl.type||'application/pdf'})); done(SLIPURL[id]); },
-          function(){ if(cur===id)pv.querySelector('.slippvb').textContent='לא הצלחתי לטעון את התלוש — אפשר ללחוץ כדי לפתוח.'; }); },300); });
+          function(){ if(cur===id)pv.querySelector('.cslipvb').textContent='לא הצלחתי לטעון את התלוש — אפשר ללחוץ כדי לפתוח.'; }); },300); });
       b.addEventListener('mouseleave',hide); }); })();
   var dl=el('cfList'); if(dl)dl.addEventListener('click',function(ev){fListClick(ev,function(){render();open(id);});});
   on('cfAll','click',function(){var e2=eff(E.filter(function(x){return x.id===id;})[0]); PK.openAll(allEmpFiles(e2));});
