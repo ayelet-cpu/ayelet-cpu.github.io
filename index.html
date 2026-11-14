@@ -1253,6 +1253,8 @@ section.act .allgood,.act table{font-size:14.5px}
 .ptrack>header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--line-2)}
 .ptrack>header h2{margin:0;font-size:16px}
 .ptrack .chips{display:flex;gap:6px;flex-wrap:wrap}
+.cmptab select.cmpcm{display:block;margin-top:4px;font:inherit;font-size:11.5px;color:var(--muted);border:1px dashed var(--line);border-radius:7px;background:transparent;padding:2px 4px;max-width:150px}
+.ptrack .ptfl{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:6px}.ptrack .ptfl select{font:inherit;font-size:13.5px;font-weight:700;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
 .ptrack .chips button{font:inherit;font-size:12.5px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);cursor:pointer}
 .ptrack .chips button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .ptrack .scroll{overflow-x:auto}
@@ -2016,7 +2018,7 @@ function pensSec(cls,title,note,rows,body,always){
     '<div class="plist">'+rows.map(body||function(e){return pensRow(e);}).join('')+'</div></section>';
 }
 /* ---------- מעקב פנסיה: מי עם פנסיה פעילה, מתי לפתוח, אילו מסמכים יש ---------- */
-var PTF='all';
+var PTF='todo';
 /* 12.11.2026 (איילת: «יש ערבוב בין הלשוניות… הכול מול העיניים»): טבלה אחת ושורת סינון אחת — בלי הפס העליון ובלי הרשימות הכפולות מתחת */
 var PTFS=[['all','כולם',''],['late','באיחור','crit'],['now','לפתוח החודש','warn'],['next','חודש הבא','warn'],['later','בהמשך',''],['open','נפתחה','ok'],['nodate','בלי תאריך התחלה','crit'],
   ['noform','בלי טופס פרטי פנסיה',''],['act','פנסיה קודמת פעילה',''],['talked','בטיפול','']];
@@ -2032,6 +2034,7 @@ function ptMatch(e,k){
   if(k==='act')return e.pension==='פעילה'||formYes;
   if(k==='noform')return !e.pform&&!e.pens_open&&!e.foreign&&!((kitOf(e)||{}).m&8);
   var w=!e.pens_open, n=e.pmonth?pmNum(e):null;
+  if(k==='todo')return w&&(n===null||n<=NOWM);
   if(k==='late')return w&&n!==null&&n<NOWM;
   if(k==='now')return w&&n===NOWM;
   if(k==='next')return w&&n===NOWM+1;
@@ -2044,18 +2047,21 @@ function ptMatch(e,k){
 function fmtD(d){var p=String(d||'').split('-');return p.length===3?(+p[2])+'.'+(+p[1])+'.'+p[0].slice(2):String(d||'');}
 function isNewHire(e){ /* התחיל/ה בחודשיים האחרונים — עוד אין תלוש/נוכחות בנתונים, אבל זה בדיוק הזמן לאסוף טופס פנסיה */
   if(e.status==='עזב'||e.status==='לא פעיל'||!e.start)return false; var q=String(e.start).split('-'); return ((+q[0])*12+(+q[1]))>=NOWM-2; }
+var PTSEL=[['todo','לפתוח עכשיו'],['next','לפתוח בחודש הבא'],['later','בהמשך'],['open','כבר נפתחה'],['all','כולם']];
 function pensTrack(A){
+  if(PTF==='late'||PTF==='now'||PTF==='nodate')PTF='todo'; else if(!PTSEL.some(function(p){return p[0]===PTF;}))PTF='all';
   var rows=A.filter(function(e){return ptMatch(e,PTF);}).sort(function(x,y){
     return (x.pens_open-y.pens_open)||((x.pmonth?pmNum(x):99999)-(y.pmonth?pmNum(y):99999))||String(x.name).localeCompare(String(y.name),'he');});
   function dk(e,t,lbl){ /* לחיצה מסמנת «התקבל» / מבטלת. מסמך שיש לו קובץ — נעול */
     var ok=t==='טופס 101'?e.s101==='יש':(e.dtypes.indexOf(t)>=0||(e.ds&&e.ds[t]==='got')), lock=t==='טופס 101'?(e.s101==='יש'&&!(MARKS[e.id]||{}).f101):!!(e.dlock&&e.dlock[t]);
     return '<button type="button" class="dk '+(ok?'ok':'no')+'" data-pt="doc" data-emp="'+e.id+'" data-doc="'+esc(t)+'"'+(lock?' disabled title="יש קובץ — התקבל"':' title="לחיצה: '+(ok?'לבטל «התקבל»':'לסמן «התקבל»')+'"')+'>'+(ok?'✓':'✗')+' '+lbl+'</button>';}
-  var h='<section class="ptrack"><header><h2>פנסיה</h2><div class="chips" id="ptChips">'+
-    PTFS.map(function(p){var n=A.filter(function(e){return ptMatch(e,p[0]);}).length; if(p[0]==='nodate'&&!n)return '';
-      return (p[0]==='noform'?'<span class="chsep" aria-hidden="true"></span>':'')+'<button type="button" class="'+(n?p[2]:'')+'" data-ptf="'+p[0]+'" aria-pressed="'+(PTF===p[0])+'">'+esc(p[1])+' <b>'+n+'</b></button>';}).join('')+
-    '</div><span class="pasof">נכון ל־'+pmLabel(NOWM)+'</span></header>';
+  /* 14.11.2026 (איילת: «צריך כל כך הרבה לשוניות?… אפשר להשתמש בסינונים»): סינון אחד נפתח במקום 10 כפתורים */
+  var h='<section class="ptrack"><header><h2>פנסיה</h2><label class="ptfl">להציג: <select id="ptSel" aria-label="סינון">'+
+    PTSEL.map(function(p){var n=A.filter(function(e){return ptMatch(e,p[0]);}).length;
+      return '<option value="'+p[0]+'" data-n="'+n+'"'+(PTF===p[0]?' selected':'')+'>'+esc(p[1])+' ('+n+')</option>';}).join('')+
+    '</select></label><span class="pasof">'+rows.length+' עובדים · נכון ל־'+pmLabel(NOWM)+'</span></header>';
   if(!rows.length)return h+'<div class="empty">אין עובדים בסינון הזה.</div></section>';
-  h+='<div class="scroll"><table><thead><tr><th>עובד/ת</th><th>מתי נפתחת</th><th>חודש פתיחה</th><th>מה חסר לפנסיה <span style="font-weight:400">(לחיצה = התקבל)</span></th><th>טופס פרטי פנסיה <span style="font-weight:400">(בטר צ׳אנס)</span></th><th></th></tr></thead><tbody>';
+  h+='<div class="scroll"><table><thead><tr><th>עובד/ת</th><th>פתיחת הפנסיה</th><th>מה חסר לפנסיה <span style="font-weight:400">(לחיצה = התקבל)</span></th><th>קרן קודמת <span style="font-weight:400">(מהטופס בבטר צ׳אנס)</span></th><th></th></tr></thead><tbody>';
   rows.forEach(function(e){
     var mt=(e.pform&&e.pform.meta)||{};
     var lateBy=(e.pmonth&&!e.pens_open)?NOWM-pmNum(e):0;
@@ -2080,8 +2086,9 @@ function pensTrack(A){
         '<button class="tlb done" data-done="'+e.id+'" data-kind="'+esc(pk)+'" type="button">✓ טופל</button>':'');
     h+='<tr data-id="'+e.id+'" tabindex="0">'+
       '<td class="pn"><b>'+esc(e.name)+'</b>'+(e.newhire?' <span class="pill p-acc">חדש/ה</span>':'')+'<em>'+esc(e.dept)+(e.start?' · החל '+esc(fmtD(e.start)):'')+'</em></td>'+
-      '<td class="wrap pbasis">'+pensBasis(e)+'</td>'+
-      '<td>'+(e.pens_open?'<span class="pill p-ok">✓ נפתחה '+esc(e.opened_date?fmtD(e.opened_date):(e.opened_month||''))+'</span>':esc(e.pmonth_he||'חסר תאריך התחלה')+due)+'</td>'+
+      '<td>'+(e.pens_open?'<span class="pill p-ok">✓ נפתחה '+esc(e.opened_date?fmtD(e.opened_date):(e.opened_month||''))+'</span>':
+        (e.pmonth_he?esc(e.pmonth_he):'<span class="pill p-crit">חסר תאריך התחלה</span>')+due+
+        '<em class="pinfo">'+(e.pension==='פעילה'?'שכר 4':'שכר 7')+(e.age_defer?' · נדחה עד גיל '+e.age_thr:'')+'</em>')+'</td>'+
       '<td class="pdocs">'+docs+(e.pform&&!e.pens_open?'<em class="pinfo" title="מה שהעובד מילא בטופס פרטי פנסיה">טופס: '+esc(pformLine(e.pform))+(mt.form_date||mt.date?' · '+esc(mt.form_date||mt.date):'')+'</em>':'')+'</td>'+
       '<td class="ptedit wrap">'+pfCell(e)+
         '<details class="ptmore"'+(((MARKS[e.id]||{}).pstage||e.talked_note)?' open':'')+'><summary>✎ הערה שלי</summary><div class="pted">'+pstageSel(e)+
@@ -2268,8 +2275,8 @@ function pfCell(e){ var f=pfOf(e), kitF=!!((kitOf(e)||{}).m&8), noFund=(e.pensio
       '<em class="pinfo">מילא/ה '+esc(fmtD(f.d))+(f.a==='y'&&f.fund?' · '+esc(f.fund):'')+(f.a==='y'?(f.files?' · '+f.files+' קבצים צורפו':' · בלי קבצים'):'')+'</em>';
     if(!e.pens_open&&((f.a==='y'&&e.pension!=='פעילה')||(f.a==='n'&&e.pension==='פעילה')))
       h+='<span class="pill p-warn pfdiff" title="מה שהעובד ענה בטופס שונה ממה שרשום בפנקס — לבדוק ולעדכן בכרטיס">בפנקס רשום: '+esc(e.pension==='פעילה'?'קרן פעילה':noFund?'אין קרן':'לא ידוע')+'</span>'; }
-  else if(f||kitF)h='<span class="pwait">מילא/ה'+(f&&f.d?' '+esc(fmtD(f.d)):'')+' — בלי תשובה על קרן</span>';
-  else h='<span class="pdone">לא מילא/ה</span>';
+  else { var known=e.pension==='פעילה'?'<span class="pfa y">יש קרן פעילה</span>':noFund?'<span class="pfa n">אין קרן פעילה</span>':'<span class="pwait">לא ידוע</span>';
+    h=known+'<em class="pinfo">'+((f||kitF)?'מילא/ה טופס'+(f&&f.d?' '+esc(fmtD(f.d)):'')+' — בלי תשובה על קרן':(e.pension==='פעילה'||noFund?'רשום בפנקס · בלי טופס':'לא מילא/ה טופס'))+'</em>'; }
   return h; }
 function kitMissNames(k){ return KIT_F.filter(function(f){return k.miss&f[0];}).map(function(f){return f[1];}); }
 function kitText(e){ var k=kitOf(e), L=kitMissNames(k), c=(typeof ctrOf==='function')?ctrOf(e):null;
@@ -2605,6 +2612,12 @@ function deptTermsHtml(){ var rc=window.PK?PK.rc(REST):'', L=DEPT_TERMS[rc]; if(
     L.map(function(r){ return '<tr><td><b>'+esc(r[0])+'</b></td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[3])+'</td><td>'+esc(r[4])+'</td><td class="cmps">'+esc(r[5])+'</td><td>'+
       (r[6]?'<button class="tlb" type="button" data-ctpl="'+r[6]+'" data-tn="'+esc(r[0])+'">📄 הסכם ריק</button>':'<span class="cmps">—</span>')+'</td></tr>'; }).join('')+
     '</tbody></table></div><p class="cmpsrc">פנסיה בכל המחלקות: רק מהשכר הבסיסי. קרן פעילה — מהחודש ה-3, רטרואקטיבי; בלי קרן — אחרי 6 חודשים (מהתלוש השביעי). תעריף לשעה + 1 הבראה = התעריף בהסכם (למשל 39 + 1).</p></details>'; }
+/* 14.11.2026 (איילת: «לא צריך לסמן ידנית שתקין או להתעלם? יש עובדים שהחוזה מחוץ לבטר צ'אנס או שאין צורך בחוזה»):
+   בעמודת «חוזה» — סימון ידני בשורה (נשמר בכרטיס: contract='yes' / 'none'), ו«↩ ביטול הסימון». רק איילת וטלי. */
+function cmpCtrMark(e,r){ if(e.ghost||!cmpCanReady())return ''; var m=MARKS[e.id]||{};
+  if(m.contract==='yes'||m.contract==='none')return '<span class="cmps ex">סומן ידנית'+((m.by||{}).contract?' · '+esc(m.by.contract.who||''):'')+'</span><button class="cmpx" type="button" data-cctr="" data-eid="'+e.id+'">↩ ביטול הסימון</button>';
+  if(r.c!=='no'&&r.c!=='wait'&&r.c!=='unk')return '';
+  return '<select class="cmpcm" data-cctrsel="1" data-eid="'+e.id+'" aria-label="סימון ידני של החוזה"><option value="">סימון ידני…</option><option value="yes">יש חוזה — מחוץ לבטר צ׳אנס</option><option value="none">לא צריך חוזה</option></select>'; }
 function cmpRows(){
   return ctrPool().concat(ctrGhosts()).map(function(e){ return {e:e,r:cmpOf(e)}; });
 }
@@ -2658,7 +2671,7 @@ function renderCmp(){
       (r.extra?'<span class="cmps ex">★ '+esc(r.extra)+'</span>':'')+'<button class="cmpx" type="button" data-cset="extra" data-eid="'+e.id+'">'+(r.extra?'✎ הסדר':'＋ הסדר מיוחד')+'</button></td>'+
       '<td><select class="cmpdep'+(r.man.d?' man':'')+'" data-cset="dept" data-eid="'+e.id+'"'+(e.ghost?' disabled':'')+'>'+(r.dept?'':'<option value="">— לבחור —</option>')+
         CMP_DEPTS.map(function(d){return '<option'+(d===r.dept?' selected':'')+'>'+esc(d)+'</option>';}).join('')+'</select>'+(r.form?'<span class="cmps cmpform">'+esc(r.form)+'</span>':'')+(r.man.d?'<span class="cmps ex">סומן ידנית</span>':'')+'</td>'+
-      '<td><span class="dchip '+cs[1]+'">'+cs[0]+'</span>'+(x&&x.cf?'<span class="cmps">'+esc(x.cf)+'</span>':'')+(r.wrong?'<span class="cmps bad">✗ לא ההסכם של המחלקה</span>':'')+(r.tosign?'<button class="cmpx" type="button" data-cdoc="'+esc(r.tosign.id)+'">📎 חוזה לחתימה מצורף</button>':'')+'</td>'+
+      '<td><span class="dchip '+cs[1]+'">'+cs[0]+'</span>'+(x&&x.cf?'<span class="cmps">'+esc(x.cf)+'</span>':'')+(r.wrong?'<span class="cmps bad">✗ לא ההסכם של המחלקה</span>':'')+(r.tosign?'<button class="cmpx" type="button" data-cdoc="'+esc(r.tosign.id)+'">📎 חוזה לחתימה מצורף</button>':'')+cmpCtrMark(e,r)+'</td>'+
       cmpCell(r.b,'b',e.id,r.man.r)+cmpCell(r.h,'h',e.id)+cmpCell(r.t,'t',e.id)+cmpCell(r.p,'p',e.id)+
       '<td>'+(r.bad?'<span class="dchip no">'+r.bad+' לתקן</span>':'<span class="dchip ok">תקין</span>')+'</td><td class="cmpa">'+acts+'</td></tr>'; });
   if(!L.length)h+='<tr><td colspan="9" class="cmpempty">אין עובדים בסינון הזה</td></tr>';
@@ -2676,6 +2689,7 @@ function cmpSet(eid,k,v){ var e=E.filter(function(x){return x.id===eid;})[0]; if
   if(v===''||v==null){ delete m[k]; } else m[k]=v; stamp(m,k); touch(eid); save(); render(); toast('✓ נשמר — '+esc(e.name)); }
 document.addEventListener('change',function(ev){ var t=ev.target; if(!t.closest||!t.closest('#ctrView .cmp'))return;
   if(t.matches('select.cmpd')){ CMPD=t.value; render(); return; }
+  if(t.matches('select[data-cctrsel]')){ if(t.value)cmpSet(+t.dataset.eid,'contract',t.value); return; }
   if(t.matches('select[data-cset="dept"]')){ var eid=+t.dataset.eid, r=cmpOf(E.filter(function(x){return x.id===eid;})[0]||{}), auto=(r.x&&r.x.k)||'';
     cmpSet(eid,'cdept',t.value===auto?'':t.value); } },true);
 document.addEventListener('input',function(ev){ var t=ev.target; if(!t.matches||!t.matches('#ctrView input.cmpq'))return; CMPQ=t.value; clearTimeout(window.__cmpT);
@@ -2684,6 +2698,7 @@ document.addEventListener('click',function(ev){ var t=ev.target; if(!t.closest||
   var b=t.closest('[data-cf]'); if(b){ CMPF=b.dataset.cf; render(); return; }
   b=t.closest('th[data-cs]'); if(b){ CMPS=b.dataset.cs; render(); return; }
   b=t.closest('[data-copen]'); if(b){ ev.preventDefault(); open(+b.dataset.copen); return; }
+  b=t.closest('[data-cctr]'); if(b){ cmpSet(+b.dataset.eid,'contract',''); return; }
   b=t.closest('[data-cagree]'); if(b){ var e4=E.filter(function(x){return x.id===+b.dataset.eid;})[0]; if(!e4)return; if(!isTali()){ alert('רק טלי מאשרת את ההסכם'); return; }
     var r4=cmpOf(e4); if(b.dataset.cagree==='1'){ if(!confirm(e4.name+' — זה ההסכם שלו/ה?\n\n'+r4.dept+' · בסיס '+r4.b.t+' · הבראה '+r4.h.t+' · נסיעות '+r4.t.t+(r4.extra?' · '+r4.extra:'')+'\n\nאחרי האישור: קלוד ישלח את החוזה בבטר צ׳אנס, ואיילת תשלח את תיקון התלוש לחשבת.'))return; agreeSave(e4,true); }
     else { if(!confirm('לבטל את אישור ההסכם של '+e4.name+'?'))return; agreeSave(e4,false); } return; }
@@ -3268,6 +3283,8 @@ document.getElementById('pensView').addEventListener('keydown',function(ev){ if(
   try{document.querySelector('#'+vid+' .pstrip').scrollIntoView({block:'nearest'});}catch(_){} },true); });
 document.getElementById('pensView').addEventListener('click',function(ev){
   var c=ev.target.closest('button[data-ptf]'); if(!c)return; ev.stopPropagation(); PTF=c.dataset.ptf; renderPens();},true);
+document.getElementById('pensView').addEventListener('change',function(ev){ if(ev.target.id!=='ptSel')return; ev.stopPropagation(); PTF=ev.target.value; renderPens(); },true);
+document.getElementById('pensView').addEventListener('click',function(ev){ if(ev.target.closest('.ptfl'))ev.stopPropagation(); },true);
 ['pensView','docsView'].forEach(function(vid){
   document.getElementById(vid).addEventListener('click',function(ev){
     if(ev.target.closest('.ptmore'))return;
