@@ -1106,12 +1106,24 @@ details.pfacts{margin:0}
 #dbody .kfacts>span b{color:var(--warn)}
 #dbody .kfacts>span{flex:1 1 180px}
 #dbody .kfacts>span.wide{flex-basis:100%}
-#dbody .shiftpill{cursor:help;border:1px dashed var(--line);background:var(--surface);color:var(--ink-2)}
-#dbody .statusline{position:relative}
+#dbody .kfacts .shiftpill{cursor:help;display:inline-flex;align-items:center}
+#dbody .kfacts .slipbtn.shiftpill{border:1px solid var(--accent) !important;background:var(--accent-soft) !important;border-radius:999px !important;padding:5px 12px !important;color:var(--accent-ink)}
+#dbody .kfacts .slipbtn.shiftpill:hover,#dbody .kfacts .slipbtn.shiftpill:focus-within{background:var(--accent) !important;color:#fff}
+#dbody .kfacts .slipbtn.shiftpill .shpop span{border:0 !important;background:none !important;padding:0 !important;display:inline !important}
+#dbody .shpop{color:var(--ink);font-size:13px}
+#dbody .slippv{display:none;position:absolute;top:calc(100% + 4px);inset-inline:0;z-index:31;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 14px 40px rgba(0,0,0,.2);padding:8px;font-size:13px;font-weight:400;color:var(--ink)}
+#dbody .slippv.on{display:block}
+#dbody .slippvh{color:var(--sub);margin:0 4px 6px}
+#dbody .slippvb{height:min(70vh,760px);overflow:auto;text-align:center;color:var(--sub)}
+#dbody .slippvb iframe{width:100%;height:100%;border:0;border-radius:8px;background:#fff}
+#dbody .slippvb img{max-width:100%;height:auto}
+#dbody .kfacts>span{position:relative}
 #dbody .shpop{display:none;position:absolute;top:calc(100% + 4px);inset-inline:0;z-index:30;max-height:62vh;overflow:auto;
   background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.18);padding:10px 12px;text-align:start;cursor:default;font-weight:400}
 #dbody .shiftpill:hover .shpop,#dbody .shiftpill:focus-within .shpop,#dbody .shiftpill:focus .shpop{display:block}
 #dbody .shpop .shhd{font-size:14px;margin-bottom:6px;color:var(--ink)}
+#dbody .shpop .shhd b{color:var(--ink) !important}
 #dbody .shpop .shhd span{font-size:12.5px;color:var(--sub)}
 #dbody .shpop table{width:100%;border-collapse:collapse;font-size:13px}
 #dbody .shpop th{position:sticky;top:-10px;background:var(--surface-2);font-weight:700;text-align:start;padding:4px 6px;border-bottom:1px solid var(--line)}
@@ -1482,7 +1494,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261114-13';
+var PK_VER='20261114-15';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -1815,7 +1827,7 @@ function flush(){
     .saveMarks(JSON.stringify(payload));
 }
 function GAS(){return (typeof google!=='undefined')&&google.script&&google.script.run;}
-var JUSTSAVED=0, CARDF={}, CARDF_ID=null;   /* אילו נושאים פתוחים בכרטיס — נשמר בין רענונים של אותו עובד */
+var JUSTSAVED=0, CARDF={}, CARDF_ID=null, SLIPURL={};   /* אילו נושאים פתוחים בכרטיס — נשמר בין רענונים של אותו עובד */
 function mk(id){if(!MARKS[id])MARKS[id]={};return MARKS[id];}
 function touch(id){mk(id).u=new Date().toISOString().slice(0,10);DIRTY=true;PEND[id]=1;}
 /* 30.10.2026 (איילת): כל סימון קובע (עזב/פעיל/טופל/שיפט) — נשאל «בטוחה?», ונשמר מי ומתי, כדי שיהיה ברור בכרטיס ואפשר לתקן */
@@ -3127,6 +3139,7 @@ function open(id){
     if(x.due==='עכשיו')return '<span class="pill p-warn">פנסיה — לפתוח החודש</span>';
     return '';
   }
+  var _shBtn='';
   var h='<div class="statusline">'+pState(e)+'<button class="pill" id="btnToggleActive" type="button" style="cursor:pointer;border:1px solid #bbb;background:#fff">'+(e.state==='לא פעיל'?'↩ החזר לפעיל':'➖ סמן כלא פעיל')+'</button>'+pFlags(e)+
     (e.ext?'':'<span class="pill '+(e.s101==='יש'?'p-ok':'p-crit')+'">טופס 101 '+(e.s101==='יש'?'✓':'חסר')+'</span>')+
     (function(){ var t=['שיפט — '+ATT_HE+':', e.worked_sept?(e.sept_days+' ימים'+(e.sept_hours?' · '+e.sept_hours+' שעות':'')):(e.global?'גלובלי — לא מחתים':'לא החתים')];
@@ -3139,7 +3152,7 @@ function open(id){
           (sp.d||[]).map(function(r){return '<tr>'+r.map(function(v,i){return '<td>'+esc(String(cell(v,i)))+'</td>';}).join('')+'</tr>';}).join('')+
           (sp.s||[]).map(function(r){return '<tr class="shs"><td colspan="'+Math.max(1,isum)+'">'+esc(r[0]||'')+'</td><td>'+esc(String(cell(r[1],isum)))+'</td>'+(C.length-isum-1>0?'<td colspan="'+(C.length-isum-1)+'"></td>':'')+'</tr>';}).join('')+
           '</tbody></table><div class="shsrc">מתוך בקרת השכר</div></div>'; }
-      return '<span class="pill shiftpill" tabindex="0"'+(pop?'':' title="'+esc(t.join(' · '))+'"')+'>🕒 פירוט שיפט'+pop+'</span>'; })()+
+      _shBtn='<span class="slipbtn shiftpill" tabindex="0"'+(pop?'':' title="'+esc(t.join(' · '))+'"')+'>🕒 שיפט'+(sp&&sp.month?' '+esc((+sp.month.slice(5))+'/'+sp.month.slice(0,4)):'')+pop+'</span>'; return ''; })()+
     '</div>';   /* מצב הפנסיה — בריבוע שבכותרת (בלי כפילות, 14.11.2026) */
   if(raw.manual)h+='<div class="statusline"><span class="hint">נוסף ידנית'+(raw.manual_by?' על ידי '+esc(raw.manual_by):'')+(raw.manual_at?' · '+esc(fmtD(String(raw.manual_at).slice(0,10))):'')+'</span>'+
     '<button class="btn" id="mNeEdit" type="button">✎ תיקון פרטים</button><button class="btn ghost" id="mNeDel" type="button">נוסף בטעות — למחוק</button></div>';
@@ -3185,8 +3198,8 @@ function open(id){
     if(_b.d)P('טופס 101 אחרון','בטר צ׳אנס · '+esc(fmtD(_b.d))); }
   var _sl=slipFiles(e);
   FA.push('<span><i>תלוש '+SLIP_N+'</i>'+(e.slip?'יש':'<b>אין</b>')+
-    (_sl.length?'<div class="slips">'+_sl.map(function(x){return '<button type="button" class="slipbtn" data-slipopen="'+esc(x.f.id)+'" title="פתיחת התלוש">📄 '+esc(x.l)+'</button>';}).join('')+'</div>'
-      :'<div class="sub">אין עדיין העתק תלוש בבקרה</div>')+'</span>');
+    '<div class="slips">'+_sl.map(function(x){return '<button type="button" class="slipbtn" data-slipopen="'+esc(x.f.id)+'" title="פתיחת התלוש">📄 '+esc(x.l)+'</button>';}).join('')+_shBtn+'</div>'+
+    (_sl.length?'':'<div class="sub">אין עדיין העתק תלוש בבקרה</div>')+'</span>');
   /* 14.11.2026 (איילת: «הנתון הזה לא ממש חשוב… כשנעמוד על פירוט שיפט שנראה את זה»): הנוכחות — רק בריחוף על «פירוט שיפט» בשורת המצב */
   if(e.rate){ var _r=String(e.rate), _ri=_r.indexOf(' (');   /* 14.11.2026 (איילת: «הנתונים האלה מאוד חשובים — ברור ומודגש»): הסכום גדול, ההסבר קטן מתחת */
     FA.push('<span class="wide"><i>תעריף</i>'+esc(_ri>0?_r.slice(0,_ri):_r)+(_ri>0?'<div class="sub">'+esc(_r.slice(_ri+2).replace(/\)$/,''))+'</div>':'')+'</span>'); }
@@ -3332,6 +3345,22 @@ function wire(id){
   document.querySelectorAll('#dbody a[data-src]').forEach(function(a){a.addEventListener('click',function(ev){ev.preventDefault();
     var f=window.PK&&PK.bySource(a.dataset.src); if(f)PK.open(f,false); else alert('הקובץ הזה עוד לא הועלה לענן.');});});
   document.querySelectorAll('#dbody [data-slipopen]').forEach(function(b){b.addEventListener('click',function(){var f=fFind(b.dataset.slipopen); if(f)PK.open(f,false);});});
+  /* 14.11.2026 (איילת: «למה אם עומדים על התלוש לא רואים אותו? אלא רק כשלוחצים») — תצוגה מקדימה בריחוף */
+  (function(){ var tile=document.querySelector('#dbody .kfacts .slips'); if(!tile)return; tile=tile.parentNode;
+    var pv=document.createElement('div'); pv.className='slippv'; tile.appendChild(pv);
+    var tmr=null, cur=null, inPv=false;
+    function hide(){ clearTimeout(tmr); tmr=setTimeout(function(){ if(!inPv){ pv.classList.remove('on'); cur=null; } },250); }
+    pv.addEventListener('mouseenter',function(){ inPv=true; clearTimeout(tmr); });
+    pv.addEventListener('mouseleave',function(){ inPv=false; hide(); });
+    tile.querySelectorAll('[data-slipopen]').forEach(function(b){
+      b.addEventListener('mouseenter',function(){ clearTimeout(tmr); tmr=setTimeout(function(){ var id=b.dataset.slipopen; if(cur===id){ pv.classList.add('on'); return; }
+        var f=fFind(id); if(!f)return; cur=id; pv.innerHTML='<div class="slippvh">📄 '+esc(b.textContent.replace('📄','').trim())+' — לחיצה פותחת בגדול</div><div class="slippvb">טוענת…</div>'; pv.classList.add('on');
+        var done=function(u){ if(cur!==id)return; var isImg=/^image\//.test(f.mime||'');
+          pv.querySelector('.slippvb').innerHTML=isImg?'<img alt="תלוש" src="'+u+'">':'<iframe title="תלוש" src="'+u+'#toolbar=0&navpanes=0&view=FitH"></iframe>'; };
+        if(SLIPURL[id])return done(SLIPURL[id]);
+        PK.blob(f).then(function(bl){ SLIPURL[id]=URL.createObjectURL(new Blob([bl],{type:f.mime||bl.type||'application/pdf'})); done(SLIPURL[id]); },
+          function(){ if(cur===id)pv.querySelector('.slippvb').textContent='לא הצלחתי לטעון את התלוש — אפשר ללחוץ כדי לפתוח.'; }); },300); });
+      b.addEventListener('mouseleave',hide); }); })();
   var dl=el('cfList'); if(dl)dl.addEventListener('click',function(ev){fListClick(ev,function(){render();open(id);});});
   on('cfAll','click',function(){var e2=eff(E.filter(function(x){return x.id===id;})[0]); PK.openAll(allEmpFiles(e2));});
   on('cfAdd','click',function(){el('cfIn').click();});
