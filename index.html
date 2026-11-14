@@ -1258,6 +1258,8 @@ section.act .allgood,.act table{font-size:14.5px}
 .ptrack>header h2{margin:0;font-size:16px}
 .ptrack .chips{display:flex;gap:6px;flex-wrap:wrap}
 .cmptab select.cmpcm{display:block;margin-top:4px;font:inherit;font-size:11.5px;color:var(--muted);border:1px dashed var(--line);border-radius:7px;background:transparent;padding:2px 4px;max-width:150px}
+details.pfacts{margin:-4px 0 12px}details.pfacts>summary{cursor:pointer;font-size:14px;font-weight:700;color:var(--accent-ink);list-style:none;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+details.pfacts>summary::-webkit-details-marker{display:none}details.pfacts[open]>summary{margin-bottom:8px}
 details.mkfold{margin:6px 0 8px}details.mkfold>summary{cursor:pointer;font-size:12.5px;color:var(--sub);list-style:none;width:max-content;padding:3px 0}
 details.mkfold>summary::-webkit-details-marker{display:none}details.mkfold>summary:hover{color:var(--accent-ink)}details.mkfold[open]>summary{font-weight:700;color:var(--ink-2)}
 details.docmore .docgrid{margin-top:6px}
@@ -2396,6 +2398,13 @@ var COLS_OPT=[
  ['addr','כתובת',function(e){return e.addr?esc(e.addr):'<span class="sub">—</span>';}],
  ['phone','טלפון',function(e){return e.phone?'<span class="n">'+esc(e.phone)+'</span>':'<span class="sub">—</span>';}],
  ['email','מייל',function(e){return e.email?'<span class="sub">'+esc(e.email)+'</span>':'<span class="sub">—</span>';}],
+ ['tz','ת״ז',function(e){return e.tz?'<span class="n">'+esc(e.tz)+'</span>':'<span class="sub">—</span>';}],
+ ['age','גיל',function(e){ var d=(typeof isoD==='function')?isoD(e.birth):''; if(!d)return '<span class="sub">—</span>'; var a=Math.floor((Date.now()-new Date(d+'T00:00:00'))/31557600000); return '<span class="n">'+a+'</span>';}],
+ ['extra','עבודה נוספת',function(e){ var b=e.b101; return !b?'<span class="sub">—</span>':b.extra===1?'<b>יש</b>'+(b.taxreq?' · ביקש/ה תיאום':''):'אין';}],
+ ['marital','מצב משפחתי',function(e){ return e.b101&&e.b101.marital?esc(e.b101.marital):'<span class="sub">—</span>';}],
+ ['hmo','קופת חולים',function(e){ return e.b101&&e.b101.hmo?esc(e.b101.hmo):'<span class="sub">—</span>';}],
+ ['credits','נקודות זיכוי',function(e){ return e.b101&&e.b101.credits?'<span class="sub">'+esc(e.b101.credits.split(' | ').map(function(t){return (t.match(/^\d{1,2} ?[אב]?/)||[''])[0].replace(/\s/g,'');}).join(', '))+'</span>':'<span class="sub">—</span>';}],
+ ['f101d','טופס 101 אחרון',function(e){ return e.b101&&e.b101.d?'<span class="n">'+esc(fmtD(e.b101.d))+'</span>':'<span class="sub">—</span>';}],
  ['rate','תעריף',function(e){return e.rate?'<span class="sub">'+esc(e.rate)+'</span>':'<span class="sub">—</span>';}],
  ['note','הערה',function(e){return e.note?'<span class="sub">'+esc(e.note)+'</span>':'<span class="sub">—</span>';}]
 ];
@@ -3017,27 +3026,29 @@ function open(id){
          (f.a==='y'?(f.files?' · '+f.files+' קבצים צורפו':' · בלי קבצים'):'')+(diff?' <span class="pill p-warn">שונה ממה שרשום — לעדכן «פנסיה קודמת»</span>':'')+'</div>'; })()+'</div>';
   }
   document.getElementById('dpens').innerHTML=h.slice(_h0); h=h.slice(0,_h0);
-  var FA=[];
+  var FA=[], PA=[];
   function F(l,v){ if(v)FA.push('<span><i>'+l+'</i>'+v+'</span>'); }
+  /* 14.11.2026 (איילת: «פרטים אישיים בתוך כרטיס העובד יהיו בתוך כפתור נלחץ»): פרטים אישיים ופרטי ה-101 — מקופלים */
+  function P(l,v){ if(v)PA.push('<span><i>'+l+'</i>'+v+'</span>'); }
   F('מחלקה',esc(e.dept));
-  if(e.addr)F('כתובת',esc(e.addr));
-  if(e.phone)F('טלפון',esc(e.phone));
-  if(e.email)F('מייל',esc(e.email));
-  if(e.birth){ var _bd=isoD(e.birth), _ag=_bd?Math.floor((Date.now()-new Date(_bd+'T00:00:00'))/31557600000):null; F('תאריך לידה',esc(fmtD(_bd)||e.birth)+(_ag!=null&&_ag>=0&&_ag<100?' · גיל '+_ag:'')); }
+  if(e.addr)P('כתובת',esc(e.addr));
+  if(e.phone)P('טלפון',esc(e.phone));
+  if(e.email)P('מייל',esc(e.email));
+  if(e.birth){ var _bd=isoD(e.birth), _ag=_bd?Math.floor((Date.now()-new Date(_bd+'T00:00:00'))/31557600000):null; P('תאריך לידה',esc(fmtD(_bd)||e.birth)+(_ag!=null&&_ag>=0&&_ag<100?' · גיל '+_ag:'')); }
   if(e.b101){ var _b=e.b101, _w=[];
     _w.push(_b.extra===1?'<b>יש הכנסה נוספת</b>'+(_b.taxreq?' · ביקש/ה תיאום מס':' — לבדוק תיאום מס'):_b.extra===0?'אין':'—');
     if(_b.second)_w.push('אצלנו: משרה נוספת');
-    F('עבודה נוספת',_w.join(' · '));
-    var _o=[]; if(_b.soldier)_o.push('חייל/ת משוחרר/ת'); if(_b.oleh)_o.push('עולה חדש/ה'); if(_o.length)F('הצהרות ב-101',esc(_o.join(' · ')));
-    if(_b.tel)F('טלפון נוסף',esc(_b.tel));
-    if(_b.marital)F('מצב משפחתי',esc(_b.marital));
-    if(_b.hmo)F('קופת חולים',esc(_b.hmo));
-    if(_b.resident==='לא')F('תושב/ת ישראל','<b>לא</b>');
-    if(_b.kibbutz&&_b.kibbutz!=='לא')F('חבר/ת קיבוץ',esc(_b.kibbutz));
-    if(_b.aliyah)F('תאריך עלייה',esc(_b.aliyah));
-    if(_b.income)F('סוג ההכנסה אצלנו',esc(_b.income));
-    if(_b.credits)F('נקודות זיכוי שביקש/ה',esc(_b.credits.split(' | ').map(function(t){return t.replace(/^(\d{1,2} ?[אב]? ?)\.\s*/,'$1. ');}).join(' · ')));
-    if(_b.d)F('טופס 101 אחרון','בטר צ׳אנס · '+esc(fmtD(_b.d))); }
+    (_b.extra===1?F:P)('עבודה נוספת',_w.join(' · '));   /* הכנסה נוספת משפיעה על המס — נשארת גלויה */
+    var _o=[]; if(_b.soldier)_o.push('חייל/ת משוחרר/ת'); if(_b.oleh)_o.push('עולה חדש/ה'); if(_o.length)P('הצהרות ב-101',esc(_o.join(' · ')));
+    if(_b.tel)P('טלפון נוסף',esc(_b.tel));
+    if(_b.marital)P('מצב משפחתי',esc(_b.marital));
+    if(_b.hmo)P('קופת חולים',esc(_b.hmo));
+    if(_b.resident==='לא')P('תושב/ת ישראל','<b>לא</b>');
+    if(_b.kibbutz&&_b.kibbutz!=='לא')P('חבר/ת קיבוץ',esc(_b.kibbutz));
+    if(_b.aliyah)P('תאריך עלייה',esc(_b.aliyah));
+    if(_b.income)P('סוג ההכנסה אצלנו',esc(_b.income));
+    if(_b.credits)P('נקודות זיכוי שביקש/ה',esc(_b.credits.split(' | ').map(function(t){return t.replace(/^(\d{1,2} ?[אב]? ?)\.\s*/,'$1. ');}).join(' · ')));
+    if(_b.d)P('טופס 101 אחרון','בטר צ׳אנס · '+esc(fmtD(_b.d))); }
   F('תחילת עבודה',e.start?esc(fmtD(e.start))+(e.months!=null?' · ותק '+e.months+' ח׳':''):'<b>חסר</b>');
   F('תלוש '+SLIP_N,e.slip?'יש':'<b>אין</b>');
   F(ATT_HE,e.worked_sept?(e.sept_days+' ימים · '+(e.sept_hours||0)+' ש׳'):(e.global?'לא מחתים':'<b>לא החתים</b>'));
@@ -3049,6 +3060,7 @@ function open(id){
     if(e.sev_ytd)F('פיצויים',(e.sev_ytd||0).toLocaleString('he-IL')+' ₪');
   }
   h+='<div class="facts">'+FA.join('')+'</div>';
+  if(PA.length)h+='<details class="pfacts"><summary>👤 פרטים אישיים ופרטי טופס 101</summary><div class="facts">'+PA.join('')+'</div></details>';
   /* marking */
   var docs=m.docs||[];
   function chip(t){
@@ -3365,10 +3377,11 @@ document.getElementById('fWhat').addEventListener('change',function(){F.what=thi
 
 /* ---------- דוח וייצוא ---------- */
 var REPCOLS=[['name','שם העובד',150],['tz','ת״ז',78],['emp_no','מס׳ עובד',58],['dept','מחלקה',82],['role','תפקיד',120],
-  ['birth','תאריך לידה',78],['gender','מין',42],['addr','כתובת',190],['phone','טלפון',86],['email','מייל',165],
+  ['birth','תאריך לידה',78],['age','גיל',38],['gender','מין',42],['addr','כתובת',190],['phone','טלפון',86],['email','מייל',165],
+  ['marital','מצב משפחתי',70],['hmo','קופת חולים',70],['extra','עבודה נוספת',90],['credits','נקודות זיכוי',140],['f101d','טופס 101 אחרון',78],
   ['start','תחילת עבודה',80],['months','ותק',42],['state','סטטוס',62],['s101','טופס 101',58],
   ['pens','פנסיה',78],['pmonth','חודש פתיחה',84],['due','מצב פנסיה',70],['rate','תעריף',220],['docs','מסמכים',190],['note','הערה',200]];
-var RPNUM={months:1,emp_no:1};
+var RPNUM={months:1,emp_no:1,age:1};
 var RPPRE={
   contact:['name','tz','dept','role','phone','email','addr'],
   pens:['name','tz','dept','start','months','pens','pmonth','due','s101','docs'],
@@ -3397,6 +3410,12 @@ function repCell(e,k){
     case 'addr':   return e.addr||'';
     case 'phone':  return e.phone||'';
     case 'email':  return e.email||'';
+    case 'age':    { var _d=isoD(e.birth); return _d?String(Math.floor((Date.now()-new Date(_d+'T00:00:00'))/31557600000)):''; }
+    case 'marital':return (e.b101&&e.b101.marital)||'';
+    case 'hmo':    return (e.b101&&e.b101.hmo)||'';
+    case 'extra':  return !e.b101?'':(e.b101.extra===1?'יש'+(e.b101.taxreq?' · ביקש/ה תיאום מס':''):'אין');
+    case 'credits':return e.b101&&e.b101.credits?e.b101.credits.split(' | ').map(function(t){return (t.match(/^\d{1,2} ?[אב]?/)||[''])[0].replace(/\s/g,'');}).join(', '):'';
+    case 'f101d':  return e.b101&&e.b101.d?fmtD(e.b101.d):'';
     case 'start':  return e.start||'';
     case 'months': return (e.months!=null&&e.start)?String(e.months):'';
     case 'state':  return e.ext?(e.extlbl||'עובד חוץ'):(e.active?'פעיל':'לא פעיל');
