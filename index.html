@@ -1610,6 +1610,12 @@ function inboxNotice(){ if(!PK.me||!PK.me.owner)return;
   ov.addEventListener('click',function(ev){ var a=ev.target.closest('[data-ibf]'); if(a){ ev.preventDefault(); var f=FILES.filter(function(x){return x.id===a.dataset.ibf;})[0]; if(f)PK.open(f); return; }
     if(ev.target===ov||ev.target.closest('[data-ibx]'))ov.remove(); });
 }
+/* פרטי 101 מבטר צ'אנס: הטופס האחרון מעדכן טלפון / מייל / כתובת / תאריך לידה / מין (סימון ידני בכרטיס עדיין גובר),
+   ומה שהעובד הצהיר (הכנסה נוספת, משרה נוספת, חייל משוחרר, עולה, בקשת תיאום מס) נשמר ב-e.b101 */
+function bc101Merge(D,L){ var M={}; (L||[]).forEach(function(b){ if(b&&b.emps)Object.keys(b.emps).forEach(function(k){ M[k]=b.emps[k]; }); });
+  D.employees.forEach(function(e){ var b=M[String(e.id)]; if(!b||b.err)return;
+    ['phone','email','addr','birth','gender'].forEach(function(k){ if(b[k])e[k]=b[k]; });
+    e.b101={d:b.d||'',extra:b.extra,second:b.second,oleh:b.oleh,soldier:b.soldier,taxreq:b.taxreq}; }); }
 var booted=false;
 function boot(){
   msg('טוענת…');
@@ -1618,8 +1624,11 @@ function boot(){
     PK.me=me;
     var rs=me.scope==='all'?['asa','chakoli','helena','nero'].concat(me.owner?['pastel','ariela']:[]):[me.scope]; /* פאסטל — רק איילת (me.owner) */ /* הלנה ונרו ביץ' — רק למי שרואה הכול (איילת, טלי) */
     return Promise.all([Promise.all(rs.map(function(r){ return json('/storage/v1/object/authenticated/pinkas/'+r+'/app.json').catch(function(e){ if(e.status===400||e.status===404)return null; throw e; }); })),
-                        PK.newList(rs)])
+                        PK.newList(rs),
+                        /* 14.11.2026 (איילת: «שפרטי ה-101 יהיו מעודכנים אצלנו»): <rest>/bc101.json — מה שהעובד מילא בטופס 101 האחרון בבטר צ'אנס */
+                        Promise.all(rs.map(function(r){ return json('/storage/v1/object/authenticated/pinkas/'+r+'/bc101.json').catch(function(){ return null; }); }))])
       .then(function(x){ var D=mergePayloads(x[0]); if(!D.employees.length) throw new Error('נתוני העובדים עוד לא הועלו לענן');
+        bc101Merge(D,x[2]);
         return addNew(D,x[1]).then(function(){ return PK.reload(); }).then(function(){ return D; }); });
   }).then(function(D){
     var m={}; D.employees.forEach(function(e){m[e.id]=e;}); window.__PK_EMP=m;
@@ -3007,6 +3016,13 @@ function open(id){
   if(e.addr)F('כתובת',esc(e.addr));
   if(e.phone)F('טלפון',esc(e.phone));
   if(e.email)F('מייל',esc(e.email));
+  if(e.birth){ var _bd=isoD(e.birth), _ag=_bd?Math.floor((Date.now()-new Date(_bd+'T00:00:00'))/31557600000):null; F('תאריך לידה',esc(fmtD(_bd)||e.birth)+(_ag!=null&&_ag>=0&&_ag<100?' · גיל '+_ag:'')); }
+  if(e.b101){ var _b=e.b101, _w=[];
+    _w.push(_b.extra===1?'<b>יש הכנסה נוספת</b>'+(_b.taxreq?' · ביקש/ה תיאום מס':' — לבדוק תיאום מס'):_b.extra===0?'אין':'—');
+    if(_b.second)_w.push('אצלנו: משרה נוספת');
+    F('עבודה נוספת',_w.join(' · '));
+    var _o=[]; if(_b.soldier)_o.push('חייל/ת משוחרר/ת'); if(_b.oleh)_o.push('עולה חדש/ה'); if(_o.length)F('הצהרות ב-101',esc(_o.join(' · ')));
+    if(_b.d)F('טופס 101 אחרון','בטר צ׳אנס · '+esc(fmtD(_b.d))); }
   F('תחילת עבודה',e.start?esc(fmtD(e.start))+(e.months!=null?' · ותק '+e.months+' ח׳':''):'<b>חסר</b>');
   F('תלוש '+SLIP_N,e.slip?'יש':'<b>אין</b>');
   F(ATT_HE,e.worked_sept?(e.sept_days+' ימים · '+(e.sept_hours||0)+' ש׳'):(e.global?'לא מחתים':'<b>לא החתים</b>'));
