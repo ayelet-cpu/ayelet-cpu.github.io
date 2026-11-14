@@ -1106,6 +1106,11 @@ details.pfacts{margin:0}
 #dbody .kfacts>span b{color:var(--warn)}
 #dbody .kfacts>span{flex:1 1 180px}
 #dbody .kfacts>span.wide{flex-basis:100%}
+#dbody h4.fgrp{margin:12px 0 6px;font-size:14px;font-weight:700;color:var(--ink-2)}
+#dbody h4.fgrp:first-child{margin-top:0}
+#dbody .kfacts .slips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+#dbody .kfacts .slipbtn{font:inherit;font-size:14px;font-weight:600;padding:5px 12px;border-radius:999px;border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent-ink);cursor:pointer}
+#dbody .kfacts .slipbtn:hover{background:var(--accent);color:#fff}
 #dbody .kfacts .sub{font-size:13.5px;font-weight:400;color:var(--sub);margin:0}
 </style>
 </head>
@@ -1465,7 +1470,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261114-8';
+var PK_VER='20261114-10';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -3032,6 +3037,14 @@ function notesByMonth(e){
     s+='<div class="nmgrp"><div class="nmhd">'+esc(nlabel(G.y,G.m))+'<span>'+G.items.length+'</span></div><ul class="list">'+G.items.join('')+'</ul></div>'; });
   return s+(n?'</details>':'')+'<div class="mkfoot" style="margin-top:8px"><button class="btn" id="mAddNote" type="button">➕ הערת שכר</button></div></div>';
 }
+var FROM_EMP_RE=/מחלה|מילואים|חופש|לידה|אבל|היעדר|הצהר|רפוא|תאונ|בדיק|ביקור/;   /* אישורים שהעובד מעביר (לא מסמכי העסקה) */
+function slipFiles(e){
+  return allEmpFiles(e).filter(function(f){return f.dtype==='תלוש שכר';}).map(function(f){
+    var m=f.meta||{}, mm=String(m.month||(String(f.source||'').match(/\d{1,2}[.\/]\d{4}/)||[''])[0]||'');
+    var k=/^(\d{4})-(\d{2})/.test(mm)?mm.slice(0,7):(mm.match(/(\d{1,2})[.\/](\d{4})/)?mm.replace(/^(\d{1,2})[.\/](\d{4})$/,function(_,a,b){return b+'-'+String(a).padStart(2,'0');}):String(f.created_at||'').slice(0,7));
+    return {f:f,k:k,l:/^\d{4}-\d{2}$/.test(k)?(+k.slice(5))+'/'+k.slice(0,4):(mm||'תלוש')};
+  }).sort(function(a,b){return a.k<b.k?1:a.k>b.k?-1:0;});
+}
 function allEmpFiles(e){
   var L=(e.cfiles||[]).slice(), seen={};
   L.forEach(function(f){seen[f.id]=1;if(f.path)seen[f.path]=1;});
@@ -3040,18 +3053,22 @@ function allEmpFiles(e){
   return L.sort(function(a,b){return String((b.meta||{}).date||b.created_at).localeCompare(String((a.meta||{}).date||a.created_at));});
 }
 function docsBox(e,bare){
-  var L=allEmpFiles(e);
+  var L=allEmpFiles(e); if(bare)L=L.filter(function(f){return f.dtype!=='תלוש שכר';});
   var legacy=(e.docs||[]).filter(function(d){return !(d&&typeof d==='object'&&d.path&&window.PK&&PK.bySource(d.path));});
   var opts=DOCTYPES.concat(['פרטי פנסיה','הסכם עבודה','תלוש שכר','אחר']);
   return '<div class="sec">'+(bare?'':'<h3>📁 כל המסמכים של העובד/ת ('+L.length+')</h3>')+
     /* 14.11.2026 (איילת: «אפשר עוד לצמצם, תחשוב חכם», Impeccable): שורה אחת למסמך. מה שלא משנה החלטה (שם הקובץ, גודל, מקור) — בריחוף */
-    (L.length?'<ul class="flist fcomp" id="cfList">'+L.map(function(f){
+    /* 14.11.2026 (איילת: «יש הבדל בין מסמכי עובדים לבין מסמכים שהעובד העביר אלינו כמו מחלה»): שתי קבוצות */
+    (L.length?(function(){ var row=function(f){
         var src=f.kind==='note'?'מהערת שכר':(f.kind==='pension_form'?'טופס פרטי פנסיה':(f.source&&f.source!=='העלאה'?'מהתיקייה':'הועלה'));
-        var m=(f.meta||{}), when=m.month||(String(f.source||'').match(/\d{2}\.\d{4}/)||[''])[0]||fmtD(String(m.date||f.created_at||'').slice(0,10));
+        var m=(f.meta||{}), when=(/^\d{4}-\d{2}$/.test(m.month||'')?(+m.month.slice(5))+'/'+m.month.slice(0,4):m.month)||(String(f.source||'').match(/\d{2}\.\d{4}/)||[''])[0]||fmtD(String(m.date||f.created_at||'').slice(0,10));
         var tip=[f.name,fSize(f.bytes),src,f.created_by,String(f.created_at||'').slice(0,10)].filter(Boolean).join(' · ');
         return '<li data-fid="'+esc(f.id)+'" title="'+esc(tip)+'"><span class="fn"><b>'+esc(f.dtype||f.name)+'</b>'+(when?' <em>'+esc(when)+'</em>':'')+'</span>'+
           '<button type="button" data-fopen="'+esc(f.id)+'">פתיחה</button><button type="button" data-fdl="'+esc(f.id)+'" aria-label="הורדה" title="הורדה">⬇</button>'+
-          (f.source==='העלאה'?'<button type="button" class="fdel" data-fdel="'+esc(f.id)+'" title="הסרת הקובץ">✕</button>':'')+'</li>';}).join('')+'</ul>'
+          (f.source==='העלאה'?'<button type="button" class="fdel" data-fdel="'+esc(f.id)+'" title="הסרת הקובץ">✕</button>':'')+'</li>';};
+      var B=L.filter(function(f){return FROM_EMP_RE.test(String(f.dtype||f.name||''));}), A=L.filter(function(f){return B.indexOf(f)<0;});
+      var grp=function(t,X){return X.length?'<h4 class="fgrp">'+t+' ('+X.length+')</h4><ul class="flist fcomp">'+X.map(row).join('')+'</ul>':'';};
+      return '<div id="cfList">'+(bare?grp('🗂 מסמכי העובד/ת',A)+grp('🩺 אישורים שהעובד/ת העביר/ה (מחלה, מילואים…)',B):'<ul class="flist fcomp">'+L.map(row).join('')+'</ul>')+'</div>'; })()
       :'<p class="hint">אין עדיין מסמכים בענן לעובד/ת הזה/ו.</p>')+
     (legacy.length?'<p class="hint">רשומים בתיקיות אבל עוד לא עלו לענן: '+legacy.map(function(d){return esc(typeof d==='object'?(d.file||d.dtype):d);}).join(' · ')+'</p>':'')+
     '<div class="fup">'+(L.length>1?'<button class="fbtn" id="cfAll" type="button">⬇ הורדת כל המסמכים ('+L.length+')</button>':'')+
@@ -3136,7 +3153,10 @@ function open(id){
     if(_b.income)P('סוג ההכנסה אצלנו',esc(_b.income));
     if(_b.credits)P('נקודות זיכוי שביקש/ה',esc(_b.credits.split(' | ').map(function(t){return t.replace(/^(\d{1,2} ?[אב]? ?)\.\s*/,'$1. ');}).join(' · ')));
     if(_b.d)P('טופס 101 אחרון','בטר צ׳אנס · '+esc(fmtD(_b.d))); }
-  F('תלוש '+SLIP_N,e.slip?'יש':'<b>אין</b>');
+  var _sl=slipFiles(e);
+  FA.push('<span><i>תלוש '+SLIP_N+'</i>'+(e.slip?'יש':'<b>אין</b>')+
+    (_sl.length?'<div class="slips">'+_sl.map(function(x){return '<button type="button" class="slipbtn" data-slipopen="'+esc(x.f.id)+'" title="פתיחת התלוש">📄 '+esc(x.l)+'</button>';}).join('')+'</div>'
+      :'<div class="sub">אין עדיין העתק תלוש בבקרה</div>')+'</span>');
   F('נוכחות '+ATT_HE,(e.worked_sept?(e.sept_days+' ימים · '+(e.sept_hours||0)+' ש׳'):(e.global?'לא מחתים':'<b>לא החתים</b>'))+
     (e.sept_roles&&e.sept_roles.length>1?'<div class="sub">'+e.sept_roles.map(function(r){return esc(r.role)+' '+r.days;}).join(' · ')+'</div>':''));
   if(e.rate){ var _r=String(e.rate), _ri=_r.indexOf(' (');   /* 14.11.2026 (איילת: «הנתונים האלה מאוד חשובים — ברור ומודגש»): הסכום גדול, ההסבר קטן מתחת */
@@ -3247,7 +3267,8 @@ function open(id){
   var f101s=(e.f101||[]).length?'<div class="sec"><h3>מקור טופס 101</h3><ul class="list">'+
      e.f101.map(function(f){return '<li><span class="m">'+esc(f.src)+' · '+esc(f.month)+'</span><br>'+esc(f.text)+'</li>';}).join('')+'</ul></div>':'';
   h+=fold('pens','🏦 פנסיה',esc(e.ext?'אין פנסיה':(e.todo||(e.pens_open?'נפתחה':''))),hm+(e.ext?'':pformBox(e)));
-  h+=fold('docs','📁 מסמכים',esc(_fl.length+' קבצים'+(e.missing.length?' · חסר: '+e.missing.join(', '):'')),(hd?'<div class="mkpanel">'+hd+'</div>':'')+docsBox(e,true)+f101s);
+  h+=fold('docs','📁 מסמכים',esc((function(){var X=_fl.filter(function(f){return f.dtype!=='תלוש שכר';}), b=X.filter(function(f){return FROM_EMP_RE.test(String(f.dtype||f.name||''));}).length;
+    return (X.length-b)+' מסמכים'+(b?' · '+b+' אישורים':'');})()+(e.missing.length?' · חסר: '+e.missing.join(', '):'')),(hd?'<div class="mkpanel">'+hd+'</div>':'')+docsBox(e,true)+f101s);
   h+='<div class="cardsec">'+notesByMonth(e)+'</div>';
   h+=fold('set','⚙️ סימונים והגדרות',esc([m.note?'יש הערה':'',m.shift?SHIFT_HE[m.shift]:''].filter(Boolean).join(' · ')),hs);
   if(CARDF_ID!==id){CARDF={};CARDF_ID=id;}
@@ -3281,6 +3302,7 @@ function wire(id){
     apply(function(m){m.pension='פעילה';}); });
   document.querySelectorAll('#dbody a[data-src]').forEach(function(a){a.addEventListener('click',function(ev){ev.preventDefault();
     var f=window.PK&&PK.bySource(a.dataset.src); if(f)PK.open(f,false); else alert('הקובץ הזה עוד לא הועלה לענן.');});});
+  document.querySelectorAll('#dbody [data-slipopen]').forEach(function(b){b.addEventListener('click',function(){var f=fFind(b.dataset.slipopen); if(f)PK.open(f,false);});});
   var dl=el('cfList'); if(dl)dl.addEventListener('click',function(ev){fListClick(ev,function(){render();open(id);});});
   on('cfAll','click',function(){var e2=eff(E.filter(function(x){return x.id===id;})[0]); PK.openAll(allEmpFiles(e2));});
   on('cfAdd','click',function(){el('cfIn').click();});
