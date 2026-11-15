@@ -1117,6 +1117,7 @@ details.pfacts{margin:0}
 .cslipvh{display:flex;align-items:center;gap:10px;margin:0 4px 8px}
 .cslipvh b{font-size:15px}.cslipvh span{color:var(--sub);flex:1}
 .cslipvh button{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px}
+.cslipvh button.pp{width:auto;padding:0 14px;font:inherit;font-size:14px;font-weight:700;color:var(--accent-ink);border-color:var(--accent);background:var(--accent-soft)}
 .cslipvb{flex:1;min-height:0;overflow:auto;text-align:center;color:var(--sub)}
 .cslipvb iframe{width:100%;height:100%;border:0;border-radius:8px;background:#fff}
 .cslipvb img{max-width:100%;height:auto}
@@ -1506,7 +1507,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261115-3';
+var PK_VER='20261115-4';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -3366,6 +3367,19 @@ function wire(id){
   (function(){ var tile=document.querySelector('#dbody .kfacts .slips'); if(!tile)return; tile=tile.parentNode;
     document.querySelectorAll('.cslip').forEach(function(x){x.remove();});
     var pv=document.createElement('div'); pv.className='cslip'; document.body.appendChild(pv);
+    /* 15.11 (איילת: «אי אפשר להדפיס את התלוש והשיפט») — 🖨 בחלון: תלוש = הדפסת הקובץ עצמו; שיפט = הטבלה בדף נקי */
+    pv.addEventListener('click',function(ev){ if(!ev.target.closest('[data-pvp]'))return;
+      var vb=pv.querySelector('.cslipvb'); if(!vb)return; var fr=vb.querySelector('iframe'), im=vb.querySelector('img');
+      if(fr&&fr.src){ try{ fr.contentWindow.focus(); fr.contentWindow.print(); }catch(_){ window.open(fr.src,'_blank'); } return; }
+      var ttl=(pv.querySelector('.cslipvh b')||{}).textContent||'', sub=(pv.querySelector('.cslipvh span')||{}).textContent||'';
+      var nm=((document.getElementById('dname')||{}).textContent||'').trim();
+      var body=im?'<img src="'+im.src+'" style="max-width:100%">':vb.innerHTML;
+      var doc='<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>'+esc(nm+' '+ttl)+'</title><style>body{font-family:Arial,sans-serif;margin:18px;color:#000}h1{font-size:18px;margin:0 0 4px}p{margin:0 0 12px;font-size:13px;color:#444}'+
+        'table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #bbb;padding:4px 6px;text-align:right;white-space:nowrap}th{background:#eee}tr.shs td{font-weight:700;background:#f3f3f3}.shhd{display:none}.shsrc{font-size:11px;color:#666;margin-top:8px}</style></head><body>'+
+        '<h1>'+esc((nm?nm+' — ':'')+ttl.replace(/^[^֐-׿A-Za-z0-9]+/,''))+'</h1><p>'+esc(sub)+'</p>'+body+'</body></html>';
+      var pf=document.createElement('iframe'); pf.style.cssText='position:fixed;width:0;height:0;border:0;left:-9999px'; document.body.appendChild(pf);
+      pf.contentDocument.open(); pf.contentDocument.write(doc); pf.contentDocument.close();
+      setTimeout(function(){ try{ pf.contentWindow.focus(); pf.contentWindow.print(); }catch(_){} setTimeout(function(){pf.remove();},60000); },300); });
     pv.addEventListener('click',function(ev){ if(ev.target.closest('[data-pvx]')){ pv.classList.remove('on'); cur=null; pinned=false; } });
     document.addEventListener('keydown',function(ev){ if(ev.key==='Escape'){ pv.classList.remove('on'); pinned=false; } });
     var tmr=null, cur=null, inPv=false, pinned=false;
@@ -3374,7 +3388,7 @@ function wire(id){
     pv.addEventListener('mouseleave',function(){ inPv=false; hide(); });
     tile.querySelectorAll('[data-slipopen]').forEach(function(b){
       b.addEventListener('mouseenter',function(){ clearTimeout(tmr); tmr=setTimeout(function(){ var id=b.dataset.slipopen; if(cur===id){ pv.classList.add('on'); return; }
-        var f=fFind(id); if(!f)return; cur=id; pv.innerHTML='<div class="cslipvh"><b>📄 תלוש '+esc(b.textContent.replace('📄','').trim())+'</b><span>גלילה בתוך החלון · לחיצה על הכפתור פותחת בלשונית חדשה</span><button type="button" data-pvx aria-label="סגירה">✕</button></div><div class="cslipvb">טוענת…</div>'; pv.classList.add('on');
+        var f=fFind(id); if(!f)return; cur=id; pv.innerHTML='<div class="cslipvh"><b>📄 תלוש '+esc(b.textContent.replace('📄','').trim())+'</b><span>גלילה בתוך החלון · לחיצה על הכפתור פותחת בלשונית חדשה</span><button type="button" class="pp" data-pvp>🖨 הדפסה</button><button type="button" data-pvx aria-label="סגירה">✕</button></div><div class="cslipvb">טוענת…</div>'; pv.classList.add('on');
         var done=function(u){ if(cur!==id)return; var isImg=/^image\//.test(f.mime||'');
           pv.querySelector('.cslipvb').innerHTML=isImg?'<img alt="תלוש" src="'+u+'">':'<iframe title="תלוש" src="'+u+'#toolbar=0&navpanes=0&view=FitH"></iframe>'; };
         if(SLIPURL[id])return done(SLIPURL[id]);
@@ -3384,7 +3398,7 @@ function wire(id){
     /* צילום שיפט — אותו חלון גדול: בריחוף, או בלחיצה (נשאר פתוח עד ✕ / Esc) */
     tile.querySelectorAll('.shiftpill').forEach(function(b){ var sp=b.querySelector('.shpop'); if(!sp)return;
       function show(){ cur='shift'; var hd=sp.querySelector('.shhd');
-        pv.innerHTML='<div class="cslipvh"><b>🕒 '+(hd&&hd.querySelector('b')?esc(hd.querySelector('b').textContent):'צילום שיפט')+'</b><span>'+(hd&&hd.querySelector('span')?esc(hd.querySelector('span').textContent):'')+'</span><button type="button" data-pvx aria-label="סגירה">✕</button></div><div class="cslipvb shv">'+sp.innerHTML+'</div>';
+        pv.innerHTML='<div class="cslipvh"><b>🕒 '+(hd&&hd.querySelector('b')?esc(hd.querySelector('b').textContent):'צילום שיפט')+'</b><span>'+(hd&&hd.querySelector('span')?esc(hd.querySelector('span').textContent):'')+'</span><button type="button" class="pp" data-pvp>🖨 הדפסה</button><button type="button" data-pvx aria-label="סגירה">✕</button></div><div class="cslipvb shv">'+sp.innerHTML+'</div>';
         pv.classList.add('on'); }
       b.addEventListener('mouseenter',function(){ clearTimeout(tmr); tmr=setTimeout(function(){ if(cur==='shift'){pv.classList.add('on');return;} show(); },300); });
       b.addEventListener('mouseleave',hide);
