@@ -1329,9 +1329,10 @@ details.pfacts{margin:0}
 .gwho button{font:inherit;font-size:16px;font-weight:700;padding:10px 20px;border-radius:12px;border:1.5px solid var(--line);
   background:var(--surface-2);color:var(--ink);cursor:pointer;min-width:92px}
 .gwho button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
-.gcard input[type=password]{width:100%;font:inherit;font-size:17px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);
+.gcard input[type=password],.gcard input[type=text]{width:100%;font:inherit;font-size:17px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);
   background:var(--surface);color:var(--ink);text-align:center;letter-spacing:1px}
-.gcard input[type=password]:focus{outline:none;border-color:var(--accent)}
+.gcard input[type=text]{margin-bottom:10px}
+.gcard input[type=password]:focus,.gcard input[type=text]:focus{outline:none;border-color:var(--accent)}
 .gcard .gbtn{margin-top:14px;width:100%;font:inherit;font-size:17px;font-weight:800;padding:13px;border-radius:12px;border:0;
   background:var(--accent);color:#fff;cursor:pointer}
 .gcard .gbtn:disabled{opacity:.6;cursor:default}
@@ -1486,7 +1487,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
   <div class="gcard" role="dialog" aria-labelledby="gTitle">
     <h1 id="gTitle">פנקס עובדים</h1>
     <p class="gsub">אסא · צ׳אקולי</p>
-    <div class="gwho" id="gWho" role="group" aria-label="מי נכנסת?"></div>
+    <input type="text" id="gUser" placeholder="שם משתמש" autocomplete="username" autocapitalize="off" spellcheck="false" aria-label="שם משתמש">
     <input type="password" id="gPw" placeholder="סיסמה" autocomplete="current-password" aria-label="סיסמה">
     <button class="gbtn" id="gGo" type="button">כניסה</button>
     <div class="gmsg" id="gMsg" role="status"></div>
@@ -1496,7 +1497,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261114-18';
+var PK_VER='20261115-1';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -1686,16 +1687,19 @@ function runner(ok,fail){
 window.google={script:{run:runner(null,null)}};
 
 /* ---------- כניסה ---------- */
-var who=load(UK)||'ayelet';
-function drawWho(){ $('gWho').innerHTML=USERS.map(function(u){return '<button type="button" data-k="'+u.k+'" aria-pressed="'+(u.k===who)+'">'+u.n+'</button>';}).join(''); }
-drawWho();
-$('gWho').addEventListener('click',function(ev){var b=ev.target.closest('button[data-k]');if(!b)return;who=b.dataset.k;store(UK,who);drawWho();$('gPw').focus();});
+/* 15.11.2026 (איילת: «תן לרשום את השם משתמש ולא שכולם יהיו רשומים»): מקלידים שם משתמש — בעברית (איילת) או באנגלית (ayelet). במכשיר שכבר נכנסו ממנו — השם נשמר. */
+function userKey(t){ t=String(t||'').trim(); if(!t) return ''; var lo=t.toLowerCase().replace(/@pinkas\.local$/,'');
+  for(var i=0;i<USERS.length;i++){ if(USERS[i].k===lo||USERS[i].n===t) return USERS[i].k; }
+  return /^[a-z0-9._-]{2,40}$/.test(lo)?lo:''; }
+(function(){ var k=load(UK); if(k){ var u=USERS.filter(function(x){return x.k===k;})[0]; $('gUser').value=u?u.n:k; } })();
+$('gUser').addEventListener('keydown',function(e){if(e.key==='Enter')$('gPw').focus();});
 function msg(t,err){var m=$('gMsg');m.textContent=t||'';m.className='gmsg'+(err?' err':'');}
 $('gGo').addEventListener('click',function(){
+  var who=userKey($('gUser').value); if(!who){msg($('gUser').value.trim()?'שם המשתמש לא מוכר. אפשר לנסות שוב.':'נא להקליד שם משתמש',true);$('gUser').focus();return;}
   var pw=$('gPw').value; if(!pw){msg('נא להקליד סיסמה',true);return;}
   var b=this; b.disabled=true; msg('בודקת…');
-  auth('token?grant_type=password',{email:who+'@pinkas.local',password:pw}).then(function(j){keep(j);$('gPw').value='';return boot();})
-    .catch(function(e){ msg(e.status===400?'הסיסמה לא נכונה. אפשר לנסות שוב.':(e.status===429?'יותר מדי ניסיונות. נסי שוב בעוד כמה דקות.':'לא הצלחתי להתחבר: '+e.message),true); })
+  auth('token?grant_type=password',{email:who+'@pinkas.local',password:pw}).then(function(j){keep(j);store(UK,who);$('gPw').value='';return boot();})
+    .catch(function(e){ msg(e.status===400?'שם המשתמש או הסיסמה לא נכונים. אפשר לנסות שוב.':(e.status===429?'יותר מדי ניסיונות. נסי שוב בעוד כמה דקות.':'לא הצלחתי להתחבר: '+e.message),true); })
     .then(function(){b.disabled=false;});
 });
 $('gPw').addEventListener('keydown',function(e){if(e.key==='Enter')$('gGo').click();});
