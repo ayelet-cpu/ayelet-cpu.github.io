@@ -1329,10 +1329,10 @@ details.pfacts{margin:0}
 .gwho button{font:inherit;font-size:16px;font-weight:700;padding:10px 20px;border-radius:12px;border:1.5px solid var(--line);
   background:var(--surface-2);color:var(--ink);cursor:pointer;min-width:92px}
 .gwho button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
-.gcard input[type=password],.gcard input[type=text]{width:100%;font:inherit;font-size:17px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);
+.gcard input[type=password],.gcard select{width:100%;font:inherit;font-size:17px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);
   background:var(--surface);color:var(--ink);text-align:center;letter-spacing:1px}
-.gcard input[type=text]{margin-bottom:10px}
-.gcard input[type=password]:focus,.gcard input[type=text]:focus{outline:none;border-color:var(--accent)}
+.gcard select{margin-bottom:10px;cursor:pointer;text-align:center;text-align-last:center}
+.gcard input[type=password]:focus,.gcard select:focus{outline:none;border-color:var(--accent)}
 .gcard .gbtn{margin-top:14px;width:100%;font:inherit;font-size:17px;font-weight:800;padding:13px;border-radius:12px;border:0;
   background:var(--accent);color:#fff;cursor:pointer}
 .gcard .gbtn:disabled{opacity:.6;cursor:default}
@@ -1487,7 +1487,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
   <div class="gcard" role="dialog" aria-labelledby="gTitle">
     <h1 id="gTitle">פנקס עובדים</h1>
     <p class="gsub">אסא · צ׳אקולי</p>
-    <input type="text" id="gUser" placeholder="שם משתמש" autocomplete="username" autocapitalize="off" spellcheck="false" aria-label="שם משתמש">
+    <select id="gUser" aria-label="שם משתמש"><option value="">בחרי שם משתמש</option></select>
     <input type="password" id="gPw" placeholder="סיסמה" autocomplete="current-password" aria-label="סיסמה">
     <button class="gbtn" id="gGo" type="button">כניסה</button>
     <div class="gmsg" id="gMsg" role="status"></div>
@@ -1497,7 +1497,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261115-1';
+var PK_VER='20261115-2';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -1691,11 +1691,13 @@ window.google={script:{run:runner(null,null)}};
 function userKey(t){ t=String(t||'').trim(); if(!t) return ''; var lo=t.toLowerCase().replace(/@pinkas\.local$/,'');
   for(var i=0;i<USERS.length;i++){ if(USERS[i].k===lo||USERS[i].n===t) return USERS[i].k; }
   return /^[a-z0-9._-]{2,40}$/.test(lo)?lo:''; }
-(function(){ var k=load(UK); if(k){ var u=USERS.filter(function(x){return x.k===k;})[0]; $('gUser').value=u?u.n:k; } })();
-$('gUser').addEventListener('keydown',function(e){if(e.key==='Enter')$('gPw').focus();});
+/* 15.11 (איילת: «שיהיה אפשר לבחור שם משתמש מתוך רשימה נפתחת») — רשימה נפתחת; השם האחרון במכשיר נבחר מראש. */
+$('gUser').insertAdjacentHTML('beforeend',USERS.map(function(u){return '<option value="'+u.k+'">'+u.n+'</option>';}).join(''));
+(function(){ var k=load(UK); if(k&&USERS.some(function(x){return x.k===k;})) $('gUser').value=k; })();
+$('gUser').addEventListener('change',function(){ if(this.value) $('gPw').focus(); });
 function msg(t,err){var m=$('gMsg');m.textContent=t||'';m.className='gmsg'+(err?' err':'');}
 $('gGo').addEventListener('click',function(){
-  var who=userKey($('gUser').value); if(!who){msg($('gUser').value.trim()?'שם המשתמש לא מוכר. אפשר לנסות שוב.':'נא להקליד שם משתמש',true);$('gUser').focus();return;}
+  var who=userKey($('gUser').value); if(!who){msg('נא לבחור שם משתמש',true);$('gUser').focus();return;}
   var pw=$('gPw').value; if(!pw){msg('נא להקליד סיסמה',true);return;}
   var b=this; b.disabled=true; msg('בודקת…');
   auth('token?grant_type=password',{email:who+'@pinkas.local',password:pw}).then(function(j){keep(j);store(UK,who);$('gPw').value='';return boot();})
