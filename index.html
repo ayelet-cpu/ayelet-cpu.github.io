@@ -211,6 +211,10 @@ footer{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
 .milrow a,.zarbox a{cursor:pointer;color:var(--accent-ink);text-decoration:underline;margin-inline-end:8px}
 .mild{font-size:13.5px;color:var(--muted)}
 .mildone{font-size:13.5px;white-space:nowrap}
+.frnrules{margin:0 16px 12px;background:var(--surface-2);border-radius:10px;padding:10px 14px;font-size:14px;line-height:1.6}
+.frnrules summary{cursor:pointer}
+.frnrules h4{margin:10px 0 4px;font-size:14px}
+.frnrules ul{margin:0;padding-inline-start:20px}
 .zarbox{grid-column:1/-1;background:var(--surface-2);border-radius:10px;padding:8px 12px;font-size:14px}
 .zarbox table{border-collapse:collapse;font-size:13px;margin-top:6px}
 .zarbox td,.zarbox th{border:1px solid var(--line-2);padding:2px 8px;text-align:center}
@@ -1507,7 +1511,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261118-1';
+var PK_VER='20261122-1';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -2331,6 +2335,24 @@ function frnPens(e){
     (e.pens_open?'<span class="pill p-ok">✓ נפתחה '+esc(e.opened_date?fmtD(e.opened_date):(e.opened_month||''))+'</span>':'<span class="sub">פתיחה: '+esc(e.pmonth_he||'חסר תאריך התחלה')+'</span>'+due)+
     '<br>'+pstageSel(e)+'<input type="text" class="pnote" data-pt="note" data-emp="'+e.id+'" value="'+esc(e.talked_note||'')+'" placeholder="מה נאמר…" aria-label="מה נאמר">'+
     ((pstageInfo(e)||e.talked_at)?'<em class="pinfo">'+esc(pstageInfo(e)||('דיברנו '+fmtD(e.talked_at)))+'</em>':'')+'</div>'; }
+/* 22.11.2026 (איילת): «תרשום למעלה בפנקס את הנהלים שמעניינים אותנו» — סיכום נוהל 9.0.0003 של רשות האוכלוסין (מהדורה 7, 26.08.2024) */
+var FRN_RULES='<details class="frnrules" open><summary><b>נהלים — פיקדון לעובדים זרים</b></summary>'+
+  '<h4>נוהל 9.0.0003 — פיקדון לעובדים זרים (רשות האוכלוסין, מהדורה 7, 26.08.2024)</h4><ul>'+
+  '<li><b>על מי:</b> עובד זר עם אשרה ורישיון מסוג ב/1 בענף המסעדות, שנכנס לישראל לראשונה לעבודה במסעדות עד 01.03.2025.</li>'+
+  '<li><b>כמה:</b> רכיב הפיצויים + רכיב תגמולי המעסיק לפי משרה מלאה (לפי צו ההרחבה / הסכם קיבוצי). במקום קרן פנסיה ופיצויים.</li>'+
+  '<li><b>ממתי:</b> מחודש העבודה הראשון — לא אחרי חצי שנה, גם אם בצו או בחוזה כתוב אחרת. בחודש הראשון, בחודש האחרון ובחודש של חופשה ללא תשלום — לפי מספר הימים.</li>'+
+  '<li><b>גם על:</b> ימי חופשה, חג ומחלה (עם אישור) — כל יום שמשלמים עליו שכר.</li>'+
+  '<li><b>עד מתי:</b> עד ה-15 בכל חודש, על החודש הקודם. עובד שעוזב את הארץ — את היתרה לפחות 5 ימים לפני העזיבה.</li>'+
+  '<li><b>איך:</b> רק במס"ב, לחשבון הפיקדונות בבנק מזרחי טפחות (בנק 20), ובאותו מועד דיווח מקוון ליחידת הפיקדונות: פרטי המעסיק, פרטי כל עובד, הסכום לכל עובד והתקופה.</li>'+
+  '<li><b>אסור</b> לנכות את הפיקדון מהשכר של העובד.</li>'+
+  '<li><b>איחור:</b> הפרה של תנאי ההיתר — אפשר שימוע, הגבלות (גם מניעת רישום עובדים חדשים) ואכיפה פלילית.</li>'+
+  '<li><b>עובד שעוזב את הארץ:</b> המעסיק חייב לעזור לו להגיש בקשה למשיכת הפיקדון (טופס מקוון / Pikdonot@sa.piba.gov.il), 10 ימי עבודה עד 30 יום לפני הטיסה, עם צילום דרכון וכרטיס טיסה. מקבל בנמל התעופה (מזומן או העברה לחשבון בחו"ל), בניכוי מס 15%. יצא אחרי שפגה האשרה — מקבל רק 25% מיד, והשאר בניכוי לפי חודשי האיחור.</li>'+
+  '<li><b>מעמד שודרג</b> (א/5, תושב קבע, אזרחות) — אפשר למשוך בלי לצאת מהארץ.</li></ul>'+
+  '<h4>מי לא בנוהל הזה</h4><ul>'+
+  '<li><b>מבקשי מקלט — רישיון 2(א)(5)</b>: לפי נוהל אחר — 9.0.0004 «פיקדון לעובדים זרים שהם מסתננים». <span class="pill p-warn">הנוהל עוד לא נמצא כאן</span></li>'+
+  '<li>עובד יומי מירדן ועובדים פלסטינים — אין חובת פיקדון.</li>'+
+  '<li>עובד בלי אשרת ב/1 (למשל נולד בישראל) — לבדוק את המעמד ברישיון השהייה שלו לפני שקובעים פיקדון.</li></ul>'+
+  '<p class="sub">הפקדה לפיקדון אינה אישור שההעסקה או השהייה חוקיות. מידע על רישיון ועל הפקדות — באתר רשות האוכלוסין.</p></details>';
 function renderFrn(){
   /* כל עובד זר שלא סומן «עזב»/«לא פעיל» — גם מי שעוד אין לו תלוש או נוכחות (התאילנדים שהגיעו ב-30.8) */
   var box=document.getElementById('frnView'), A=V().filter(frnOn);
@@ -2339,7 +2361,7 @@ function renderFrn(){
   var h='<div class="pwrap">';
   if(urgent.length)h+='<div class="frnalert" role="alert"><b>⚠️ אשרה שנגמרת השבוע:</b> '+urgent.map(function(e){ var d=visaDays(e); return esc(e.name)+' ('+(d<0?'פגה':d===0?'היום':'עוד '+d+' ימים')+')'; }).join(' · ')+'</div>';
   h+='<section class="psec"><header><span class="pcnt">'+A.length+'</span><h2>עובדים זרים — '+esc(REST)+'</h2>'+
-     '<p class="pnote">תוקף האשרה והפיקדון מוזנים כאן ונשמרים מיד. הפנסיה של עובד זר מופקדת בפיקדון בבנק — לא קרן פנסיה. הערות השכר ומי שעזב — משותפים לכל העובדים.</p></header><div class="plist">';
+     '<p class="pnote">תוקף האשרה והפיקדון מוזנים כאן ונשמרים מיד. הפנסיה של עובד זר מופקדת בפיקדון בבנק — לא קרן פנסיה. הערות השכר ומי שעזב — משותפים לכל העובדים.</p></header>'+FRN_RULES+'<div class="plist">';
   if(!A.length)h+='<div class="frow"><span class="hint">אין עובדים זרים פעילים ב'+esc(REST)+'.</span></div>';
   A.forEach(function(e){ var mk0=MARKS[e.id]||{}, d=visaDays(e), F=(window.PK?PK.byEmp(e.id):[]);
     h+='<div class="frow" data-fid="'+e.id+'">'+
