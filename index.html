@@ -250,6 +250,17 @@ footer{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
 .dalg.sev-crit .dalc{background:#FBE9E7;color:#A93226}.dalg.sev-warn .dalc{background:#FCF3DC;color:#8A6508}
 .dalg ul{margin:4px 0 6px;padding-inline-start:22px;font-size:13.5px;line-height:1.7}
 .dep-act{white-space:nowrap}
+.dep-views{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 10px}.dep-views .pill{cursor:pointer;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:14px;font-weight:700;padding:6px 14px}
+.dep-views .pill.on{background:var(--accent);color:#fff;border-color:var(--accent)}.dep-views .dep-exp{margin-inline-start:auto;display:flex;gap:6px}
+.dep-et tr.dep-erow{cursor:pointer}.dep-et tr.dep-erow:hover td{background:var(--accent-soft)}.dep-et tr.dep-erow.on td{background:var(--accent-soft);font-weight:600}
+.dep-car{display:inline-block;width:14px;color:var(--accent-ink)}.dep-et td,.dep-et th{white-space:normal;vertical-align:top}.dep-et td.num{white-space:nowrap}
+.dep-edet>td{padding:6px 10px 14px;background:var(--surface-2)}.dep-mt{width:100%}.dep-mt td,.dep-mt th{white-space:normal;vertical-align:top}.dep-mt td.num{white-space:nowrap}
+.dep-mt tr.dep-pre td{color:var(--sub);font-style:italic;background:var(--surface-2)}.dep-mt td.dep-note{font-size:12.5px;color:var(--sub);max-width:240px}
+.dep-mt tfoot td,.dep-et tfoot td{font-weight:700;background:var(--accent-soft);border-top:2px solid var(--line)}.dep-mt tfoot tr.ill td{font-weight:600;font-style:italic;background:var(--surface-2)}
+.dep-fil2{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:0 0 8px}.dep-fil2 label{display:flex;flex-direction:column;gap:2px;font-size:12.5px;font-weight:600;color:var(--sub)}
+.dep-fil2 select{font:inherit;font-size:14px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);max-width:240px}
+.depx-t th.dep-sort{cursor:pointer;user-select:none}.depx-t th.dep-sort.on{color:var(--accent-ink)}
+.dep-info{margin:4px 0;padding:6px 10px;border-radius:8px;background:#E3EEFB;color:#1D4E89;font-weight:600;font-size:13.5px}
 .dep-rbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}
 .dep-rbar .pill{cursor:pointer;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:13.5px}.dep-rbar .pill.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 #frnView .frn-h{margin:16px 16px 6px;font-size:16px}
@@ -262,7 +273,7 @@ footer{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
 .depdlg h3{margin:0;font-size:17px}.depdlg label{display:flex;flex-direction:column;gap:3px;font-size:13px;font-weight:600;color:var(--sub)}
 .depdlg input,.depdlg select{font:inherit;font-size:15px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
 .depdlg .ddmsg{color:#A93226;font-weight:700;min-height:1.2em}.depdlg .ddbtn{display:flex;gap:8px}
-@media (max-width:900px){.dkpi{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:900px){.dkpi{grid-template-columns:repeat(2,minmax(0,1fr))}.dep-views .dep-exp{margin-inline-start:0}}
 .dep-t{border-collapse:collapse;width:100%;font-size:13.5px}
 .dep-t th{background:var(--accent-soft);font-weight:700;padding:5px 8px;text-align:center;white-space:nowrap}
 .dep-t td{border-top:1px solid var(--line-2);padding:4px 8px;text-align:center;white-space:nowrap}
@@ -1574,7 +1585,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261123-11';
+var PK_VER='20261123-12';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -3256,7 +3267,7 @@ function depEmpName(l){ var e=l.eid!=null?E.filter(function(x){return x.id===l.e
 var DEPOPEN={};
 var DEP_PST={entered:['הוזן — עוד לא שולם','info'],paid:['שולם · חסרה אסמכתה','soon'],confirmed:['שולם · אושר באסמכתה','ok']};
 function depFile(id){ return id?(window.PK?PK.files():[]).filter(function(f){return f.id===id;})[0]:null; }
-function depPayRows(l,c){ return '<tr class="dep-pays"><td colspan="10"><table class="dep-t"><thead><tr><th>תאריך תשלום</th><th>סכום</th><th>מצב</th><th></th><th>אישור / סימוכין</th><th>אסמכתה</th><th>הערה על הפרש</th><th>הוזן ע״י</th></tr></thead><tbody>'+
+function depPayRows(l,c,cols){ return '<tr class="dep-pays"><td colspan="'+(cols||10)+'"><table class="dep-t"><thead><tr><th>תאריך תשלום</th><th>סכום</th><th>מצב</th><th></th><th>אישור / סימוכין</th><th>אסמכתה</th><th>הערה על הפרש</th><th>הוזן ע״י</th></tr></thead><tbody>'+
   c.P.map(function(p){ var st=DEP_PST[p.state]||[p.state,'none'], f=depFile(p.file_id);
     return '<tr><td>'+(p.paid_on?esc(fmtD(p.paid_on)):'—')+'</td><td>'+depN(p.amount,1)+'</td><td><span class="vpill '+st[1]+'">'+esc(st[0])+'</span></td>'+
       '<td class="dep-act">'+(isOwn()?(p.state==='entered'?'<button type="button" class="tlb" data-deppaid="'+esc(p.id)+'">✓ שולם</button>':'')+'<button type="button" class="tlb dep-x" data-depdel="'+esc(p.id)+'" title="ביטול התשלום">ביטול</button>':'')+'</td>'+
@@ -3376,79 +3387,133 @@ function depReport(key){ var L=depLines(), today=depToday(), sure=L.filter(funct
     rows.push({total:true,text:(rows.length)+' תשלומים בלי אסמכתה'});
     return {name:'אסמכתאות חסרות',title:'תשלומים בלי אסמכתה',head:['עובד','חודש','תאריך תשלום','סכום','אישור / סימוכין','הערה'],widths:[22,13,12,12,16,26],rows:rows}; }
 }
-function depReports(){ return (DEPREP==='all'?DEP_REPS.map(function(r){return r[0];}):[DEPREP]).map(depReport); }
-function depRepSub(){ return esc(depRestLabel())+' · הופק '+new Date().toLocaleDateString('he-IL')+' · רק מסלול ודאי נספר בסכומים'; }
-function depXlsx(){ var R=depReports(), sub=depRepSub().replace(/&[^;]+;/g,"'");
-  var sh=R.map(function(r){ return {name:r.name.slice(0,31),title:r.title+' — '+depRestLabel(),sub:sub,head:r.head,widths:r.widths,zebra:true,rows:r.rows}; });
-  var b; try{ b=nXlsxBlob(sh); }catch(e){ alert('שגיאה ביצירת קובץ האקסל: '+e.message); return; }
-  _dlBlob(b,'מעקב הפרשות - '+depRestLabel()+' - '+(DEPREP==='all'?'כל הדוחות':depReport(DEPREP).name)+' - '+new Date().toISOString().slice(0,10)+'.xlsx'); }
-function depPdf(){ var R=depReports(), num=function(v){ return typeof v==='number'?depN(v,1):esc(v==null?'':v); };
-  var body=R.map(function(r){ return '<h2>'+esc(r.title)+'</h2><table><thead><tr>'+r.head.map(function(h){return '<th>'+esc(h)+'</th>';}).join('')+'</tr></thead><tbody>'+
-    r.rows.map(function(x){ if(Array.isArray(x))return '<tr>'+x.map(function(v){return '<td'+(typeof v==='number'?' class="n"':'')+'>'+num(v)+'</td>';}).join('')+'</tr>';
-      return '<tr class="'+(x.total?'t':'g')+'"><td colspan="'+r.head.length+'">'+esc(x.group!=null?x.group:x.text)+'</td></tr>'; }).join('')+'</tbody></table>'; }).join('<div class="pb"></div>');
-  var doc='<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>מעקב הפרשות — '+esc(depRestLabel())+'</title><style>body{font-family:Arial,sans-serif;margin:14px;color:#000;font-size:12px}h1{font-size:17px;margin:0 0 2px}h2{font-size:14px;margin:14px 0 6px}p{margin:0 0 8px;color:#444}'+
-    'table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:3px 5px;text-align:right}th{background:#eee}td.n{white-space:nowrap}tr.g td{background:#E6EDF5;font-weight:700}tr.t td{background:#EEF5EF;font-weight:700}.pb{page-break-after:always}@page{size:A4 landscape;margin:10mm}</style></head><body>'+
-    '<h1>מעקב הפרשות — עובדים זרים — '+esc(depRestLabel())+'</h1><p>'+depRepSub()+'</p>'+body+'</body></html>';
+function depRepSub(){ return esc(depRestLabel())+' · הופק '+new Date().toLocaleDateString('he-IL'); }
+function depExportData(){ var L=depLines(), rows=[], head, widths, title;
+  if(DEPV==='emp'){ title='מעקב הפרשות לפי עובד'; head=['חודש','ברוטו','בסיס','%','נדרש','שולם','יתרה','מועד אחרון','מצב','הערה']; widths=[14,11,11,7,12,12,12,12,24,34];
+    depEmpGroups(L).forEach(function(g){ var t={req:0,paid:0}; g.L.forEach(function(l){ if(l.state==='ok'){ var c=depCalc(l); t.req+=c.req||0; t.paid+=c.paid; } });
+      var rl=depRule(g.L[0].rule_id); rows.push({group:g.nm+' · '+(rl?rl.label:'')+' · נדרש '+depN(t.req,1)+' · שולם '+depN(t.paid,1)+' · לא שולם '+depN(t.req-t.paid,1)+' ₪'});
+      g.L.slice().sort(function(a,b){return a.month.localeCompare(b.month);}).forEach(function(l){ var c=depCalc(l); rows.push([depMon(l.month),l.gross==null?'':+l.gross,l.base==null?'':+l.base,l.rate?Math.round(l.rate*1000)/10+'%':'',c.req==null?'':c.req,c.paid,c.bal==null?'':c.bal,l.due?fmtD(l.due):'',c.st,l.note||'']); }); }); }
+  else { title='מעקב הפרשות — כל העובדים · כל החודשים'; head=['עובד','חודש','בסיס','נדרש','שולם','יתרה','מועד אחרון','מצב','הערה']; widths=[24,14,11,12,12,12,12,24,34];
+    var T={req:0,paid:0,bal:0}; depAllRows(L).forEach(function(r){ var l=r.l, c=r.c; if(l.state==='ok'){T.req+=c.req||0;T.paid+=c.paid;T.bal+=c.bal||0;} rows.push([r.nm,depMon(l.month),l.base==null?'':+l.base,c.req==null?'':c.req,c.paid,c.bal==null?'':c.bal,l.due?fmtD(l.due):'',c.st+(l.state==='check'?' (לא נספר)':''),l.note||'']); });
+    rows.push({total:true,text:'סה״כ (מסלול ודאי): נדרש '+depN(T.req,1)+' · שולם '+depN(T.paid,1)+' · לא שולם '+depN(T.bal,1)+' ₪'}); }
+  var f=[]; if(DEPV==='all'){ if(DEPFL.emp){ var g0=depEmpGroups(L).filter(function(g){return g.z===DEPFL.emp;})[0]; if(g0)f.push(g0.nm); } if(DEPFL.st)f.push(DEPFL.st==='unpaid'?'לא שולם':DEP_ST[DEPFL.st]); if(DEPFL.from||DEPFL.to)f.push((DEPFL.from?depMon(DEPFL.from):'')+' – '+(DEPFL.to?depMon(DEPFL.to):'')); }
+  return {title:title,head:head,widths:widths,rows:rows,filt:f.join(' · ')}; }
+function depXlsx(){ var D=depExportData(), b;
+  try{ b=nXlsxBlob([{name:'מעקב הפרשות',title:D.title+' — '+depRestLabel(),sub:(D.filt?D.filt+' · ':'')+'הופק '+new Date().toLocaleDateString('he-IL'),head:D.head,widths:D.widths,zebra:true,rows:D.rows}]); }catch(e){ alert('שגיאה ביצירת קובץ האקסל: '+e.message); return; }
+  _dlBlob(b,'מעקב הפרשות - '+depRestLabel()+' - '+new Date().toISOString().slice(0,10)+'.xlsx'); }
+function depPdf(){ var D=depExportData(), num=function(v){ return typeof v==='number'?depN(v,1):esc(v==null?'':v); };
+  var body='<table><thead><tr>'+D.head.map(function(h){return '<th>'+esc(h)+'</th>';}).join('')+'</tr></thead><tbody>'+
+    D.rows.map(function(x){ if(Array.isArray(x))return '<tr>'+x.map(function(v){return '<td'+(typeof v==='number'?' class="n"':'')+'>'+num(v)+'</td>';}).join('')+'</tr>';
+      return '<tr class="'+(x.total?'t':'g')+'"><td colspan="'+D.head.length+'">'+esc(x.group!=null?x.group:x.text)+'</td></tr>'; }).join('')+'</tbody></table>';
+  var doc='<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>'+esc(D.title)+' — '+esc(depRestLabel())+'</title><style>body{font-family:Arial,sans-serif;margin:14px;color:#000;font-size:11.5px}h1{font-size:16px;margin:0 0 2px}p{margin:0 0 8px;color:#444}'+
+    'table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:3px 5px;text-align:right}th{background:#eee}td.n{white-space:nowrap}tr.g td{background:#E6EDF5;font-weight:700}tr.t td{background:#EEF5EF;font-weight:700}@page{size:A4 landscape;margin:10mm}</style></head><body>'+
+    '<h1>'+esc(D.title)+' — '+esc(depRestLabel())+'</h1><p>'+esc(D.filt?D.filt+' · ':'')+'הופק '+esc(new Date().toLocaleDateString('he-IL'))+'</p>'+body+'</body></html>';
   var pf=document.createElement('iframe'); pf.style.cssText='position:fixed;width:0;height:0;border:0;left:-9999px'; document.body.appendChild(pf);
   pf.contentDocument.open(); pf.contentDocument.write(doc); pf.contentDocument.close();
   setTimeout(function(){ try{ pf.contentWindow.focus(); pf.contentWindow.print(); }catch(_){} setTimeout(function(){pf.remove();},60000); },300); }
-function depRestBar(){ return ''; var R={}; DEPX().lines.forEach(function(l){R[l.rest]=1;}); var ks=['asa','chakoli','pastel','ariela'].filter(function(k){return R[k];}), cur=depRestKey();
-  if(ks.length<2)return '';
-  return '<div class="dep-rbar"><b>מסעדה</b>'+ks.map(function(k){ return '<button type="button" class="pill'+(cur===k?' on':'')+'" data-depr="'+k+'">'+esc(DEP_RHE[k])+'</button>'; }).join('')+
-    '<button type="button" class="pill'+(cur==='all'?' on':'')+'" data-depr="all">כל המסעדות</button></div>'; }
-function renderDep(){
-  var box=document.getElementById('depView'), L=depLines(); if(!L.length){ box.innerHTML=depRestBar()?'<section class="psec depx"><header><h2>מעקב הפרשות — '+esc(depRestLabel())+'</h2></header>'+depRestBar()+'<div class="frow"><span class="hint">אין נתוני הפרשות ב'+esc(depRestLabel())+'.</span></div></section>':''; return; }
-  var MS=depMonths(L); if(DEPM!=='all'&&MS.indexOf(DEPM)<0)DEPM=MS[MS.length-1];
+/* 23.11.2026 ערב (איילת: «אין מידע אחורה, אין פירוט — ללחוץ על עובד ולראות את כל הפירוט מתחילת חודש ההפרשה… וגם טבלה עם הכל עם סינון ומיון»):
+   שתי תצוגות — «לפי עובד» (שורה לעובד, לחיצה = כל החודשים) ו«כל העובדים · כל החודשים» (טבלה אחת, מיון בלחיצה על כותרת, סינון).
+   בחירת החודש משפיעה רק על הקוביות. אקסל / PDF = בדיוק מה שמוצג. */
+var DEPV='emp', DEPOE={}, DEPS={k:'month',d:-1}, DEPFL={emp:'',st:'',from:'',to:''};
+var DEP_ST={open:'פתוח',late:'באיחור',paid:'שולם',norcpt:'שולם · חסרה אסמכתה',zero:'אין הפרשה בחודש',check:'להמחשה / לבדוק',missing:'חסר נתון'};
+function depStKey(l,c){ c=c||depCalc(l); if(l.state==='missing'||c.req==null)return 'missing'; if(l.state==='check')return 'check'; if(c.req===0)return 'zero';
+  if(c.bal<=0.005)return c.conf?'paid':'norcpt'; return c.late?'late':'open'; }
+function depPayInfo(c){ return (c.last?'<br><span class="sub">שולם '+esc(fmtD(c.last))+'</span>':'')+(c.refs.length?'<br><span class="sub">אישור '+esc(c.refs.join(', '))+'</span>':'')+(c.ent?'<br><span class="sub">הוזן לתשלום '+depN(c.ent,1)+' ₪</span>':''); }
+function depActs(l,c){ return (c.n?'<button type="button" class="tlb" data-depopen="'+esc(l.id)+'">'+c.n+' תשלומים '+(DEPOPEN[l.id]?'▴':'▾')+'</button>':'')+
+  (isOwn()&&l.state==='ok'&&(c.req||0)>0&&c.bal>0.005?'<button type="button" class="tlb" data-depadd="'+esc(l.id)+'">＋ תשלום</button>':''); }
+/* טבלת החודשים של עובד אחד — גם בלשונית וגם בכרטיס העובד */
+function depMonthTable(X,o){ o=o||{}; X=X.slice().sort(function(a,b){return String(a.month).localeCompare(String(b.month));});
+  var first=-1; X.forEach(function(l,i){ if(first<0&&((l.required||0)>0||l.state==='missing'))first=i; });
+  var pre=first>0?X.slice(0,first).filter(function(l){return (l.required||0)===0;}):[]; var body=X.slice(pre.length);
+  var T={req:0,paid:0,bal:0,ill:0}, cols=o.acts?11:10;
+  var h='<div class="dep-tw"><table class="dep-t dep-mt"><thead><tr><th>חודש</th><th>ברוטו</th><th>בסיס</th><th>%</th><th>נדרש</th><th>שולם</th><th>יתרה</th><th>מועד אחרון</th><th>מצב</th><th>הערה</th>'+(o.acts?'<th></th>':'')+'</tr></thead><tbody>';
+  if(pre.length)h+='<tr class="dep-pre"><td colspan="'+cols+'">'+esc(depMon(pre[0].month))+' – '+esc(depMon(pre[pre.length-1].month))+': '+pre.length+' חודשים ראשונים — בלי הפרשה ('+esc((depRule(pre[0].rule_id)||{}).label||'')+')</td></tr>';
+  body.slice().reverse().forEach(function(l){ var c=depCalc(l), ill=l.state!=='ok';
+    if(ill)T.ill+=c.req||0; else { T.req+=c.req||0; T.paid+=c.paid; T.bal+=c.bal||0; }
+    h+='<tr class="'+(ill?'dep-ill':'')+'"><td>'+esc(depMon(l.month))+'</td><td class="num">'+depN(l.gross)+'</td><td class="num">'+depN(l.base)+'</td><td>'+(l.rate?Math.round(l.rate*1000)/10+'%':'—')+'</td>'+
+      '<td class="num">'+depN(c.req,1)+'</td><td class="num">'+depN(c.paid,1)+'</td><td class="num"><b>'+depN(c.bal,1)+'</b></td><td>'+(l.due?esc(fmtD(l.due)):'—')+'</td>'+
+      '<td><span class="vpill '+c.cl+'">'+esc(c.st)+'</span>'+depPayInfo(c)+'</td><td class="dep-note">'+esc(l.note||'')+'</td>'+(o.acts?'<td class="dep-act">'+depActs(l,c)+'</td>':'')+'</tr>'+
+      (o.acts&&DEPOPEN[l.id]&&c.n?depPayRows(l,c,cols):''); });
+  h+='</tbody><tfoot><tr><td colspan="4">סה״כ'+(T.ill?' — מסלול ודאי':'')+'</td><td class="num">'+depN(T.req,1)+'</td><td class="num">'+depN(T.paid,1)+'</td><td class="num"><b>'+depN(T.bal,1)+'</b></td><td colspan="'+(cols-7)+'">'+(T.bal>0.005?'<b>לא שולם: '+depN(T.bal,1)+' ₪</b>':'הכול שולם')+'</td></tr>'+
+    (T.ill?'<tr class="ill"><td colspan="4">להמחשה (לא נספר)</td><td class="num">'+depN(T.ill,1)+'</td><td colspan="'+(cols-5)+'"></td></tr>':'')+'</tfoot></table></div>';
+  return {html:h,T:T}; }
+function depEmpGroups(L){ var G={}, ord=[]; L.forEach(function(l){ if(!G[l.zar_id]){G[l.zar_id]=[];ord.push(l.zar_id);} G[l.zar_id].push(l); });
+  return ord.map(function(z){ return {z:z,L:G[z],nm:depEmpName(G[z][0])}; }).sort(function(a,b){return String(a.nm).localeCompare(String(b.nm));}); }
+/* הטבלה המלאה — שורות אחרי סינון ומיון */
+function depAllRows(L){ var R=L.map(function(l){ var c=depCalc(l); return {l:l,c:c,nm:depEmpName(l),st:depStKey(l,c)}; });
+  R=R.filter(function(r){ return (!DEPFL.emp||r.l.zar_id===DEPFL.emp)&&(!DEPFL.st||r.st===DEPFL.st||(DEPFL.st==='unpaid'&&(r.st==='open'||r.st==='late')))&&(!DEPFL.from||r.l.month>=DEPFL.from)&&(!DEPFL.to||r.l.month<=DEPFL.to); });
+  var k=DEPS.k, d=DEPS.d, v=function(r){ return k==='emp'?r.nm:k==='month'?r.l.month:k==='req'?(r.c.req==null?-1:r.c.req):k==='paid'?r.c.paid:k==='bal'?(r.c.bal==null?-1:r.c.bal):k==='due'?(r.l.due||''):k==='st'?r.st:k==='base'?(+r.l.base||0):r.l.month; };
+  R.sort(function(a,b){ var x=v(a), y=v(b); var c=(typeof x==='number'&&typeof y==='number')?x-y:String(x).localeCompare(String(y),'he'); return c*d||String(a.nm).localeCompare(String(b.nm),'he')||String(b.l.month).localeCompare(String(a.l.month)); });
+  return R; }
+function renderDep(){ var box=document.getElementById('depView');
+  try{ renderDep2(box); }catch(err){ try{console.warn('renderDep',err);}catch(_){} box.innerHTML='<section class="psec depx"><div class="frow"><span class="hint">שגיאה בהצגת מעקב ההפרשות: '+esc(err&&err.message||err)+' — שאר הפנקס עובד.</span></div></section>'; } }
+function renderDep2(box){
+  var L=depLines(); if(!L.length){ box.innerHTML=''; return; }
+  var rk=depRestKey(), MS=depMonths(L); if(DEPM!=='all'&&MS.indexOf(DEPM)<0)DEPM=MS[MS.length-1];
   var inM=function(l){ return DEPM==='all'||l.month===DEPM; };
   var sure=L.filter(function(l){return l.state==='ok';}), M=sure.filter(inM);
-  var K={req:0,paid:0,late:0,lateN:0,old:0,oldN:0};
+  var K={req:0,paid:0,late:0,lateN:0,old:0,oldN:0,all:0,allPaid:0};
   M.forEach(function(l){ var c=depCalc(l); K.req+=c.req||0; K.paid+=c.paid; if(c.late){K.late+=c.bal;K.lateN++;} });
-  if(DEPM!=='all')sure.filter(function(l){return l.month<DEPM;}).forEach(function(l){ var c=depCalc(l); if(c.bal>0.005){K.old+=c.bal;K.oldN++;} });
-  var AL=depAlerts(L.filter(inM)), probEmp={}; AL.forEach(function(a){probEmp[a.l.zar_id]=1;}); L.filter(inM).forEach(function(l){ if(l.state!=='ok')probEmp[l.zar_id]=1; });
-  var noDue=M.filter(function(l){return !l.due&&(l.required||0)>0;}).length;
+  sure.forEach(function(l){ var c=depCalc(l); K.all+=c.req||0; K.allPaid+=c.paid; if(DEPM!=='all'&&l.month<DEPM&&c.bal>0.005){K.old+=c.bal;K.oldN++;} });
   var kp=function(t,v,sub,cl){ return '<div class="dk'+(cl?' '+cl:'')+'"><span class="dkt">'+t+'</span><b>'+v+'</b>'+(sub?'<span class="sub">'+sub+'</span>':'')+'</div>'; };
-  var rows=L.filter(inM).filter(function(l){ return DEPF==='all'||(DEPF==='sure'?l.state==='ok':(DEPF==='open'?(l.state==='ok'&&depCalc(l).bal>0.005):l.state!=='ok')); });
-  rows.sort(function(a,b){ return String(depEmpName(a)).localeCompare(String(depEmpName(b)))||String(b.month).localeCompare(String(a.month)); });
-  var TT={req:0,paid:0,bal:0,ill:0};
-  var tr=rows.map(function(l){ var c=depCalc(l), ill=l.state!=='ok';
-    if(ill)TT.ill+=c.req||0; else { TT.req+=c.req||0; TT.paid+=c.paid; TT.bal+=c.bal||0; }
-    var payInfo=(c.last?'<br><span class="sub">שולם '+esc(fmtD(c.last))+'</span>':'')+(c.refs.length?'<br><span class="sub">אישור '+esc(c.refs.join(', '))+'</span>':'')+(c.ent?'<br><span class="sub">הוזן לתשלום '+depN(c.ent,1)+' ₪</span>':'');
-    return '<tr class="'+(ill?'dep-ill':'')+'"><td><b>'+esc(depEmpName(l))+'</b>'+(depRestKey()==='all'?'<br><span class="sub">'+esc(DEP_RHE[l.rest]||l.rest)+'</span>':'')+(l.eid==null?'<br><span class="vpill soon">לא מקושר לכרטיס</span>':'')+'</td>'+
-      '<td>'+esc(depMon(l.month))+'</td><td>'+esc(l.kind||'')+'<br><span class="sub">'+esc(depPayee(l))+'</span></td>'+
-      '<td class="num">'+depN(c.req,1)+'</td><td class="num">'+depN(c.paid,1)+'</td><td class="num"><b>'+depN(c.bal,1)+'</b></td>'+
-      '<td>'+(l.due?esc(fmtD(l.due)):'<span class="sub">לא נקבע</span>')+'</td>'+
-      '<td><span class="vpill '+c.cl+'">'+esc(c.st)+'</span>'+payInfo+'</td>'+
-      '<td class="dep-act">'+(c.n?'<button type="button" class="tlb" data-depopen="'+esc(l.id)+'">'+c.n+' תשלומים '+(DEPOPEN[l.id]?'▴':'▾')+'</button>':'')+
-        (isOwn()&&l.state==='ok'&&(c.req||0)>0?'<button type="button" class="tlb" data-depadd="'+esc(l.id)+'">＋ תשלום</button>':'')+'</td>'+
-      '<td class="dep-note">'+esc(l.note||'')+'</td></tr>'+
-      (DEPOPEN[l.id]&&c.n?depPayRows(l,c):''); }).join('');
-  var opt=function(v,t){ return '<option value="'+v+'"'+(DEPM===v?' selected':'')+'>'+t+'</option>'; };
-  var fb=function(v,t){ return '<button type="button" class="pill'+(DEPF===v?' on':'')+'" data-depf="'+v+'">'+t+'</button>'; };
-  box.innerHTML='<section class="psec depx"><header><h2>מעקב הפרשות — '+esc(depRestLabel())+'</h2>'+
-    '<label class="depm">חודש <select id="depMon">'+opt('all','כל החודשים')+MS.slice().reverse().map(function(m){return opt(m,depMon(m));}).join('')+'</select></label></header>'+
-    depRestBar()+'<div class="dep-stop">⛔ עוד לא להפקיד. מועד ההפרשה: מומחים — רק אחרי חצי שנה · מסתננים — מיד · סרילנקים — מיד.</div>'+
-    '<div class="dkpi">'+kp('נדרש להפריש',depN(K.req,1)+' ₪','מסלול ודאי'+(DEPM==='all'?' · כל החודשים':''))+kp('שולם',depN(K.paid,1)+' ₪','לפי אישורי תשלום')+
-      kp('יתרה לתשלום',depN(K.req-K.paid,1)+' ₪','',(K.req-K.paid)>0.005?'warn':'')+
-      kp('באיחור',K.lateN?depN(K.late,1)+' ₪':'0',K.lateN?K.lateN+' שורות':(noDue?'מועד אחרון עוד לא נקבע ל-'+noDue+' שורות':''),K.lateN?'bad':'')+
-      kp('עובדים עם חוסרים / חריגות',Object.keys(probEmp).length,'חסר נתון · לבדוק מעמד · לא מקושר',Object.keys(probEmp).length?'warn':'')+
-      kp('חובות מחודשים קודמים',DEPM==='all'?'—':depN(K.old,1)+' ₪',DEPM==='all'?'בחרי חודש':(K.oldN?K.oldN+' שורות פתוחות':'אין'),K.oldN?'bad':'')+'</div>'+depAlertBox()+
-    '<div class="dep-rep"><b>דוחות</b><select id="depRep" aria-label="דוח">'+[['all','כל הדוחות (גיליון לכל דוח)']].concat(DEP_REPS).map(function(r){return '<option value="'+r[0]+'"'+(DEPREP===r[0]?' selected':'')+'>'+esc(r[1])+'</option>';}).join('')+'</select>'+
-      '<button type="button" class="btn" id="depXls">אקסל</button><button type="button" class="btn" id="depPdf">PDF</button></div>'+
-    '<div class="dep-fil">'+fb('all','הכול')+fb('sure','רק מסלול ודאי')+fb('open','פתוח לתשלום')+fb('check','להמחשה / לבדוק')+'<span class="sub">'+rows.length+' שורות</span></div>'+
-    '<div class="dep-tw"><table class="dep-t depx-t"><thead><tr><th>עובד</th><th>חודש</th><th>סוג ההפרשה · למי</th><th>נדרש</th><th>שולם</th><th>יתרה</th><th>מועד אחרון</th><th>מצב</th><th>תשלומים</th><th>הערות</th></tr></thead><tbody>'+
-    (tr||'<tr><td colspan="10" class="sub">אין שורות לסינון הזה.</td></tr>')+'</tbody>'+
-    (rows.length?'<tfoot><tr class="dep-tot-row"><td colspan="3">סה״כ'+(TT.ill?' — מסלול ודאי':'')+'</td><td class="num">'+depN(TT.req,1)+'</td><td class="num">'+depN(TT.paid,1)+'</td><td class="num"><b>'+depN(TT.bal,1)+'</b></td><td colspan="4">'+(TT.bal>0.005?'<b>לא שולם: '+depN(TT.bal,1)+' ₪</b>':'הכול שולם')+'</td></tr>'+
-      (TT.ill?'<tr class="dep-tot-row ill"><td colspan="3">להמחשה (לא נספר)</td><td class="num">'+depN(TT.ill,1)+'</td><td colspan="6"></td></tr>':'')+'</tfoot>':'')+'</table></div>'+
-    '<p class="sub dep-help">«שולם» נקבע רק לפי תשלומים שהוזנו. שורות «להמחשה» לא נכנסות לסכומים עד שיתברר המסלול.</p></section>';
+  var opt=function(v,t,cur){ return '<option value="'+esc(v)+'"'+(cur===v?' selected':'')+'>'+esc(t)+'</option>'; };
+  var dep=(window.PK?PK.items():[]).filter(function(x){return x.kind==='zar'&&x.rest===rk&&!x.deleted&&x.data&&Array.isArray(x.data.deposits)&&x.data.deposits.length;});
+  var banner=(rk==='asa'||rk==='chakoli')?'<div class="dep-stop">⛔ עוד לא להפקיד. מועד ההפרשה: מומחים — רק אחרי חצי שנה · מסתננים — מיד · סרילנקים — מיד.</div>':'';
+  dep.forEach(function(it){ it.data.deposits.forEach(function(x){ banner+='<div class="dep-info">בבקרת השכר רשומה הפקדה מרוכזת: '+esc(fmtD(x.date))+' — '+depN(x.amount,1)+' ₪ · אין אסמכתה, לכן לא סומנה «שולם»</div>'; }); });
+  var h='<section class="psec depx"><header><h2>מעקב הפרשות — '+esc(depRestLabel())+'</h2>'+
+    '<label class="depm">סיכום לחודש <select id="depMon">'+opt('all','כל החודשים',DEPM)+MS.slice().reverse().map(function(m){return opt(m,depMon(m),DEPM);}).join('')+'</select></label></header>'+banner+
+    '<div class="dkpi">'+kp('נדרש להפריש',depN(K.req,1)+' ₪',DEPM==='all'?'כל החודשים':depMon(DEPM))+kp('שולם',depN(K.paid,1)+' ₪','לפי אישורי תשלום')+
+      kp('יתרה לתשלום',depN(K.req-K.paid,1)+' ₪',DEPM==='all'?'':depMon(DEPM),(K.req-K.paid)>0.005?'warn':'')+
+      kp('באיחור',K.lateN?depN(K.late,1)+' ₪':'0',K.lateN?K.lateN+' חודשים':'',K.lateN?'bad':'')+
+      kp('חובות מחודשים קודמים',DEPM==='all'?'—':depN(K.old,1)+' ₪',DEPM==='all'?'':(K.oldN?K.oldN+' חודשים פתוחים':'אין'),K.oldN?'bad':'')+
+      kp('סה״כ לא שולם — מתחילת ההפרשה',depN(K.all-K.allPaid,1)+' ₪','מתוך '+depN(K.all,1)+' ₪',(K.all-K.allPaid)>0.005?'bad':'')+'</div>'+depAlertBox()+
+    '<div class="dep-views"><button type="button" class="pill'+(DEPV==='emp'?' on':'')+'" data-depv="emp">לפי עובד</button><button type="button" class="pill'+(DEPV==='all'?' on':'')+'" data-depv="all">כל העובדים · כל החודשים</button>'+
+      '<span class="dep-exp"><button type="button" class="btn" id="depXls">אקסל</button><button type="button" class="btn" id="depPdf">PDF</button></span></div>';
+  if(DEPV==='emp'){
+    var G=depEmpGroups(L);
+    h+='<div class="dep-tw"><table class="dep-t dep-et"><thead><tr><th>עובד</th><th>מסלול · למי</th><th>תחילת ההפרשה</th><th>חודשים</th><th>נדרש</th><th>שולם</th><th>לא שולם</th><th>מצב</th></tr></thead><tbody>'+
+      G.map(function(g){ var t={req:0,paid:0,late:0,miss:0,ill:0}, st0=null;
+        g.L.forEach(function(l){ var c=depCalc(l); if(l.state==='ok'){t.req+=c.req||0;t.paid+=c.paid; if(c.late)t.late++; if(st0===null&&(c.req||0)>0)st0=l.month;} else if(l.state==='check')t.ill+=c.req||0; if(l.state==='missing')t.miss++; });
+        if(st0===null){ var s1=g.L.slice().sort(function(a,b){return a.month.localeCompare(b.month);}).filter(function(l){return (l.required||0)>0;})[0]; st0=s1?s1.month:''; }
+        var l0=g.L[0], rl=depRule(l0.rule_id), open=!!DEPOE[g.z], bal=t.req-t.paid;
+        var stp=t.miss?'<span class="vpill bad">חסר נתון ב-'+t.miss+'</span>':(l0.state==='check'||l0.state==='regular'?'<span class="vpill soon">להמחשה — לבדוק מעמד</span>':(t.late?'<span class="vpill bad">'+t.late+' חודשים באיחור</span>':(bal>0.005?'<span class="vpill info">פתוח</span>':'<span class="vpill ok">שולם</span>')));
+        var row='<tr class="dep-erow'+(open?' on':'')+'" data-depemp="'+esc(g.z)+'"><td><span class="dep-car">'+(open?'▾':'◂')+'</span> <b>'+esc(g.nm)+'</b>'+(l0.eid==null?' <span class="vpill soon">לא מקושר לכרטיס</span>':'')+'</td>'+
+          '<td>'+esc(rl?rl.label:(l0.track||''))+'<br><span class="sub">'+esc(depPayee(l0))+'</span></td><td>'+(st0?esc(depMon(st0)):'—')+'</td><td class="num">'+g.L.length+'</td>'+
+          '<td class="num">'+(l0.state==='check'?'<i>'+depN(t.ill,1)+'</i>':depN(t.req,1))+'</td><td class="num">'+depN(t.paid,1)+'</td><td class="num"><b>'+(l0.state==='check'?'—':depN(bal,1))+'</b></td><td>'+stp+'</td></tr>';
+        return row+(open?'<tr class="dep-edet"><td colspan="8">'+depMonthTable(g.L,{acts:true}).html+'</td></tr>':''); }).join('')+'</tbody></table></div>'+
+      '<p class="sub dep-help">לחיצה על עובד פותחת את כל החודשים שלו מתחילת ההפרשה. «להמחשה» — המסלול עוד לא ברור, הסכום לא נספר.</p>';
+  } else {
+    var R=depAllRows(L), G2=depEmpGroups(L), T={req:0,paid:0,bal:0,ill:0};
+    var th=function(k,t){ return '<th class="dep-sort'+(DEPS.k===k?' on':'')+'" data-depsort="'+k+'">'+t+(DEPS.k===k?(DEPS.d>0?' ▲':' ▼'):'')+'</th>'; };
+    h+='<div class="dep-fil2"><label>עובד <select id="depFEmp">'+opt('','כולם',DEPFL.emp)+G2.map(function(g){return opt(g.z,g.nm,DEPFL.emp);}).join('')+'</select></label>'+
+      '<label>מצב <select id="depFSt">'+opt('','הכול',DEPFL.st)+opt('unpaid','לא שולם (פתוח + באיחור)',DEPFL.st)+Object.keys(DEP_ST).map(function(k){return opt(k,DEP_ST[k],DEPFL.st);}).join('')+'</select></label>'+
+      '<label>מחודש <select id="depFFrom">'+opt('','—',DEPFL.from)+MS.map(function(m){return opt(m,depMon(m),DEPFL.from);}).join('')+'</select></label>'+
+      '<label>עד חודש <select id="depFTo">'+opt('','—',DEPFL.to)+MS.map(function(m){return opt(m,depMon(m),DEPFL.to);}).join('')+'</select></label>'+
+      ((DEPFL.emp||DEPFL.st||DEPFL.from||DEPFL.to)?'<button type="button" class="tlb" data-depfclear="1">ניקוי סינון</button>':'')+'<span class="sub">'+R.length+' שורות</span></div>'+
+      '<div class="dep-tw"><table class="dep-t depx-t"><thead><tr>'+th('emp','עובד')+th('month','חודש')+th('base','בסיס')+th('req','נדרש')+th('paid','שולם')+th('bal','יתרה')+th('due','מועד אחרון')+th('st','מצב')+'<th>הערה</th><th></th></tr></thead><tbody>'+
+      R.map(function(r){ var l=r.l, c=r.c, ill=l.state!=='ok'; if(ill)T.ill+=c.req||0; else {T.req+=c.req||0;T.paid+=c.paid;T.bal+=c.bal||0;}
+        return '<tr class="'+(ill?'dep-ill':'')+'"><td><b>'+esc(r.nm)+'</b></td><td>'+esc(depMon(l.month))+'</td><td class="num">'+depN(l.base)+'</td><td class="num">'+depN(c.req,1)+'</td><td class="num">'+depN(c.paid,1)+'</td><td class="num"><b>'+depN(c.bal,1)+'</b></td>'+
+          '<td>'+(l.due?esc(fmtD(l.due)):'—')+'</td><td><span class="vpill '+c.cl+'">'+esc(c.st)+'</span>'+depPayInfo(c)+'</td><td class="dep-note">'+esc(l.note||'')+'</td><td class="dep-act">'+depActs(l,c)+'</td></tr>'+(DEPOPEN[l.id]&&c.n?depPayRows(l,c,10):''); }).join('')+
+      '</tbody><tfoot><tr><td colspan="3">סה״כ לפי הסינון'+(T.ill?' — מסלול ודאי':'')+'</td><td class="num">'+depN(T.req,1)+'</td><td class="num">'+depN(T.paid,1)+'</td><td class="num"><b>'+depN(T.bal,1)+'</b></td><td colspan="4">'+(T.bal>0.005?'<b>לא שולם: '+depN(T.bal,1)+' ₪</b>':'הכול שולם')+'</td></tr>'+
+      (T.ill?'<tr class="ill"><td colspan="3">להמחשה (לא נספר)</td><td class="num">'+depN(T.ill,1)+'</td><td colspan="6"></td></tr>':'')+'</tfoot></table></div>'+
+      '<p class="sub dep-help">לחיצה על כותרת עמודה ממיינת (לחיצה נוספת — הפוך). הסינון והמיון נכנסים גם לאקסל ול-PDF.</p>';
+  }
+  box.innerHTML=h+'</section>';
 }
 document.getElementById('depView').addEventListener('toggle',function(ev){ var g=ev.target.closest&&ev.target.closest('[data-dalg]'); if(g)DEPAL=g.open?g.dataset.dalg:(DEPAL===g.dataset.dalg?'':DEPAL); },true);
-document.getElementById('depView').addEventListener('change',function(ev){ if(ev.target.id==='depMon'){ DEPM=ev.target.value; renderDep(); } if(ev.target.id==='depRep'){ DEPREP=ev.target.value; } });
+document.getElementById('depView').addEventListener('change',function(ev){ var id=ev.target.id;
+  if(id==='depMon'){ DEPM=ev.target.value; renderDep(); return; }
+  var F={depFEmp:'emp',depFSt:'st',depFFrom:'from',depFTo:'to'}; if(F[id]){ DEPFL[F[id]]=ev.target.value; renderDep(); } });
 document.getElementById('depView').addEventListener('click',function(ev){ var b=ev.target.closest('[data-depf]'); if(b){ DEPF=b.dataset.depf; renderDep(); return; }
   var rb=ev.target.closest('[data-depr]'); if(rb){ DEPR=rb.dataset.depr===PK.rc(REST)?'':rb.dataset.depr; renderDep(); return; }
   if(ev.target.closest('#depXls')){ depXlsx(); return; } if(ev.target.closest('#depPdf')){ depPdf(); return; }
+  var vb=ev.target.closest('[data-depv]'); if(vb){ DEPV=vb.dataset.depv; renderDep(); return; }
+  var sb=ev.target.closest('[data-depsort]'); if(sb){ var k=sb.dataset.depsort; DEPS=DEPS.k===k?{k:k,d:-DEPS.d}:{k:k,d:(k==='emp'||k==='due'||k==='st')?1:-1}; renderDep(); return; }
+  if(ev.target.closest('[data-depfclear]')){ DEPFL={emp:'',st:'',from:'',to:''}; renderDep(); return; }
+  if(!ev.target.closest('button,a,select,input')){ var er=ev.target.closest('[data-depemp]'); if(er){ DEPOE[er.dataset.depemp]=!DEPOE[er.dataset.depemp]; renderDep(); return; } }
   var t=ev.target.closest('[data-depopen],[data-depadd],[data-depatt],[data-deppaid],[data-depdel],[data-depfile],[data-depgo]'); if(!t)return;
   if(t.dataset.depopen){ DEPOPEN[t.dataset.depopen]=!DEPOPEN[t.dataset.depopen]; renderDep(); return; }
-  if(t.dataset.depgo){ DEPM=t.dataset.depgo; DEPF='all'; renderDep(); var tb=document.querySelector('#depView .depx-t'); if(tb)tb.scrollIntoView({behavior:'smooth',block:'start'}); return; }
+  if(t.dataset.depgo){ DEPV='all'; DEPFL={emp:'',st:'',from:t.dataset.depgo,to:t.dataset.depgo}; renderDep(); var tb=document.querySelector('#depView .depx-t'); if(tb)tb.scrollIntoView({behavior:'smooth',block:'start'}); return; }
   if(t.dataset.depfile){ var f=depFile(t.dataset.depfile); if(f)PK.open(f); return; }
   if(!isOwn()){ alert('רק איילת'); return; }
   if(t.dataset.depadd){ var l=depLineById(t.dataset.depadd); if(l)depPayDlg(l); return; }
@@ -3461,13 +3526,8 @@ document.getElementById('depView').addEventListener('click',function(ev){ var b=
 /* בכרטיס העובד — «היסטוריית הפרשות», כל החודשים לפי שנה */
 function depHistBox(e){ var rc=PK.rc(e.orig_rest||e.rest), L=DEPX().lines.filter(function(l){return l.rest===rc&&l.eid===e.id;});
   if(!L.length)return null;
-  L.sort(function(a,b){return String(b.month).localeCompare(String(a.month));});
-  var T={req:0,paid:0}, Y={};
-  L.forEach(function(l){ var c=depCalc(l); if(l.state==='ok'){T.req+=c.req||0;T.paid+=c.paid;} (Y[l.month.slice(0,4)]=Y[l.month.slice(0,4)]||[]).push([l,c]); });
-  var body=Object.keys(Y).sort().reverse().map(function(y){ return '<h4 class="fgrp">'+y+'</h4><div class="dep-tw"><table class="dep-t"><thead><tr><th>חודש</th><th>סוג</th><th>נדרש</th><th>שולם</th><th>יתרה</th><th>מצב</th></tr></thead><tbody>'+
-    Y[y].map(function(x){ var l=x[0], c=x[1]; return '<tr class="'+(l.state!=='ok'?'dep-ill':'')+'"><td>'+esc(depMon(l.month))+'</td><td>'+esc(l.kind)+'</td><td>'+depN(c.req,1)+'</td><td>'+depN(c.paid,1)+'</td><td><b>'+depN(c.bal,1)+'</b></td><td><span class="vpill '+c.cl+'">'+esc(c.st)+'</span></td></tr>'; }).join('')+
-    '</tbody></table></div>'; }).join('');
-  return {hint:'נדרש '+depN(T.req,1)+' ₪ · שולם '+depN(T.paid,1)+' ₪ · יתרה '+depN(T.req-T.paid,1)+' ₪', body:body}; }
+  var mt=depMonthTable(L,{acts:false});
+  return {hint:'נדרש '+depN(mt.T.req,1)+' ₪ · שולם '+depN(mt.T.paid,1)+' ₪ · יתרה '+depN(mt.T.bal,1)+' ₪', body:mt.html}; }
 function render(){
   document.querySelectorAll('nav.tabs button').forEach(function(b){b.setAttribute('aria-selected',b.dataset.tab===TAB);});
   document.getElementById('todoView').hidden=(TAB!=='todo');
