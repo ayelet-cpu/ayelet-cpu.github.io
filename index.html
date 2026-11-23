@@ -1511,7 +1511,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261122-2';
+var PK_VER='20261123-1';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -1768,7 +1768,8 @@ function boot(){
   return json('/rest/v1/rpc/pinkas_me',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(function(me){
     if(!me){ store(SK,null); S=null; throw new Error('למשתמש הזה אין הרשאה לבקרת השכר'); }
     PK.me=me;
-    var rs=me.scope==='all'?['asa','chakoli','helena','nero'].concat(me.owner?['pastel','ariela']:[]):[me.scope]; /* פאסטל — רק איילת (me.owner) */ /* הלנה ונרו ביץ' — רק למי שרואה הכול (איילת, טלי) */
+    /* 23.11.2026 (איילת: «שתסתיר את הלנה ונרו ביץ ושתפסיק להוריד עבורם מידע») — הלנה ונרו לא נטענות ולא מוצגות. הנתונים שלהן נשארים בענן. */
+    var rs=me.scope==='all'?['asa','chakoli'].concat(me.owner?['pastel','ariela']:[]):[me.scope]; /* פאסטל — רק איילת (me.owner) */ /* הלנה ונרו ביץ' — רק למי שרואה הכול (איילת, טלי) */
     return Promise.all([Promise.all(rs.map(function(r){ return json('/storage/v1/object/authenticated/pinkas/'+r+'/app.json').catch(function(e){ if(e.status===400||e.status===404)return null; throw e; }); })),
                         PK.newList(rs),
                         /* 14.11.2026 (איילת: «שפרטי ה-101 יהיו מעודכנים אצלנו»): <rest>/bc101.json — מה שהעובד מילא בטופס 101 האחרון בבטר צ'אנס */
@@ -1782,7 +1783,7 @@ function boot(){
     $('payload').textContent=JSON.stringify(D);
     if(PK.me.scope==='chakoli')window.__FORCE_REST__='cha';
     else if(PK.me.scope==='asa')window.__FORCE_REST__='asa';
-    if(PK.me.scope==='all')document.querySelectorAll('#restbar button[data-full]').forEach(function(b){b.style.display='';});
+    /* 23.11.2026: הלנה ונרו ביץ' מוסתרות (איילת) — הכפתורים נשארים מוסתרים */
     if(PK.me.owner)document.querySelectorAll('#restbar button[data-own]').forEach(function(b){b.style.display='';});
     try{ localStorage.setItem('pnkas-who',PK.me.name); }catch(_){}
     $('gate').hidden=true; booted=true;
@@ -3733,7 +3734,7 @@ document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&!rpDlg.hi
 var neDlg=document.getElementById('neDlg'), NE_EDIT=null;
 var NE_F=['name','tz','birth','gender','start','s101','pension','dept','role','rate','phone','email','addr'];
 function neEl(k){return document.getElementById('ne_'+k);}
-function neRests(){ var s=PK.me&&PK.me.scope; return s==='asa'?['אסא']:(s==='chakoli'?["צ'אקולי"]:['אסא',"צ'אקולי",'הלנה',"נרו ביץ'"].concat(PK.me&&PK.me.owner?['פאסטל','אריאלה וטופול']:[])); }
+function neRests(){ var s=PK.me&&PK.me.scope; return s==='asa'?['אסא']:(s==='chakoli'?["צ'אקולי"]:['אסא',"צ'אקולי"].concat(PK.me&&PK.me.owner?['פאסטל','אריאלה וטופול']:[])); }
 function neDepts(){ var r=neEl('rest').value, ds={};
   E.forEach(function(e){ if((e.rest===r||e.orig_rest===r)&&eff(e).dept)ds[eff(e).dept]=1; });
   document.getElementById('ne_depts').innerHTML=Object.keys(ds).sort(function(a,b){return a.localeCompare(b,'he');}).map(function(d){return '<option value="'+esc(d)+'">';}).join(''); }
