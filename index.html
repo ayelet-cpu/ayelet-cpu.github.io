@@ -1585,7 +1585,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261123-12';
+var PK_VER='20261123-13';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -3459,7 +3459,7 @@ function renderDep2(box){
   var opt=function(v,t,cur){ return '<option value="'+esc(v)+'"'+(cur===v?' selected':'')+'>'+esc(t)+'</option>'; };
   var dep=(window.PK?PK.items():[]).filter(function(x){return x.kind==='zar'&&x.rest===rk&&!x.deleted&&x.data&&Array.isArray(x.data.deposits)&&x.data.deposits.length;});
   var banner=(rk==='asa'||rk==='chakoli')?'<div class="dep-stop">⛔ עוד לא להפקיד. מועד ההפרשה: מומחים — רק אחרי חצי שנה · מסתננים — מיד · סרילנקים — מיד.</div>':'';
-  dep.forEach(function(it){ it.data.deposits.forEach(function(x){ banner+='<div class="dep-info">בבקרת השכר רשומה הפקדה מרוכזת: '+esc(fmtD(x.date))+' — '+depN(x.amount,1)+' ₪ · אין אסמכתה, לכן לא סומנה «שולם»</div>'; }); });
+  dep.forEach(function(it){ it.data.deposits.forEach(function(x){ banner+='<div class="dep-info">בבקרת השכר רשומה הפקדה מרוכזת: '+esc(fmtD(x.date))+' — '+depN(x.amount,1)+' ₪ (בבנק — «הפקדה לפקדון» לכל עובד; נרשם כתשלום על החודשים עד 9.2026, 23.11)</div>'; }); });
   var h='<section class="psec depx"><header><h2>מעקב הפרשות — '+esc(depRestLabel())+'</h2>'+
     '<label class="depm">סיכום לחודש <select id="depMon">'+opt('all','כל החודשים',DEPM)+MS.slice().reverse().map(function(m){return opt(m,depMon(m),DEPM);}).join('')+'</select></label></header>'+banner+
     '<div class="dkpi">'+kp('נדרש להפריש',depN(K.req,1)+' ₪',DEPM==='all'?'כל החודשים':depMon(DEPM))+kp('שולם',depN(K.paid,1)+' ₪','לפי אישורי תשלום')+
