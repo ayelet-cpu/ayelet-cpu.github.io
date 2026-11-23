@@ -1568,7 +1568,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261123-7';
+var PK_VER='20261123-8';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -2408,7 +2408,7 @@ function frnPens(e){
     '<br>'+pstageSel(e)+'<input type="text" class="pnote" data-pt="note" data-emp="'+e.id+'" value="'+esc(e.talked_note||'')+'" placeholder="מה נאמר…" aria-label="מה נאמר">'+
     ((pstageInfo(e)||e.talked_at)?'<em class="pinfo">'+esc(pstageInfo(e)||('דיברנו '+fmtD(e.talked_at)))+'</em>':'')+'</div>'; }
 /* 22.11.2026 (איילת): «תרשום למעלה בפנקס את הנהלים שמעניינים אותנו» — סיכום נוהל 9.0.0003 של רשות האוכלוסין (מהדורה 7, 26.08.2024) */
-var FRN_RULES='<details class="frnrules" open><summary><b>נהלים — פיקדון לעובדים זרים</b></summary>'+
+var FRN_RULES='<details class="frnrules"><summary><b>נהלים — פיקדון לעובדים זרים</b> <span class="sub">(לחיצה פותחת)</span></summary>'+   /* 23.11.2026 (איילת: «הנהלים שיהיו מקופלים למעלה») */
   '<h4>נוהל 9.0.0003 — פיקדון לעובדים זרים (רשות האוכלוסין, מהדורה 7, 26.08.2024)</h4><ul>'+
   '<li><b>על מי:</b> עובד זר עם אשרה ורישיון מסוג ב/1 בענף המסעדות, שנכנס לישראל לראשונה לעבודה במסעדות עד 01.03.2025.</li>'+
   '<li><b>כמה:</b> רכיב הפיצויים + רכיב תגמולי המעסיק לפי משרה מלאה (לפי צו ההרחבה / הסכם קיבוצי). במקום קרן פנסיה ופיצויים.</li>'+
@@ -2480,7 +2480,7 @@ function renderFrn(){
   var h='<div class="pwrap">';
   if(urgent.length)h+='<div class="frnalert" role="alert"><b>⚠️ אשרה שנגמרת השבוע:</b> '+urgent.map(function(e){ var d=visaDays(e); return esc(e.name)+' ('+(d<0?'פגה':d===0?'היום':'עוד '+d+' ימים')+')'; }).join(' · ')+'</div>';
   h+='<section class="psec"><header><span class="pcnt">'+A.length+'</span><h2>עובדים זרים — '+esc(REST)+'</h2>'+
-     '<p class="pnote">תוקף האשרה והפיקדון מוזנים כאן ונשמרים מיד. הפנסיה של עובד זר מופקדת בפיקדון בבנק — לא קרן פנסיה. הערות השכר ומי שעזב — משותפים לכל העובדים.</p></header>'+depBox()+FRN_RULES+'<div class="plist">';
+     '<p class="pnote">תוקף האשרה והפיקדון מוזנים כאן ונשמרים מיד. הפנסיה של עובד זר מופקדת בפיקדון בבנק — לא קרן פנסיה. הערות השכר ומי שעזב — משותפים לכל העובדים.</p></header>'+FRN_RULES+depBox()+'<div class="plist">';
   if(!A.length)h+='<div class="frow"><span class="hint">אין עובדים זרים פעילים ב'+esc(REST)+'.</span></div>';
   A.forEach(function(e){ var mk0=MARKS[e.id]||{}, d=visaDays(e), F=(window.PK?PK.byEmp(e.id):[]);
     h+='<div class="frow" data-fid="'+e.id+'">'+
