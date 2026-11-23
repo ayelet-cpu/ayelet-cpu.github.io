@@ -237,7 +237,10 @@ footer{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
 .dk.warn{border-color:#E0B54A;background:#FCF3DC}.dk.bad{border-color:#C0392B;background:#FBE9E7}
 .dep-fil{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 8px}
 .dep-fil .pill{cursor:pointer;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:13px}.dep-fil .pill.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-.depx-t td,.depx-t th{white-space:nowrap}.depx-t td.dep-payee,.depx-t td.dep-note{white-space:normal;min-width:140px}
+.depx-t{table-layout:auto;width:100%}.depx-t td,.depx-t th{white-space:normal;vertical-align:top}.depx-t td.num,.depx-t th{white-space:nowrap}
+.depx-t td.dep-note{min-width:120px;max-width:260px;font-size:12.5px;color:var(--sub)}
+.depx-t td.dep-act{white-space:normal}.depx-t td.dep-act .tlb{display:block;margin:0 0 4px}
+.depx-t tfoot td{font-weight:700;background:var(--accent-soft);border-top:2px solid var(--line)}.depx-t tfoot tr.ill td{font-weight:600;font-style:italic;background:var(--surface-2)}
 .depx-t td.num{text-align:start;font-variant-numeric:tabular-nums}
 .dal{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:8px 12px;margin:0 0 10px}
 .dal-hd{display:flex;gap:8px;align-items:baseline;margin-bottom:4px}.dal-ok{color:#1F5A41;font-weight:700;margin:0 0 10px}
@@ -1571,7 +1574,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261123-9';
+var PK_VER='20261123-10';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -1602,9 +1605,9 @@ function refresh(){ if(!S||!S.refresh_token)return Promise.reject(new Error('א�
 function fresh(){ if(!S)return Promise.reject(new Error('אין חיבור')); if((S.expires_at||0)-Date.now()/1000<120)return refresh(); return Promise.resolve(S);}
 function hdr(x){var h={'apikey':KEY,'Authorization':'Bearer '+(S&&S.access_token||'')};for(var k in (x||{}))h[k]=x[k];return h;}
 function api(path,opt){ opt=opt||{};
-  function go(){ var ctl=(typeof AbortController!=='undefined')?new AbortController():null, ms=(opt.body&&typeof opt.body!=='string')?180000:30000,
+  function go(){ var ctl=(typeof AbortController!=='undefined')?new AbortController():null, nocache=/^\/storage\/v1\/object\/authenticated\//.test(path)&&!opt.method, ms=(opt.body&&typeof opt.body!=='string')?180000:30000,
       t=ctl?setTimeout(function(){ ctl.abort(); },ms):0;   /* 23.11.2026: בקשה שנתקעה — נכשלת אחרי 30 שניות (העלאת קובץ — 3 דקות), ולא משאירה «מתחבר…» לתמיד */
-    return fetch(SB+path,{method:opt.method||'GET',headers:hdr(opt.headers),body:opt.body,signal:ctl?ctl.signal:undefined}).then(function(r){ clearTimeout(t); return r; },function(e){ clearTimeout(t); throw e; }); }
+    return fetch(SB+path,{method:opt.method||'GET',headers:hdr(opt.headers),body:opt.body,signal:ctl?ctl.signal:undefined,cache:nocache?'no-store':'default'}).then(function(r){ clearTimeout(t); return r; },function(e){ clearTimeout(t); throw e; }); }
   return fresh().then(go).then(function(r){ if(r.status===401)return refresh().then(go); return r; })
     .then(function(r){ if(!r.ok)return r.text().then(function(t){var e=new Error('שגיאה '+r.status+': '+t.slice(0,160));e.status=r.status;throw e;}); return r; });
 }
@@ -1795,7 +1798,10 @@ $('gPw').addEventListener('keydown',function(e){if(e.key==='Enter')$('gGo').clic
 function mergePayloads(list){
   var out={employees:[],generated:'',unattributed:[],pending_new:[]}, seen={};
   list.forEach(function(p){ if(!p)return;
-    (p.employees||[]).forEach(function(e){ if(!seen[e.id]){seen[e.id]=1;out.employees.push(e);} });
+    (p.employees||[]).forEach(function(e){ if(!seen[e.id]){seen[e.id]=1;
+      /* 23.11.2026: כרטיס שנוסף בלי כל השדות (למשל ARITHAT) — ברירות מחדל, כדי שלא יפיל את הדף */
+      if(!Array.isArray(e.dtypes))e.dtypes=[]; if(!Array.isArray(e.docs))e.docs=[]; if(e.ndocs==null)e.ndocs=0; if(e.months==null)e.months=0;
+      out.employees.push(e);} });
     if(String(p.generated||'')>out.generated)out.generated=p.generated||'';
     (p.unattributed||[]).forEach(function(x){ if(out.unattributed.indexOf(x)<0)out.unattributed.push(x); });
     (p.pending_new||[]).forEach(function(x){ out.pending_new.push(x); });
@@ -1981,7 +1987,7 @@ function eff(e){
   o.opened_date=m.opened_date||'';
   o.talked=!!m.talked; o.talked_at=m.talked_at||''; o.talked_note=m.talked_note||'';
   var md=m.docs||[];
-  o.dtypes=e.dtypes.slice(); md.forEach(function(t){if(o.dtypes.indexOf(t)<0)o.dtypes.push(t);});
+  o.dtypes=(Array.isArray(e.dtypes)?e.dtypes:[]).slice(); md.forEach(function(t){if(o.dtypes.indexOf(t)<0)o.dtypes.push(t);});
   /* מסמכים שנמצאים בענן (מהתיקיות או שהועלו) — נחשבים «התקבל» */
   var cf=cloudFiles(e.id); o.cfiles=cf;
   cf.forEach(function(x){var t=cloudDtype(x); if(t&&o.dtypes.indexOf(t)<0)o.dtypes.push(t);});
@@ -3250,7 +3256,7 @@ function depEmpName(l){ var e=l.eid!=null?E.filter(function(x){return x.id===l.e
 var DEPOPEN={};
 var DEP_PST={entered:['הוזן — עוד לא שולם','info'],paid:['שולם · חסרה אסמכתה','soon'],confirmed:['שולם · אושר באסמכתה','ok']};
 function depFile(id){ return id?(window.PK?PK.files():[]).filter(function(f){return f.id===id;})[0]:null; }
-function depPayRows(l,c){ return '<tr class="dep-pays"><td colspan="13"><table class="dep-t"><thead><tr><th>תאריך תשלום</th><th>סכום</th><th>מצב</th><th></th><th>אישור / סימוכין</th><th>אסמכתה</th><th>הערה על הפרש</th><th>הוזן ע״י</th></tr></thead><tbody>'+
+function depPayRows(l,c){ return '<tr class="dep-pays"><td colspan="10"><table class="dep-t"><thead><tr><th>תאריך תשלום</th><th>סכום</th><th>מצב</th><th></th><th>אישור / סימוכין</th><th>אסמכתה</th><th>הערה על הפרש</th><th>הוזן ע״י</th></tr></thead><tbody>'+
   c.P.map(function(p){ var st=DEP_PST[p.state]||[p.state,'none'], f=depFile(p.file_id);
     return '<tr><td>'+(p.paid_on?esc(fmtD(p.paid_on)):'—')+'</td><td>'+depN(p.amount,1)+'</td><td><span class="vpill '+st[1]+'">'+esc(st[0])+'</span></td>'+
       '<td class="dep-act">'+(isOwn()?(p.state==='entered'?'<button type="button" class="tlb" data-deppaid="'+esc(p.id)+'">✓ שולם</button>':'')+'<button type="button" class="tlb dep-x" data-depdel="'+esc(p.id)+'" title="ביטול התשלום">ביטול</button>':'')+'</td>'+
@@ -3403,13 +3409,18 @@ function renderDep(){
   var kp=function(t,v,sub,cl){ return '<div class="dk'+(cl?' '+cl:'')+'"><span class="dkt">'+t+'</span><b>'+v+'</b>'+(sub?'<span class="sub">'+sub+'</span>':'')+'</div>'; };
   var rows=L.filter(inM).filter(function(l){ return DEPF==='all'||(DEPF==='sure'?l.state==='ok':(DEPF==='open'?(l.state==='ok'&&depCalc(l).bal>0.005):l.state!=='ok')); });
   rows.sort(function(a,b){ return String(depEmpName(a)).localeCompare(String(depEmpName(b)))||String(b.month).localeCompare(String(a.month)); });
+  var TT={req:0,paid:0,bal:0,ill:0};
   var tr=rows.map(function(l){ var c=depCalc(l), ill=l.state!=='ok';
-    return '<tr class="'+(ill?'dep-ill':'')+'"><td><b>'+esc(depEmpName(l))+'</b>'+(depRestKey()==='all'?'<br><span class="sub">'+esc(DEP_RHE[l.rest]||l.rest)+'</span>':'')+(l.eid==null?'<br><span class="vpill soon">לא מקושר לכרטיס</span>':'')+'</td><td>'+esc(depMon(l.month))+'</td><td>'+depKindLabel(l)+'</td><td class="dep-payee">'+esc(depPayee(l))+'</td>'+
+    if(ill)TT.ill+=c.req||0; else { TT.req+=c.req||0; TT.paid+=c.paid; TT.bal+=c.bal||0; }
+    var payInfo=(c.last?'<br><span class="sub">שולם '+esc(fmtD(c.last))+'</span>':'')+(c.refs.length?'<br><span class="sub">אישור '+esc(c.refs.join(', '))+'</span>':'')+(c.ent?'<br><span class="sub">הוזן לתשלום '+depN(c.ent,1)+' ₪</span>':'');
+    return '<tr class="'+(ill?'dep-ill':'')+'"><td><b>'+esc(depEmpName(l))+'</b>'+(depRestKey()==='all'?'<br><span class="sub">'+esc(DEP_RHE[l.rest]||l.rest)+'</span>':'')+(l.eid==null?'<br><span class="vpill soon">לא מקושר לכרטיס</span>':'')+'</td>'+
+      '<td>'+esc(depMon(l.month))+'</td><td>'+esc(l.kind||'')+'<br><span class="sub">'+esc(depPayee(l))+'</span></td>'+
       '<td class="num">'+depN(c.req,1)+'</td><td class="num">'+depN(c.paid,1)+'</td><td class="num"><b>'+depN(c.bal,1)+'</b></td>'+
+      '<td>'+(l.due?esc(fmtD(l.due)):'<span class="sub">לא נקבע</span>')+'</td>'+
+      '<td><span class="vpill '+c.cl+'">'+esc(c.st)+'</span>'+payInfo+'</td>'+
       '<td class="dep-act">'+(c.n?'<button type="button" class="tlb" data-depopen="'+esc(l.id)+'">'+c.n+' תשלומים '+(DEPOPEN[l.id]?'▴':'▾')+'</button>':'')+
         (isOwn()&&l.state==='ok'&&(c.req||0)>0?'<button type="button" class="tlb" data-depadd="'+esc(l.id)+'">＋ תשלום</button>':'')+'</td>'+
-      '<td>'+(l.due?esc(fmtD(l.due)):'<span class="sub">לא נקבע</span>')+'</td><td>'+(c.last?esc(fmtD(c.last)):'—')+'</td>'+
-      '<td><span class="vpill '+c.cl+'">'+esc(c.st)+'</span>'+(c.ent?'<br><span class="sub">הוזן לתשלום '+depN(c.ent,1)+' ₪</span>':'')+'</td><td>'+(c.refs.length?esc(c.refs.join(', ')):'—')+'</td><td class="dep-note">'+esc(l.note||'')+'</td></tr>'+
+      '<td class="dep-note">'+esc(l.note||'')+'</td></tr>'+
       (DEPOPEN[l.id]&&c.n?depPayRows(l,c):''); }).join('');
   var opt=function(v,t){ return '<option value="'+v+'"'+(DEPM===v?' selected':'')+'>'+t+'</option>'; };
   var fb=function(v,t){ return '<button type="button" class="pill'+(DEPF===v?' on':'')+'" data-depf="'+v+'">'+t+'</button>'; };
@@ -3424,8 +3435,10 @@ function renderDep(){
     '<div class="dep-rep"><b>דוחות</b><select id="depRep" aria-label="דוח">'+[['all','כל הדוחות (גיליון לכל דוח)']].concat(DEP_REPS).map(function(r){return '<option value="'+r[0]+'"'+(DEPREP===r[0]?' selected':'')+'>'+esc(r[1])+'</option>';}).join('')+'</select>'+
       '<button type="button" class="btn" id="depXls">אקסל</button><button type="button" class="btn" id="depPdf">PDF</button></div>'+
     '<div class="dep-fil">'+fb('all','הכול')+fb('sure','רק מסלול ודאי')+fb('open','פתוח לתשלום')+fb('check','להמחשה / לבדוק')+'<span class="sub">'+rows.length+' שורות</span></div>'+
-    '<div class="dep-tw"><table class="dep-t depx-t"><thead><tr><th>עובד</th><th>חודש</th><th>סוג ההפרשה</th><th>למי משלמים</th><th>נדרש</th><th>שולם</th><th>יתרה</th><th>תשלומים</th><th>מועד אחרון</th><th>תאריך תשלום</th><th>מצב</th><th>אסמכתה</th><th>הערות</th></tr></thead><tbody>'+
-    (tr||'<tr><td colspan="13" class="sub">אין שורות לסינון הזה.</td></tr>')+'</tbody></table></div>'+
+    '<div class="dep-tw"><table class="dep-t depx-t"><thead><tr><th>עובד</th><th>חודש</th><th>סוג ההפרשה · למי</th><th>נדרש</th><th>שולם</th><th>יתרה</th><th>מועד אחרון</th><th>מצב</th><th>תשלומים</th><th>הערות</th></tr></thead><tbody>'+
+    (tr||'<tr><td colspan="10" class="sub">אין שורות לסינון הזה.</td></tr>')+'</tbody>'+
+    (rows.length?'<tfoot><tr class="dep-tot-row"><td colspan="3">סה״כ'+(TT.ill?' — מסלול ודאי':'')+'</td><td class="num">'+depN(TT.req,1)+'</td><td class="num">'+depN(TT.paid,1)+'</td><td class="num"><b>'+depN(TT.bal,1)+'</b></td><td colspan="4">'+(TT.bal>0.005?'<b>לא שולם: '+depN(TT.bal,1)+' ₪</b>':'הכול שולם')+'</td></tr>'+
+      (TT.ill?'<tr class="dep-tot-row ill"><td colspan="3">להמחשה (לא נספר)</td><td class="num">'+depN(TT.ill,1)+'</td><td colspan="6"></td></tr>':'')+'</tfoot>':'')+'</table></div>'+
     '<p class="sub dep-help">«שולם» נקבע רק לפי תשלומים שהוזנו. שורות «להמחשה» לא נכנסות לסכומים עד שיתברר המסלול.</p></section>';
 }
 document.getElementById('depView').addEventListener('toggle',function(ev){ var g=ev.target.closest&&ev.target.closest('[data-dalg]'); if(g)DEPAL=g.open?g.dataset.dalg:(DEPAL===g.dataset.dalg?'':DEPAL); },true);
