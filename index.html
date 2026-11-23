@@ -211,6 +211,34 @@ footer{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
 .milrow a,.zarbox a{cursor:pointer;color:var(--accent-ink);text-decoration:underline;margin-inline-end:8px}
 .mild{font-size:13.5px;color:var(--muted)}
 .mildone{font-size:13.5px;white-space:nowrap}
+.vpill.info{background:#E3EEFB;color:#1D4E89}
+.dep{margin:0 16px 14px;border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;background:var(--surface-2)}
+.dep-hd{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.dep-hd h3{margin:0;font-size:16px}
+.dep-tot{display:flex;gap:16px;flex-wrap:wrap;font-size:14px}
+.dep-stop{margin:8px 0 4px;padding:6px 10px;border-radius:8px;background:#FBE9E7;color:#A93226;font-weight:700;font-size:14px}
+.dep-help{margin:4px 0 8px}
+.depw{border:1px solid var(--line-2);border-radius:10px;background:var(--surface,#fff);margin:6px 0}
+.depw>summary{display:grid;grid-template-columns:2.2fr 1.6fr 1.6fr 1fr 1.1fr 1fr;gap:10px;align-items:center;padding:8px 12px;cursor:pointer;list-style:none;font-size:14px}
+.depw>summary::-webkit-details-marker{display:none}
+.depw[open]>summary{border-bottom:1px solid var(--line-2);background:var(--accent-soft)}
+.dep-nm{display:flex;flex-direction:column}
+.dep-in{padding:10px 12px}
+.dep-rule{font-weight:700;margin-bottom:8px}
+.dep-id{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px 14px;margin-bottom:8px}
+.dep-id>div{display:flex;flex-direction:column;font-size:14px}
+.dep-warn{color:#A93226;font-weight:700;margin-bottom:8px}
+.dep-tw{overflow-x:auto}
+.dep-t{border-collapse:collapse;width:100%;font-size:13.5px}
+.dep-t th{background:var(--accent-soft);font-weight:700;padding:5px 8px;text-align:center;white-space:nowrap}
+.dep-t td{border-top:1px solid var(--line-2);padding:4px 8px;text-align:center;white-space:nowrap}
+.dep-t td.dep-note{text-align:right;white-space:normal;min-width:200px;color:var(--sub);font-size:12.5px}.dep-t td.dep-bad{color:#A93226;font-weight:700}
+.dep-t tfoot td{font-weight:700;border-top:2px solid var(--line-2)}
+.dep-amt{font-weight:700}
+.dep-ill{color:var(--sub);font-style:italic}
+.dep-zero td{color:var(--sub)}
+.dep-x{padding:0 6px}
+@media (max-width:760px){.depw>summary{grid-template-columns:1fr 1fr}.dep-id{grid-template-columns:1fr 1fr}}
 .frnrules{margin:0 16px 12px;background:var(--surface-2);border-radius:10px;padding:10px 14px;font-size:14px;line-height:1.6}
 .frnrules summary{cursor:pointer}
 .frnrules h4{margin:10px 0 4px;font-size:14px}
@@ -1511,7 +1539,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261123-1';
+var PK_VER='20261123-2';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -2363,6 +2391,44 @@ var FRN_RULES='<details class="frnrules" open><summary><b>נהלים — פיק�
   '<li><b>בעזיבה:</b> העובד מגיש בקשה (טופס מקוון / Pikdonot@sa.piba.gov.il) 7–30 ימים לפני הטיסה (מומלץ 10 ימי עבודה), עם צילום דרכון וכרטיס טיסה; מקבל בנתב״ג בניכוי מס 15%. נשאר אחרי המועד שנקבע לו לעזוב — מנכים 25%–100% לפי חודשי האיחור.</li>'+
   '<li><b>מידע על ההפקדות</b> — באתר רשות האוכלוסין, «מידע מקוון על הפקדות» (גם למעסיק).</li></ul>'+
   '<p class="sub">הפקדה לפיקדון אינה אישור שההעסקה או השהייה חוקיות. מידע על רישיון ועל הפקדות — באתר רשות האוכלוסין.</p></details>';
+/* 23.11.2026 (איילת): «מערכת בתוך פנקס העובדים עם כל המידע» — טבלת הפרשות/פיקדון לכל עובד זר.
+   הנתונים בכרטיס הזר: pinkas_items kind='zar', data.dep = {first,last,no,passport,country,birth,visa,start,track,rule,note,src,
+   months:{'YYYY-MM':{g ברוטו, b בסיס להפרשה, p אחוז, a סכום הפרשה, t מס הכנסה, h שעות, n הערה, paid תאריך תשלום, paid_by}}}.
+   מסלולים: tefahot = מסתנן (טפחות 16% מהחודש הראשון) · expert = מומחה (מהחודש ה-7, 12.5% מהשכר הממוצע במשק) · sri = סרילנקי (מיד) · check = לבדוק מעמד.
+   «סמן שולם» — רק איילת, לחודש אחד בכל פעם (לא משתנה לבד). */
+var DEP_TRACK={tefahot:['מסתנן · טפחות 16% מיד','ok'],expert:['מומחה · מהחודש ה-7','info'],sri:['סרילנקי · מיד','ok'],check:['לבדוק מעמד','warn']};
+function depItems(){ var rc=PK.rc(REST); return (window.PK?PK.items():[]).filter(function(x){ return x.kind==='zar'&&x.rest===rc&&!x.deleted&&x.data&&x.data.dep; }); }
+function depN(n,dec){ if(n===null||n===undefined||n==='')return '—'; return Number(n).toLocaleString('he-IL',{minimumFractionDigits:dec?2:0,maximumFractionDigits:dec?2:0}); }
+function depMon(k){ var p=String(k).split('-'), H=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']; return p.length===2?H[+p[1]-1]+' '+p[0]:k; }
+function depSum(d){ var s={n:0,b:0,a:0,paid:0,from:'',to:''}, ks=Object.keys(d.months||{}).sort(); ks.forEach(function(k){ var m=d.months[k]; s.n++; s.b+=+m.b||0; s.a+=+m.a||0; if(m.paid)s.paid+=+m.a||0; }); s.from=ks[0]||''; s.to=ks[ks.length-1]||''; return s; }
+function depBox(){
+  var L=depItems(); if(!L.length)return '';
+  var tr=DEP_TRACK, T={a:0,paid:0,sure:0};
+  L.sort(function(a,b){ var o={tefahot:0,sri:1,expert:2,check:3}; var ta=(a.data.dep.track in o)?o[a.data.dep.track]:9, tb=(b.data.dep.track in o)?o[b.data.dep.track]:9; return ta-tb||String(a.data.dep.last).localeCompare(String(b.data.dep.last)); });
+  var rows=L.map(function(it){ var d=it.data.dep, s=depSum(d), t=tr[d.track]||tr.check, sure=d.track!=='check';
+    if(sure){ T.a+=s.a; T.paid+=s.paid; }
+    var ks=Object.keys(d.months||{}).sort();
+    var mrows=ks.map(function(k){ var m=d.months[k], amt=+m.a||0;
+      var st=m.paid?'<span class="pill p-ok">✓ שולם '+esc(fmtD(m.paid))+'</span>'+(isOwn()?' <button type="button" class="tlb dep-x" data-depunpay="'+esc(it.id)+'|'+esc(k)+'" title="ביטול סימון">↩</button>':'')
+        :(amt>0?(sure&&isOwn()?'<button type="button" class="tlb" data-deppay="'+esc(it.id)+'|'+esc(k)+'">סמני שולם</button>':'<span class="sub">לא שולם</span>'):'<span class="sub">—</span>');
+      return '<tr'+(amt>0?'':' class="dep-zero"')+'><td>'+esc(depMon(k))+'</td><td>'+depN(m.g)+'</td><td>'+depN(m.b)+'</td><td>'+(m.p?Math.round(m.p*1000)/10+'%':'—')+'</td>'+
+        '<td class="dep-amt'+(sure?'':' dep-ill')+'">'+depN(amt,1)+'</td><td>'+depN(m.t)+'</td><td>'+depN(m.h)+'</td><td>'+st+'</td><td class="dep-note'+(/לבדוק|טעות/.test(m.n||'')?' dep-bad':'')+'">'+esc(m.n||'')+'</td></tr>'; }).join('');
+    var idf=[['שם פרטי (אנגלית)',d.first],['שם משפחה (אנגלית)',d.last],['מספר דרכון',d.passport||'חסר'],['ארץ אזרחות',d.country],['תאריך לידה',d.birth||'חסר'],
+      ['אשרה / רישיון',d.visa],['תחילת עבודה',d.start||(s.from?depMon(s.from)+' (תלוש ראשון)':'')],['מספר עובד בתלוש',d.no]];
+    return '<details class="depw"><summary><span class="dep-nm"><b>'+esc(d.first+' '+d.last)+'</b><span class="sub">'+esc(d.country||'')+'</span></span>'+
+      '<span class="vpill '+t[1]+'">'+esc(t[0])+'</span><span>'+(s.from?esc(depMon(s.from))+' – '+esc(depMon(s.to)):'—')+'<br><span class="sub">'+s.n+' חודשים</span></span>'+
+      '<span><span class="sub">בסיס</span><br>'+depN(s.b)+' ₪</span><span class="'+(sure?'':'dep-ill')+'"><span class="sub">'+(sure?'להפרשה':'להמחשה')+'</span><br><b>'+depN(s.a,1)+' ₪</b></span>'+
+      '<span><span class="sub">שולם</span><br>'+depN(s.paid,1)+' ₪</span></summary>'+
+      '<div class="dep-in"><div class="dep-rule">'+esc(d.rule||'')+'</div>'+
+      '<div class="dep-id">'+idf.map(function(f){ return '<div><span class="sub">'+esc(f[0])+'</span><b>'+esc(f[1]||'—')+'</b></div>'; }).join('')+'</div>'+
+      (d.note?'<div class="dep-warn">'+esc(d.note)+'</div>':'')+
+      '<div class="dep-tw"><table class="dep-t"><thead><tr><th>חודש שכר</th><th>ברוטו</th><th>בסיס להפרשה</th><th>%</th><th>סכום הפרשה</th><th>מס הכנסה</th><th>שעות</th><th>מצב</th><th>הערה</th></tr></thead><tbody>'+mrows+'</tbody>'+
+      '<tfoot><tr><td>סה״כ</td><td></td><td>'+depN(s.b)+'</td><td></td><td class="dep-amt">'+depN(s.a,1)+'</td><td></td><td></td><td>שולם '+depN(s.paid,1)+'</td><td></td></tr></tfoot></table></div>'+
+      (d.src?'<div class="sub">מקור: '+esc(d.src)+'</div>':'')+'</div></details>'; }).join('');
+  return '<section class="dep"><div class="dep-hd"><h3>הפרשות ופיקדון — '+esc(REST)+'</h3>'+
+    '<div class="dep-tot"><span>להפרשה (מסלול ודאי) <b>'+depN(T.a,1)+' ₪</b></span><span>שולם <b>'+depN(T.paid,1)+' ₪</b></span><span>יתרה <b>'+depN(T.a-T.paid,1)+' ₪</b></span></div></div>'+
+    '<div class="dep-stop">⛔ עוד לא להפקיד. מועד ההפרשה: מומחים — רק אחרי חצי שנה · מסתננים — מיד · סרילנקים — מיד.</div>'+
+    '<p class="sub dep-help">לחיצה על עובד פותחת את כל הפרטים לטופס ואת כל החודשים. «לבדוק מעמד» — הסכום להמחשה בלבד (12.5% מהבסיס) עד שיתברר המסלול. בסיס להפרשה = שכר יסוד + שעות שבת 100%.</p>'+rows+'</section>'; }
 function renderFrn(){
   /* כל עובד זר שלא סומן «עזב»/«לא פעיל» — גם מי שעוד אין לו תלוש או נוכחות (התאילנדים שהגיעו ב-30.8) */
   var box=document.getElementById('frnView'), A=V().filter(frnOn);
@@ -2371,7 +2437,7 @@ function renderFrn(){
   var h='<div class="pwrap">';
   if(urgent.length)h+='<div class="frnalert" role="alert"><b>⚠️ אשרה שנגמרת השבוע:</b> '+urgent.map(function(e){ var d=visaDays(e); return esc(e.name)+' ('+(d<0?'פגה':d===0?'היום':'עוד '+d+' ימים')+')'; }).join(' · ')+'</div>';
   h+='<section class="psec"><header><span class="pcnt">'+A.length+'</span><h2>עובדים זרים — '+esc(REST)+'</h2>'+
-     '<p class="pnote">תוקף האשרה והפיקדון מוזנים כאן ונשמרים מיד. הפנסיה של עובד זר מופקדת בפיקדון בבנק — לא קרן פנסיה. הערות השכר ומי שעזב — משותפים לכל העובדים.</p></header>'+FRN_RULES+'<div class="plist">';
+     '<p class="pnote">תוקף האשרה והפיקדון מוזנים כאן ונשמרים מיד. הפנסיה של עובד זר מופקדת בפיקדון בבנק — לא קרן פנסיה. הערות השכר ומי שעזב — משותפים לכל העובדים.</p></header>'+depBox()+FRN_RULES+'<div class="plist">';
   if(!A.length)h+='<div class="frow"><span class="hint">אין עובדים זרים פעילים ב'+esc(REST)+'.</span></div>';
   A.forEach(function(e){ var mk0=MARKS[e.id]||{}, d=visaDays(e), F=(window.PK?PK.byEmp(e.id):[]);
     h+='<div class="frow" data-fid="'+e.id+'">'+
@@ -2398,6 +2464,14 @@ document.getElementById('frnView').addEventListener('change',function(ev){
   touch(id); save(); FRN_SHOWN=true; render(); toast('✓ נשמר');
 });
 document.getElementById('frnView').addEventListener('click',function(ev){
+  var dp=ev.target.closest('[data-deppay],[data-depunpay]'); if(dp){ if(!isOwn()){ alert('רק איילת'); return; }
+    var pay=!!dp.dataset.deppay, ref=(dp.dataset.deppay||dp.dataset.depunpay).split('|'), it=PK.items().filter(function(x){return x.id===ref[0];})[0];
+    var m=it&&it.data&&it.data.dep&&it.data.dep.months[ref[1]]; if(!m)return;
+    if(pay){ var dd=prompt('תאריך התשלום ('+depMon(ref[1])+', '+depN(m.a,1)+' ₪):',new Date().toISOString().slice(0,10)); if(!dd)return; m.paid=dd; m.paid_by=(PK.me&&PK.me.name)||''; }
+    else { if(!confirm('לבטל את סימון התשלום של '+depMon(ref[1])+'?'))return; delete m.paid; delete m.paid_by; }
+    var openId=ref[0]; PK.saveItem(it).then(function(){ toast('✓ נשמר'); FRN_SHOWN=true; render();
+      var el=document.querySelector('[data-deppay^="'+openId+'|"],[data-depunpay^="'+openId+'|"]'); if(el){ var dt=el.closest('details'); if(dt)dt.open=true; } },function(e){ alert('לא נשמר: '+e.message); });
+    return; }
   var a=ev.target.closest('[data-fopenf]'); if(a){ var f=(window.PK?PK.files():[]).filter(function(x){return x.id===a.dataset.fopenf;})[0]; if(f)PK.open(f); return; }
   var u=ev.target.closest('button[data-fup]'); if(u){ var e=E.filter(function(x){return x.id===+u.dataset.fup;})[0]; if(!e)return;
     nDocOpen(e.orig_rest||e.rest,NDEF.y,NDEF.m,{emp:e.name,type:'אשרת עבודה',after:function(){ FRN_SHOWN=true; render(); }}); return; }
