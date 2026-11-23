@@ -247,6 +247,10 @@ footer{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
 .dalg.sev-crit .dalc{background:#FBE9E7;color:#A93226}.dalg.sev-warn .dalc{background:#FCF3DC;color:#8A6508}
 .dalg ul{margin:4px 0 6px;padding-inline-start:22px;font-size:13.5px;line-height:1.7}
 .dep-act{white-space:nowrap}
+.dep-rbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}
+.dep-rbar .pill{cursor:pointer;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:13.5px}.dep-rbar .pill.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+#frnView .frn-h{margin:16px 16px 6px;font-size:16px}
+#frnView #depSlot>#depView{margin:0 16px 12px}
 .dep-rep{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
 .dep-rep select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}.dep-act .tlb{margin-inline-end:4px}
 .dep-pays>td{background:var(--surface-2);padding:6px 10px 10px}.dep-pays a{cursor:pointer;color:var(--accent-ink);text-decoration:underline}
@@ -1236,7 +1240,6 @@ details.pfacts{margin:0}
       <button role="tab" data-tab="docs" aria-selected="false">טופס 101 ומסמכים<span class="c" id="c-docs"></span></button>
       <button role="tab" data-tab="ctr" aria-selected="false">חוזים<span class="c" id="c-ctr"></span></button>
       <button role="tab" data-tab="frn" aria-selected="false">עובדים זרים<span class="c" id="c-frn"></span></button>
-      <button role="tab" data-tab="dep" aria-selected="false" id="tabDep" hidden>מעקב הפרשות<span class="c" id="c-dep"></span></button>
       <button role="tab" data-tab="mil" aria-selected="false">מילואים<span class="c" id="c-mil"></span></button>
       <button role="tab" data-tab="notes" aria-selected="false">הערות שכר<span class="c" id="c-notes"></span></button>
       <button role="tab" data-tab="all" aria-selected="false">כל העובדים<span class="c" id="c-all"></span></button>
@@ -1250,7 +1253,7 @@ details.pfacts{margin:0}
 
   <div class="savebar" id="savebar">
     <span class="msg" id="saveMsg">אין סימונים עדיין</span>
-    <span class="syncchip s-local" id="syncChip">⏳ מתחבר…</span>
+    <span class="syncchip s-local" id="syncChip">⏳ טוען סימונים מהענן…</span>
     <span class="sp">
       <button class="btn primary" id="btnNewEmp" type="button">+ עובד חדש</button>
       <button class="btn primary" id="btnXls" type="button">אקסל</button>
@@ -1568,7 +1571,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261123-8';
+var PK_VER='20261123-9';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -1599,7 +1602,9 @@ function refresh(){ if(!S||!S.refresh_token)return Promise.reject(new Error('א�
 function fresh(){ if(!S)return Promise.reject(new Error('אין חיבור')); if((S.expires_at||0)-Date.now()/1000<120)return refresh(); return Promise.resolve(S);}
 function hdr(x){var h={'apikey':KEY,'Authorization':'Bearer '+(S&&S.access_token||'')};for(var k in (x||{}))h[k]=x[k];return h;}
 function api(path,opt){ opt=opt||{};
-  function go(){return fetch(SB+path,{method:opt.method||'GET',headers:hdr(opt.headers),body:opt.body});}
+  function go(){ var ctl=(typeof AbortController!=='undefined')?new AbortController():null, ms=(opt.body&&typeof opt.body!=='string')?180000:30000,
+      t=ctl?setTimeout(function(){ ctl.abort(); },ms):0;   /* 23.11.2026: בקשה שנתקעה — נכשלת אחרי 30 שניות (העלאת קובץ — 3 דקות), ולא משאירה «מתחבר…» לתמיד */
+    return fetch(SB+path,{method:opt.method||'GET',headers:hdr(opt.headers),body:opt.body,signal:ctl?ctl.signal:undefined}).then(function(r){ clearTimeout(t); return r; },function(e){ clearTimeout(t); throw e; }); }
   return fresh().then(go).then(function(r){ if(r.status===401)return refresh().then(go); return r; })
     .then(function(r){ if(!r.ok)return r.text().then(function(t){var e=new Error('שגיאה '+r.status+': '+t.slice(0,160));e.status=r.status;throw e;}); return r; });
 }
@@ -1937,7 +1942,7 @@ function savebar(){var n=nMarks(),bar=document.getElementById('savebar');
   var el=document.getElementById('syncChip'); if(!el)return;
   var t={live:'🟢 משותף — נשמר אוטומטית לכולן',
          ro:'👁 צפייה בלבד — אין לך הרשאת עריכה',
-         local:'⏳ מתחבר…',
+         local:'⏳ טוען סימונים מהענן…',
          off:'🟠 אין חיבור לענן — השינויים יישמרו כשהחיבור יחזור'}[SYNC];
   el.textContent=t; el.className='syncchip s-'+SYNC;}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];});}
@@ -2167,9 +2172,9 @@ function renderTodo(){
   var sd=gb('docs','data-psfk="no101"','crit',cn('חסר טופס 101'),'חסר טופס 101')+(kitData()?gb('docs','data-psfk="kit"','warn',kitRows().length,'קיט עובד — חסרים טפסים'):'')+gb('docs','data-psfk="other"','idle',mdO,'חסרים מסמכים אחרים');
   if(sp){ any=true; h+='<section class="tlsec tlsum sev-warn"><header><h2>פנסיה</h2><span class="pnote">לחיצה פותחת את הרשימה בלשונית «פנסיה»</span></header><div class="pstrip">'+sp+'</div></section>'; }
   (function(){ if(!depLines().length)return; var DA=depAlertsAll(), c=function(t){return DA.filter(function(a){return a.t===t;}).length;};
-    var sx=gb('dep','data-depal="late"','crit',c('late'),'תשלום שלא בוצע')+gb('dep','data-depal="soon"','warn',c('soon'),'מתקרב למועד')+gb('dep','data-depal="partial"','warn',c('partial'),'תשלום חלקי')+
-      gb('dep','data-depal="diff"','warn',c('diff'),'הפרש בתשלום')+gb('dep','data-depal="gap"','warn',c('gap'),'חודש ללא הפרשה')+gb('dep','data-depal="data"','idle',c('data'),'פרטים חסרים לחישוב')+gb('dep','data-depal="rate"','idle',c('rate'),'שינוי בשיעור');
-    if(sx){ any=true; h+='<section class="tlsec tlsum sev-warn"><header><h2>מעקב הפרשות — עובדים זרים</h2><span class="pnote">לחיצה פותחת את ההתראה בלשונית «מעקב הפרשות»</span></header><div class="pstrip">'+sx+'</div></section>'; } })();
+    var sx=gb('frn','data-depal="late"','crit',c('late'),'תשלום שלא בוצע')+gb('frn','data-depal="soon"','warn',c('soon'),'מתקרב למועד')+gb('frn','data-depal="partial"','warn',c('partial'),'תשלום חלקי')+
+      gb('frn','data-depal="diff"','warn',c('diff'),'הפרש בתשלום')+gb('frn','data-depal="gap"','warn',c('gap'),'חודש ללא הפרשה')+gb('frn','data-depal="data"','idle',c('data'),'פרטים חסרים לחישוב')+gb('frn','data-depal="rate"','idle',c('rate'),'שינוי בשיעור');
+    if(sx){ any=true; h+='<section class="tlsec tlsum sev-warn"><header><h2>מעקב הפרשות — עובדים זרים</h2><span class="pnote">לחיצה פותחת את ההתראה בלשונית «עובדים זרים»</span></header><div class="pstrip">'+sx+'</div></section>'; } })();
   if(sd){ any=true; h+='<section class="tlsec tlsum sev-warn"><header><h2>טופס 101 ומסמכים</h2><span class="pnote">לחיצה פותחת את הרשימה בלשונית «טופס 101 ומסמכים»</span></header><div class="pstrip">'+sd+'</div></section>'; }
   var TABBED={'חסר טופס 101':1,'פנסיה באיחור':1,'לפתוח פנסיה':1,'פנסיה בחודש הבא':1,'חסרים מסמכים':1};
   ACTS.forEach(function(a){
@@ -2388,7 +2393,7 @@ function zarBoxIt(it){ if(!it)return ''; var d=it.data||{}, M=d.months||{}, ks=O
   if(d.birth)b.push((/^\d{4}-\d{2}-\d{2}$/.test(d.birth)?'תאריך לידה: '+esc(fmtD(d.birth)):'שנת לידה: '+esc(d.birth))); if(d.arrived)b.push('הגיע/ה לישראל: '+esc(d.arrived)); if(d.visa_no)b.push('אשרה: '+esc(d.visa_no)); if(d.visa_until)b.push('אשרה עד '+esc(fmtD(d.visa_until)));
   if(d.ins_until)b.push('ביטוח רפואי עד '+esc(fmtD(d.ins_until))+(d.ins_by?' ('+esc(d.ins_by)+')':'')); if(d.status&&d.status!=='פעיל')b.push('<span class="pill p-warn">'+esc(d.status)+'</span>');
   var h='<div class="zarbox">'+b.join(' · ')+(d.note?'<div class="sub">'+esc(d.note)+'</div>':'');
-  if(ks.length){ h+='<details><summary>פיקדון — שכר לחישוב, '+ks.length+' חודשים (מ-'+esc(fmtM(d.depFrom||ks[0]))+') · אחרון '+esc(fmtM(ks[ks.length-1]))+': '+Number(M[ks[ks.length-1]]).toLocaleString('he-IL')+' ₪</summary>'+
+  if(false&&ks.length){ h+='<details><summary>פיקדון — שכר לחישוב, '+ks.length+' חודשים (מ-'+esc(fmtM(d.depFrom||ks[0]))+') · אחרון '+esc(fmtM(ks[ks.length-1]))+': '+Number(M[ks[ks.length-1]]).toLocaleString('he-IL')+' ₪</summary>'+
     '<table><tr><th>חודש</th><th>שכר לחישוב (₪)</th></tr>'+ks.slice().reverse().map(function(k){ return '<tr><td>'+esc(fmtM(k))+'</td><td>'+Number(M[k]).toLocaleString('he-IL')+'</td></tr>'; }).join('')+'</table></details>'; }
   var F=itemFiles(it); if(F.length)h+='<div>'+fileLinks(F,'data-fopenf')+'</div>';
   if(d.src)h+='<div class="sub">מקור: '+esc(d.src)+'</div>';
@@ -2480,7 +2485,7 @@ function renderFrn(){
   var h='<div class="pwrap">';
   if(urgent.length)h+='<div class="frnalert" role="alert"><b>⚠️ אשרה שנגמרת השבוע:</b> '+urgent.map(function(e){ var d=visaDays(e); return esc(e.name)+' ('+(d<0?'פגה':d===0?'היום':'עוד '+d+' ימים')+')'; }).join(' · ')+'</div>';
   h+='<section class="psec"><header><span class="pcnt">'+A.length+'</span><h2>עובדים זרים — '+esc(REST)+'</h2>'+
-     '<p class="pnote">תוקף האשרה והפיקדון מוזנים כאן ונשמרים מיד. הפנסיה של עובד זר מופקדת בפיקדון בבנק — לא קרן פנסיה. הערות השכר ומי שעזב — משותפים לכל העובדים.</p></header>'+FRN_RULES+depBox()+'<div class="plist">';
+     '<p class="pnote">תוקף האשרה והפיקדון מוזנים כאן ונשמרים מיד. הפנסיה של עובד זר מופקדת בפיקדון בבנק — לא קרן פנסיה. הערות השכר ומי שעזב — משותפים לכל העובדים.</p></header>'+FRN_RULES+'<div id="depSlot"></div><h3 class="frn-h">העובדים — אשרה, מסמכים ופרטים לטופס</h3><div class="plist">';
   if(!A.length)h+='<div class="frow"><span class="hint">אין עובדים זרים פעילים ב'+esc(REST)+'.</span></div>';
   A.forEach(function(e){ var mk0=MARKS[e.id]||{}, d=visaDays(e), F=(window.PK?PK.byEmp(e.id):[]);
     h+='<div class="frow" data-fid="'+e.id+'">'+
@@ -2493,7 +2498,9 @@ function renderFrn(){
         '<button class="tlb" type="button" data-fup="'+e.id+'">📄 העלאת מסמך</button></div>'+zarBox(e)+
     '</div>'; });
   h+='</div></section>'+zarRestBox()+'</div>';
+  var DV=document.getElementById('depView'); if(DV&&DV.parentNode===box)document.body.appendChild(DV);
   box.innerHTML=h;
+  var slot=box.querySelector('#depSlot'); if(DV&&slot){ slot.appendChild(DV); DV.hidden=false; renderDep(); }
   if(urgent.length&&!FRN_SHOWN){ FRN_SHOWN=true;
     setTimeout(function(){ alert('⚠️ אשרה שנגמרת תוך שבוע:\n\n'+urgent.map(function(e){ var dd=visaDays(e); return '• '+e.name+' — '+(dd<0?'פגה לפני '+(-dd)+' ימים':dd===0?'פגה היום':'נגמרת בעוד '+dd+' ימים')+' ('+fmtD(visaUntil(e))+')'; }).join('\n')); },50); }
   FRN_SHOWN=true;
@@ -3166,8 +3173,6 @@ function hero(){
   document.getElementById('c-todo').textContent=todo.length;
   document.getElementById('c-all').textContent=ALL.filter(function(e){return e.state==='פעיל'&&!e.foreign;}).length;
   document.getElementById('c-frn').textContent=A.filter(frnOn).length||'';
-  (function(){ var L=depLines(), tb=document.getElementById('tabDep'); tb.hidden=!L.length;
-    document.getElementById('c-dep').textContent=L.length?(depAlertsAll().filter(function(a){return a.sev!=='info';}).length||''):''; })();
   var CR2=taliIt(PK.rc(REST)).length?cmpRows():[];
   document.getElementById('c-ctr').textContent=(ctrMissing().length+CR2.filter(function(o){return o.r.needT||(isOwn()&&o.r.toSend);}).length)||'';
   document.getElementById('c-mil').textContent=milItems().filter(function(x){var d=x.data||{};return !d.done&&!d.btl&&!d.slips;}).length||'';
@@ -3207,7 +3212,11 @@ var SCOPED_USERS={}; /* בענן: ההרשאה למסעדה נקבעת לפי ה
 var DEPM='', DEPF='all';
 function DEPX(){ return (window.PK&&PK.dep)?PK.dep():{rules:[],lines:[],pay:[],track:[]}; }
 function depRule(id){ return DEPX().rules.filter(function(r){return r.id===id;})[0]||null; }
-function depLines(rc){ rc=rc||PK.rc(REST); return DEPX().lines.filter(function(l){return l.rest===rc;}); }
+var DEPR='';   /* '' = המסעדה שנבחרה למעלה · 'all' = כל המסעדות · או קוד מסעדה */
+var DEP_RHE={asa:'אסא',chakoli:"צ'אקולי",pastel:'פאסטל',ariela:'אריאלה וטופול'};
+function depRestKey(){ return DEPR||PK.rc(REST); }
+function depRestLabel(){ var k=depRestKey(); return k==='all'?'כל המסעדות':(DEP_RHE[k]||k); }
+function depLines(rc){ rc=rc||depRestKey(); return DEPX().lines.filter(function(l){return rc==='all'||l.rest===rc;}); }
 function depPays(l){ return DEPX().pay.filter(function(p){return p.line_id===l.id;}); }
 function depToday(){ return new Date().toISOString().slice(0,10); }
 function depCalc(l){ var P=depPays(l), paid=0, conf=true, last='', refs=[], ent=0;
@@ -3334,7 +3343,7 @@ var DEPREP='all';
 var DEP_REPS=[['month','לפי חודש'],['emp','לפי עובד'],['paid','תשלומים שבוצעו'],['open','יתרות פתוחות'],['hist','חובות היסטוריים'],['norcpt','אסמכתאות חסרות']];
 function depR2(n){ return Math.round((+n||0)*100)/100; }
 function depReport(key){ var L=depLines(), today=depToday(), sure=L.filter(function(l){return l.state==='ok';}), rows=[], T={a:0,b:0,c:0};
-  var nm=function(l){ return depEmpName(l); }, srt=function(a,b){ return String(nm(a)).localeCompare(String(nm(b)))||String(a.month).localeCompare(String(b.month)); };
+  var nm=function(l){ return depEmpName(l)+(depRestKey()==='all'?' ('+(DEP_RHE[l.rest]||l.rest)+')':''); }, srt=function(a,b){ return String(nm(a)).localeCompare(String(nm(b)))||String(a.month).localeCompare(String(b.month)); };
   var maxM=depMonths(L).slice(-1)[0]||'';
   if(key==='month'){ var M={}; sure.forEach(function(l){ var c=depCalc(l), x=M[l.month]=M[l.month]||{a:0,b:0,n:0,late:0}; x.a+=c.req||0; x.b+=c.paid; x.n++; if(c.late)x.late++; });
     Object.keys(M).sort().reverse().forEach(function(m){ var x=M[m]; rows.push([depMon(m),String(x.n),depR2(x.a),depR2(x.b),depR2(x.a-x.b),x.late?String(x.late):'']); T.a+=x.a; T.b+=x.b; });
@@ -3362,23 +3371,27 @@ function depReport(key){ var L=depLines(), today=depToday(), sure=L.filter(funct
     return {name:'אסמכתאות חסרות',title:'תשלומים בלי אסמכתה',head:['עובד','חודש','תאריך תשלום','סכום','אישור / סימוכין','הערה'],widths:[22,13,12,12,16,26],rows:rows}; }
 }
 function depReports(){ return (DEPREP==='all'?DEP_REPS.map(function(r){return r[0];}):[DEPREP]).map(depReport); }
-function depRepSub(){ return esc(REST)+' · הופק '+new Date().toLocaleDateString('he-IL')+' · רק מסלול ודאי נספר בסכומים'; }
+function depRepSub(){ return esc(depRestLabel())+' · הופק '+new Date().toLocaleDateString('he-IL')+' · רק מסלול ודאי נספר בסכומים'; }
 function depXlsx(){ var R=depReports(), sub=depRepSub().replace(/&[^;]+;/g,"'");
-  var sh=R.map(function(r){ return {name:r.name.slice(0,31),title:r.title+' — '+REST,sub:sub,head:r.head,widths:r.widths,zebra:true,rows:r.rows}; });
+  var sh=R.map(function(r){ return {name:r.name.slice(0,31),title:r.title+' — '+depRestLabel(),sub:sub,head:r.head,widths:r.widths,zebra:true,rows:r.rows}; });
   var b; try{ b=nXlsxBlob(sh); }catch(e){ alert('שגיאה ביצירת קובץ האקסל: '+e.message); return; }
-  _dlBlob(b,'מעקב הפרשות - '+REST+' - '+(DEPREP==='all'?'כל הדוחות':depReport(DEPREP).name)+' - '+new Date().toISOString().slice(0,10)+'.xlsx'); }
+  _dlBlob(b,'מעקב הפרשות - '+depRestLabel()+' - '+(DEPREP==='all'?'כל הדוחות':depReport(DEPREP).name)+' - '+new Date().toISOString().slice(0,10)+'.xlsx'); }
 function depPdf(){ var R=depReports(), num=function(v){ return typeof v==='number'?depN(v,1):esc(v==null?'':v); };
   var body=R.map(function(r){ return '<h2>'+esc(r.title)+'</h2><table><thead><tr>'+r.head.map(function(h){return '<th>'+esc(h)+'</th>';}).join('')+'</tr></thead><tbody>'+
     r.rows.map(function(x){ if(Array.isArray(x))return '<tr>'+x.map(function(v){return '<td'+(typeof v==='number'?' class="n"':'')+'>'+num(v)+'</td>';}).join('')+'</tr>';
       return '<tr class="'+(x.total?'t':'g')+'"><td colspan="'+r.head.length+'">'+esc(x.group!=null?x.group:x.text)+'</td></tr>'; }).join('')+'</tbody></table>'; }).join('<div class="pb"></div>');
-  var doc='<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>מעקב הפרשות — '+esc(REST)+'</title><style>body{font-family:Arial,sans-serif;margin:14px;color:#000;font-size:12px}h1{font-size:17px;margin:0 0 2px}h2{font-size:14px;margin:14px 0 6px}p{margin:0 0 8px;color:#444}'+
+  var doc='<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>מעקב הפרשות — '+esc(depRestLabel())+'</title><style>body{font-family:Arial,sans-serif;margin:14px;color:#000;font-size:12px}h1{font-size:17px;margin:0 0 2px}h2{font-size:14px;margin:14px 0 6px}p{margin:0 0 8px;color:#444}'+
     'table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:3px 5px;text-align:right}th{background:#eee}td.n{white-space:nowrap}tr.g td{background:#E6EDF5;font-weight:700}tr.t td{background:#EEF5EF;font-weight:700}.pb{page-break-after:always}@page{size:A4 landscape;margin:10mm}</style></head><body>'+
-    '<h1>מעקב הפרשות — עובדים זרים — '+esc(REST)+'</h1><p>'+depRepSub()+'</p>'+body+'</body></html>';
+    '<h1>מעקב הפרשות — עובדים זרים — '+esc(depRestLabel())+'</h1><p>'+depRepSub()+'</p>'+body+'</body></html>';
   var pf=document.createElement('iframe'); pf.style.cssText='position:fixed;width:0;height:0;border:0;left:-9999px'; document.body.appendChild(pf);
   pf.contentDocument.open(); pf.contentDocument.write(doc); pf.contentDocument.close();
   setTimeout(function(){ try{ pf.contentWindow.focus(); pf.contentWindow.print(); }catch(_){} setTimeout(function(){pf.remove();},60000); },300); }
+function depRestBar(){ var R={}; DEPX().lines.forEach(function(l){R[l.rest]=1;}); var ks=['asa','chakoli','pastel','ariela'].filter(function(k){return R[k];}), cur=depRestKey();
+  if(ks.length<2)return '';
+  return '<div class="dep-rbar"><b>מסעדה</b>'+ks.map(function(k){ return '<button type="button" class="pill'+(cur===k?' on':'')+'" data-depr="'+k+'">'+esc(DEP_RHE[k])+'</button>'; }).join('')+
+    '<button type="button" class="pill'+(cur==='all'?' on':'')+'" data-depr="all">כל המסעדות</button></div>'; }
 function renderDep(){
-  var box=document.getElementById('depView'), L=depLines(); if(!L.length){ box.innerHTML='<div class="pwrap"><div class="frow"><span class="hint">אין נתוני הפרשות ב'+esc(REST)+'.</span></div></div>'; return; }
+  var box=document.getElementById('depView'), L=depLines(); if(!L.length){ box.innerHTML=depRestBar()?'<section class="psec depx"><header><h2>מעקב הפרשות — '+esc(depRestLabel())+'</h2></header>'+depRestBar()+'<div class="frow"><span class="hint">אין נתוני הפרשות ב'+esc(depRestLabel())+'.</span></div></section>':''; return; }
   var MS=depMonths(L); if(DEPM!=='all'&&MS.indexOf(DEPM)<0)DEPM=MS[MS.length-1];
   var inM=function(l){ return DEPM==='all'||l.month===DEPM; };
   var sure=L.filter(function(l){return l.state==='ok';}), M=sure.filter(inM);
@@ -3391,7 +3404,7 @@ function renderDep(){
   var rows=L.filter(inM).filter(function(l){ return DEPF==='all'||(DEPF==='sure'?l.state==='ok':(DEPF==='open'?(l.state==='ok'&&depCalc(l).bal>0.005):l.state!=='ok')); });
   rows.sort(function(a,b){ return String(depEmpName(a)).localeCompare(String(depEmpName(b)))||String(b.month).localeCompare(String(a.month)); });
   var tr=rows.map(function(l){ var c=depCalc(l), ill=l.state!=='ok';
-    return '<tr class="'+(ill?'dep-ill':'')+'"><td><b>'+esc(depEmpName(l))+'</b>'+(l.eid==null?'<br><span class="vpill soon">לא מקושר לכרטיס</span>':'')+'</td><td>'+esc(depMon(l.month))+'</td><td>'+depKindLabel(l)+'</td><td class="dep-payee">'+esc(depPayee(l))+'</td>'+
+    return '<tr class="'+(ill?'dep-ill':'')+'"><td><b>'+esc(depEmpName(l))+'</b>'+(depRestKey()==='all'?'<br><span class="sub">'+esc(DEP_RHE[l.rest]||l.rest)+'</span>':'')+(l.eid==null?'<br><span class="vpill soon">לא מקושר לכרטיס</span>':'')+'</td><td>'+esc(depMon(l.month))+'</td><td>'+depKindLabel(l)+'</td><td class="dep-payee">'+esc(depPayee(l))+'</td>'+
       '<td class="num">'+depN(c.req,1)+'</td><td class="num">'+depN(c.paid,1)+'</td><td class="num"><b>'+depN(c.bal,1)+'</b></td>'+
       '<td class="dep-act">'+(c.n?'<button type="button" class="tlb" data-depopen="'+esc(l.id)+'">'+c.n+' תשלומים '+(DEPOPEN[l.id]?'▴':'▾')+'</button>':'')+
         (isOwn()&&l.state==='ok'&&(c.req||0)>0?'<button type="button" class="tlb" data-depadd="'+esc(l.id)+'">＋ תשלום</button>':'')+'</td>'+
@@ -3400,9 +3413,9 @@ function renderDep(){
       (DEPOPEN[l.id]&&c.n?depPayRows(l,c):''); }).join('');
   var opt=function(v,t){ return '<option value="'+v+'"'+(DEPM===v?' selected':'')+'>'+t+'</option>'; };
   var fb=function(v,t){ return '<button type="button" class="pill'+(DEPF===v?' on':'')+'" data-depf="'+v+'">'+t+'</button>'; };
-  box.innerHTML='<div class="pwrap"><section class="psec depx"><header><h2>מעקב הפרשות — '+esc(REST)+'</h2>'+
+  box.innerHTML='<section class="psec depx"><header><h2>מעקב הפרשות — '+esc(depRestLabel())+'</h2>'+
     '<label class="depm">חודש <select id="depMon">'+opt('all','כל החודשים')+MS.slice().reverse().map(function(m){return opt(m,depMon(m));}).join('')+'</select></label></header>'+
-    '<div class="dep-stop">⛔ עוד לא להפקיד. מועד ההפרשה: מומחים — רק אחרי חצי שנה · מסתננים — מיד · סרילנקים — מיד.</div>'+
+    depRestBar()+'<div class="dep-stop">⛔ עוד לא להפקיד. מועד ההפרשה: מומחים — רק אחרי חצי שנה · מסתננים — מיד · סרילנקים — מיד.</div>'+
     '<div class="dkpi">'+kp('נדרש להפריש',depN(K.req,1)+' ₪','מסלול ודאי'+(DEPM==='all'?' · כל החודשים':''))+kp('שולם',depN(K.paid,1)+' ₪','לפי אישורי תשלום')+
       kp('יתרה לתשלום',depN(K.req-K.paid,1)+' ₪','',(K.req-K.paid)>0.005?'warn':'')+
       kp('באיחור',K.lateN?depN(K.late,1)+' ₪':'0',K.lateN?K.lateN+' שורות':(noDue?'מועד אחרון עוד לא נקבע ל-'+noDue+' שורות':''),K.lateN?'bad':'')+
@@ -3413,11 +3426,12 @@ function renderDep(){
     '<div class="dep-fil">'+fb('all','הכול')+fb('sure','רק מסלול ודאי')+fb('open','פתוח לתשלום')+fb('check','להמחשה / לבדוק')+'<span class="sub">'+rows.length+' שורות</span></div>'+
     '<div class="dep-tw"><table class="dep-t depx-t"><thead><tr><th>עובד</th><th>חודש</th><th>סוג ההפרשה</th><th>למי משלמים</th><th>נדרש</th><th>שולם</th><th>יתרה</th><th>תשלומים</th><th>מועד אחרון</th><th>תאריך תשלום</th><th>מצב</th><th>אסמכתה</th><th>הערות</th></tr></thead><tbody>'+
     (tr||'<tr><td colspan="13" class="sub">אין שורות לסינון הזה.</td></tr>')+'</tbody></table></div>'+
-    '<p class="sub dep-help">«שולם» נקבע רק לפי תשלומים שהוזנו (הזנת תשלומים — בשלב הבא). שורות «להמחשה» לא נכנסות לסכומים עד שיתברר המסלול.</p></section></div>';
+    '<p class="sub dep-help">«שולם» נקבע רק לפי תשלומים שהוזנו. שורות «להמחשה» לא נכנסות לסכומים עד שיתברר המסלול.</p></section>';
 }
 document.getElementById('depView').addEventListener('toggle',function(ev){ var g=ev.target.closest&&ev.target.closest('[data-dalg]'); if(g)DEPAL=g.open?g.dataset.dalg:(DEPAL===g.dataset.dalg?'':DEPAL); },true);
 document.getElementById('depView').addEventListener('change',function(ev){ if(ev.target.id==='depMon'){ DEPM=ev.target.value; renderDep(); } if(ev.target.id==='depRep'){ DEPREP=ev.target.value; } });
 document.getElementById('depView').addEventListener('click',function(ev){ var b=ev.target.closest('[data-depf]'); if(b){ DEPF=b.dataset.depf; renderDep(); return; }
+  var rb=ev.target.closest('[data-depr]'); if(rb){ DEPR=rb.dataset.depr===PK.rc(REST)?'':rb.dataset.depr; renderDep(); return; }
   if(ev.target.closest('#depXls')){ depXlsx(); return; } if(ev.target.closest('#depPdf')){ depPdf(); return; }
   var t=ev.target.closest('[data-depopen],[data-depadd],[data-depatt],[data-deppaid],[data-depdel],[data-depfile],[data-depgo]'); if(!t)return;
   if(t.dataset.depopen){ DEPOPEN[t.dataset.depopen]=!DEPOPEN[t.dataset.depopen]; renderDep(); return; }
@@ -3447,13 +3461,14 @@ function render(){
   document.getElementById('pensView').hidden=(TAB!=='pens');
   document.getElementById('docsView').hidden=(TAB!=='docs');
   document.getElementById('frnView').hidden=(TAB!=='frn');
-  document.getElementById('depView').hidden=(TAB!=='dep');
+  if(TAB==='dep')TAB='frn';   /* 23.11.2026 (איילת: «לא צריך 2 מסכים לעובדים זרים») — מעקב ההפרשות בתוך «עובדים זרים» */
+  document.getElementById('depView').hidden=(TAB!=='frn');
   document.getElementById('ctrView').hidden=(TAB!=='ctr');
   document.getElementById('milView').hidden=(TAB!=='mil');
   if(TAB!=='frn')FRN_SHOWN=false;
   document.getElementById('notesView').hidden=(TAB!=='notes');
-  document.getElementById('tableView').hidden=(TAB==='todo'||TAB==='pens'||TAB==='docs'||TAB==='notes'||TAB==='frn'||TAB==='mil'||TAB==='ctr'||TAB==='dep');
-  if(TAB==='todo')renderTodo(); else if(TAB==='pens')renderPens(); else if(TAB==='frn')renderFrn(); else if(TAB==='dep')renderDep(); else if(TAB==='mil')renderMil(); else if(TAB==='ctr')renderCtr();
+  document.getElementById('tableView').hidden=(TAB==='todo'||TAB==='pens'||TAB==='docs'||TAB==='notes'||TAB==='frn'||TAB==='mil'||TAB==='ctr');
+  if(TAB==='todo')renderTodo(); else if(TAB==='pens')renderPens(); else if(TAB==='frn')renderFrn(); else if(TAB==='mil')renderMil(); else if(TAB==='ctr')renderCtr();
   else if(TAB==='docs')renderDocs(); else if(TAB==='notes'){ var _nb=document.getElementById('nFormBox'); /* טופס פתוח לא מצויר מחדש ברקע (שלא יימחק מה שמקלידים) */ if(!(NFORM&&_nb&&_nb.__nf===NFORM))renderNotes(); } else renderTable();
   hero();
 }
