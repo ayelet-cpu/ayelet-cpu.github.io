@@ -1574,7 +1574,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261123-10';
+var PK_VER='20261123-11';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -3392,7 +3392,7 @@ function depPdf(){ var R=depReports(), num=function(v){ return typeof v==='numbe
   var pf=document.createElement('iframe'); pf.style.cssText='position:fixed;width:0;height:0;border:0;left:-9999px'; document.body.appendChild(pf);
   pf.contentDocument.open(); pf.contentDocument.write(doc); pf.contentDocument.close();
   setTimeout(function(){ try{ pf.contentWindow.focus(); pf.contentWindow.print(); }catch(_){} setTimeout(function(){pf.remove();},60000); },300); }
-function depRestBar(){ var R={}; DEPX().lines.forEach(function(l){R[l.rest]=1;}); var ks=['asa','chakoli','pastel','ariela'].filter(function(k){return R[k];}), cur=depRestKey();
+function depRestBar(){ return ''; var R={}; DEPX().lines.forEach(function(l){R[l.rest]=1;}); var ks=['asa','chakoli','pastel','ariela'].filter(function(k){return R[k];}), cur=depRestKey();
   if(ks.length<2)return '';
   return '<div class="dep-rbar"><b>מסעדה</b>'+ks.map(function(k){ return '<button type="button" class="pill'+(cur===k?' on':'')+'" data-depr="'+k+'">'+esc(DEP_RHE[k])+'</button>'; }).join('')+
     '<button type="button" class="pill'+(cur==='all'?' on':'')+'" data-depr="all">כל המסעדות</button></div>'; }
