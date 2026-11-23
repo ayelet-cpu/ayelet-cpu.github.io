@@ -1539,7 +1539,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261123-2';
+var PK_VER='20261123-3';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -2396,7 +2396,7 @@ var FRN_RULES='<details class="frnrules" open><summary><b>נהלים — פיק�
    months:{'YYYY-MM':{g ברוטו, b בסיס להפרשה, p אחוז, a סכום הפרשה, t מס הכנסה, h שעות, n הערה, paid תאריך תשלום, paid_by}}}.
    מסלולים: tefahot = מסתנן (טפחות 16% מהחודש הראשון) · expert = מומחה (מהחודש ה-7, 12.5% מהשכר הממוצע במשק) · sri = סרילנקי (מיד) · check = לבדוק מעמד.
    «סמן שולם» — רק איילת, לחודש אחד בכל פעם (לא משתנה לבד). */
-var DEP_TRACK={tefahot:['מסתנן · טפחות 16% מיד','ok'],expert:['מומחה · מהחודש ה-7','info'],sri:['סרילנקי · מיד','ok'],check:['לבדוק מעמד','warn']};
+var DEP_TRACK={tefahot:['מסתנן · טפחות 16% מיד','ok'],expert:['מומחה · מהחודש ה-7','info'],sri:['סרילנקי · מיד','ok'],regular:['עובד זר רגיל · לבדוק אשרה','warn'],check:['לבדוק מעמד','warn']};
 function depItems(){ var rc=PK.rc(REST); return (window.PK?PK.items():[]).filter(function(x){ return x.kind==='zar'&&x.rest===rc&&!x.deleted&&x.data&&x.data.dep; }); }
 function depN(n,dec){ if(n===null||n===undefined||n==='')return '—'; return Number(n).toLocaleString('he-IL',{minimumFractionDigits:dec?2:0,maximumFractionDigits:dec?2:0}); }
 function depMon(k){ var p=String(k).split('-'), H=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']; return p.length===2?H[+p[1]-1]+' '+p[0]:k; }
@@ -2404,8 +2404,8 @@ function depSum(d){ var s={n:0,b:0,a:0,paid:0,from:'',to:''}, ks=Object.keys(d.m
 function depBox(){
   var L=depItems(); if(!L.length)return '';
   var tr=DEP_TRACK, T={a:0,paid:0,sure:0};
-  L.sort(function(a,b){ var o={tefahot:0,sri:1,expert:2,check:3}; var ta=(a.data.dep.track in o)?o[a.data.dep.track]:9, tb=(b.data.dep.track in o)?o[b.data.dep.track]:9; return ta-tb||String(a.data.dep.last).localeCompare(String(b.data.dep.last)); });
-  var rows=L.map(function(it){ var d=it.data.dep, s=depSum(d), t=tr[d.track]||tr.check, sure=d.track!=='check';
+  L.sort(function(a,b){ var o={tefahot:0,sri:1,expert:2,regular:3,check:4}; var ta=(a.data.dep.track in o)?o[a.data.dep.track]:9, tb=(b.data.dep.track in o)?o[b.data.dep.track]:9; return ta-tb||String(a.data.dep.last).localeCompare(String(b.data.dep.last)); });
+  var rows=L.map(function(it){ var d=it.data.dep, s=depSum(d), t=tr[d.track]||tr.check, sure=(d.track==='tefahot'||d.track==='expert'||d.track==='sri');
     if(sure){ T.a+=s.a; T.paid+=s.paid; }
     var ks=Object.keys(d.months||{}).sort();
     var mrows=ks.map(function(k){ var m=d.months[k], amt=+m.a||0;
