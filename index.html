@@ -288,6 +288,9 @@ footer{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
 .frnrules summary{cursor:pointer}
 .frnrules h4{margin:10px 0 4px;font-size:14px}
 .frnrules ul{margin:0;padding-inline-start:20px}
+.empinfo-t{border-collapse:collapse;margin-top:8px}
+.empinfo-t th{text-align:start;font-weight:600;padding:3px 0 3px 16px;color:var(--muted,#555);white-space:nowrap;vertical-align:top}
+.empinfo-t td{padding:3px 0;user-select:all}
 .zarbox{grid-column:1/-1;background:var(--surface-2);border-radius:10px;padding:8px 12px;font-size:14px}
 .zarbox table{border-collapse:collapse;font-size:13px;margin-top:6px}
 .zarbox td,.zarbox th{border:1px solid var(--line-2);padding:2px 8px;text-align:center}
@@ -1585,7 +1588,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261123-13';
+var PK_VER='20261125-1';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -2502,7 +2505,7 @@ function renderFrn(){
   var h='<div class="pwrap">';
   if(urgent.length)h+='<div class="frnalert" role="alert"><b>⚠️ אשרה שנגמרת השבוע:</b> '+urgent.map(function(e){ var d=visaDays(e); return esc(e.name)+' ('+(d<0?'פגה':d===0?'היום':'עוד '+d+' ימים')+')'; }).join(' · ')+'</div>';
   h+='<section class="psec"><header><span class="pcnt">'+A.length+'</span><h2>עובדים זרים — '+esc(REST)+'</h2>'+
-     '<p class="pnote">תוקף האשרה והפיקדון מוזנים כאן ונשמרים מיד. הפנסיה של עובד זר מופקדת בפיקדון בבנק — לא קרן פנסיה. הערות השכר ומי שעזב — משותפים לכל העובדים.</p></header>'+FRN_RULES+'<div id="depSlot"></div><h3 class="frn-h">העובדים — אשרה, מסמכים ופרטים לטופס</h3><div class="plist">';
+     '<p class="pnote">תוקף האשרה והפיקדון מוזנים כאן ונשמרים מיד. הפנסיה של עובד זר מופקדת בפיקדון בבנק — לא קרן פנסיה. הערות השכר ומי שעזב — משותפים לכל העובדים.</p></header>'+FRN_RULES+empInfoBox()+'<div id="depSlot"></div><h3 class="frn-h">העובדים — אשרה, מסמכים ופרטים לטופס</h3><div class="plist">';
   if(!A.length)h+='<div class="frow"><span class="hint">אין עובדים זרים פעילים ב'+esc(REST)+'.</span></div>';
   A.forEach(function(e){ var mk0=MARKS[e.id]||{}, d=visaDays(e), F=(window.PK?PK.byEmp(e.id):[]);
     h+='<div class="frow" data-fid="'+e.id+'">'+
@@ -3223,6 +3226,14 @@ var SCOPED_USERS={}; /* בענן: ההרשאה למסעדה נקבעת לפי ה
   F.dept='';
 }
 
+/* 25.11.2026 (איילת: «פרטים של אסא ושל צ'אקולי בנפרד, כשיהיה לנו צורך») — פרטי המעסיק לטופסי רשות האוכלוסין (פיקדון).
+   הנתונים בענן בלבד: pinkas_items kind='employer', id 'employer_<rest>', data={rows:[[שדה,ערך],…], note}. לא בקוד — הריפו ציבורי. */
+function empInfoBox(){ if(!window.PK)return ''; var rcs=REST==='זרים'?['asa','chakoli']:[PK.rc(REST)];
+  var L=rcs.map(function(rc){ return PK.items().filter(function(x){return x.kind==='employer'&&x.id==='employer_'+rc&&!x.deleted;})[0]; }).filter(Boolean); if(!L.length)return '';
+  return L.map(function(it){ var d=it.data||{}, R=Array.isArray(d.rows)?d.rows:[];
+    return '<details class="frnrules empinfo"><summary><b>פרטי המעסיק — '+esc(d.title||it.rest)+'</b> <span class="sub">(לטפסים של רשות האוכלוסין · לחיצה פותחת)</span></summary>'+
+      '<table class="empinfo-t">'+R.map(function(r){ return '<tr><th>'+esc(r[0]||'')+'</th><td>'+esc(r[1]||'')+'</td></tr>'; }).join('')+'</table>'+
+      (d.note?'<p class="sub" style="margin:6px 0 0">'+esc(d.note)+'</p>':'')+'</details>'; }).join(''); }
 /* ---------- מעקב הפרשות (23.11.2026, איילת: «מערכת חכמה למעקב הפרשות עובדים זרים», שלב 2) ----------
    הנתונים: pinkas_dep_rules / _track / _lines / _pay (cloud/sql/migrations/20261123_pinkas_dep.sql). קריאה בלבד בשלב הזה —
    הזנת תשלומים בשלב 3. «שולם» רק לפי רשומות תשלום (לא לפי סימון), ושולם במלואו רק כשסך התשלומים = הנדרש. */
