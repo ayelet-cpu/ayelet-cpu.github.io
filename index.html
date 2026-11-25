@@ -273,6 +273,7 @@ footer{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
 .depdlg h3{margin:0;font-size:17px}.depdlg label{display:flex;flex-direction:column;gap:3px;font-size:13px;font-weight:600;color:var(--sub)}
 .depdlg input,.depdlg select{font:inherit;font-size:15px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
 .depdlg .ddmsg{color:#A93226;font-weight:700;min-height:1.2em}.depdlg .ddbtn{display:flex;gap:8px}
+.depdlg.depbank{width:min(640px,100%)}.depbank .dbrow{display:flex;gap:10px;flex-wrap:wrap}.depbank .dbrow label{flex:1 1 180px}.depbank .dep-t{width:100%}.depbank .dbdet summary{cursor:pointer;font-weight:600;font-size:13px}.depbank .ddbtn{flex-wrap:wrap}
 @media (max-width:900px){.dkpi{grid-template-columns:repeat(2,minmax(0,1fr))}.dep-views .dep-exp{margin-inline-start:0}}
 .dep-t{border-collapse:collapse;width:100%;font-size:13.5px}
 .dep-t th{background:var(--accent-soft);font-weight:700;padding:5px 8px;text-align:center;white-space:nowrap}
@@ -1588,7 +1589,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261125-1';
+var PK_VER='20261125-2';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -1649,6 +1650,7 @@ var PK={
   depPaySave:function(o){ var b={}; ['line_id','rest','amount','paid_on','ref','file_id','state','diff_note'].forEach(function(k){ if(o[k]!==undefined)b[k]=o[k]; });
     return json('/rest/v1/pinkas_dep_pay'+(o.id?'?id=eq.'+encodeURIComponent(o.id):''),{method:o.id?'PATCH':'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(b)})
       .then(function(){ return PK.depLoad(); }); },
+  depPayBulk:function(arr){ return json('/rest/v1/pinkas_dep_pay',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(arr)}).then(function(){ return PK.depLoad(); }); },
   depPayDel:function(id){ return json('/rest/v1/pinkas_dep_pay?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{'Prefer':'return=minimal'}}).then(function(){ return PK.depLoad(); }); },
   saveItem:function(it){ it.updated_at=new Date().toISOString(); it.updated_by=(PK.me&&PK.me.name)||'';
     return json('/rest/v1/pinkas_items?on_conflict=id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
@@ -3324,6 +3326,62 @@ function depAttach(pid){ var p=DEPX().pay.filter(function(x){return x.id===pid;}
       .then(function(){ renderDep(); hero(); toast('✓ האסמכתה צורפה'); },function(e){ alert('לא נשמר: '+(e&&e.message||e)); }); };
   inp.click(); }
 
+/* ---------- מכתב לבנק + סגירת חודשים (25.11.2026, איילת: «אפשרות ליצוא מכתב לבנק ואפשרות לסגור חודשים») ----------
+   לכל עובד במסעדה (מסלול ודאי) — מה שלא שולם עד החודש שנבחר. המכתב כמו «מכתב לבנק חתום פקדון פאסטל»: פיקדון לכל עובד, 3 חודשים לא מתחדש, סכום ושם, חותמת החברה («בברכה», שם, ח.פ — איילת 25.11: «ככה מספיק»).
+   פרטי הבנק והחברה — מ«פרטי המעסיק» (pinkas_items kind='employer': company, hp, bank, acct), ניתנים לעריכה בחלון. «סמני כשולם» = שורת תשלום ביתרה של כל חודש (pinkas_dep_pay). */
+function depEmployer(rc){ var it=(window.PK?PK.items():[]).filter(function(x){return x.kind==='employer'&&x.id==='employer_'+rc&&!x.deleted;})[0]; return it&&it.data||{}; }
+function depBankRows(rc,upto,only){ var G={}, ord=[];
+  depLines(rc).forEach(function(l){ if(l.state!=='ok'||l.month>upto)return; if(only&&depPayee(l)!==only)return; var c=depCalc(l); if(!(c.bal>0.005))return;
+    if(!G[l.zar_id]){ G[l.zar_id]={z:l.zar_id,nm:l.emp||depEmpName(l),L:[],bal:0,from:l.month,to:l.month,payee:depPayee(l)}; ord.push(l.zar_id); }
+    var g=G[l.zar_id]; g.L.push({l:l,bal:c.bal}); g.bal+=c.bal; if(l.month<g.from)g.from=l.month; if(l.month>g.to)g.to=l.month; });
+  return ord.map(function(z){ var g=G[z]; g.bal=Math.round(g.bal*100)/100; return g; }); }
+function depLetterHtml(o){ var dd=new Date(), ds=('0'+dd.getDate()).slice(-2)+'/'+('0'+(dd.getMonth()+1)).slice(-2)+'/'+dd.getFullYear(), n=o.rows.length;
+  return '<html dir="rtl" lang="he"><head><meta charset="utf-8"><title>מכתב לבנק — '+esc(o.company||'')+'</title><style>'+
+    'body{font-family:Arial,"Segoe UI",sans-serif;font-size:12pt;margin:0}.pg{width:17cm;margin:1.8cm auto;line-height:1.5}'+
+    '.d{text-align:left}.c{text-align:center}.u{text-decoration:underline;font-weight:700}ul{margin:4px 0;padding-inline-start:22px}'+
+    '.st{margin:40px auto 0;color:#1F3A93;text-align:center;line-height:1.7}.st span{display:block}'+
+    '@media print{.pg{margin:0 auto}}</style></head><body><div class="pg">'+
+    '<p class="d">'+ds+'</p><p>עבור: '+esc(o.bank||'')+'</p><p class="c u">הנדון: פעולות בחשבון מספר '+esc(o.acct||'')+'</p>'+
+    '<p>העבירי בבקשה ל'+(n===1?'פיקדון אחד':n+' פיקדונות')+' של 3 חודשים לא מתחדשים את הסכומים:</p><ul>'+
+    o.rows.map(function(r){ return '<li>'+Math.round(r.amt).toLocaleString('he-IL')+' ₪ — '+esc(r.nm)+'</li>'; }).join('')+'</ul>'+
+    '<div class="st"><span>בברכה,</span><span>'+esc(o.company||'')+'</span>'+(o.hp?'<span>ח.פ '+esc(o.hp)+'</span>':'')+'</div></div></body></html>'; }
+function depBankDlg(){ var rc=depRestKey(); if(rc==='all')return; var E0=depEmployer(rc);
+  var MS=depMonths(depLines(rc).filter(function(l){return l.state==='ok';})), today=depToday();
+  var defM=MS.filter(function(m){ return depLines(rc).some(function(l){ return l.month===m&&l.due&&l.due<=today; }); }).pop()||MS[MS.length-1]||'';
+  var d=document.createElement('div'); d.className='depdlg-wrap';
+  d.innerHTML='<div class="depdlg depbank" role="dialog" aria-labelledby="dbT"><h3 id="dbT">מכתב לבנק וסגירת חודשים — '+esc(depRestLabel())+'</h3>'+
+    '<p class="sub">מה שעוד לא שולם, לכל עובד, עד החודש שנבחר. רק מסלול ודאי (לא «להמחשה»).</p>'+
+    '<div class="dbrow"><label>עד חודש השכר<select id="dbM">'+MS.slice().reverse().map(function(m){return '<option value="'+esc(m)+'"'+(m===defM?' selected':'')+'>'+esc(depMon(m))+'</option>';}).join('')+'</select></label>'+
+      '<label>למי<select id="dbP"><option value="הפקדה לבנק">הפקדה לבנק</option><option value="">כל המסלולים</option></select></label></div>'+
+    '<div id="dbList"></div>'+
+    '<details class="dbdet"><summary>פרטי הבנק והחותמת</summary><div class="dbrow">'+
+      '<label>בנק<input id="dbBank" value="'+esc(E0.bank||'')+'"></label><label>חשבון<input id="dbAcct" value="'+esc(E0.acct||'')+'"></label></div><div class="dbrow">'+
+      '<label>שם החברה<input id="dbCo" value="'+esc(E0.company||'')+'"></label><label>ח.פ<input id="dbHp" value="'+esc(E0.hp||'')+'"></label></div></details>'+
+    '<div class="ddbtn"><button type="button" class="btn" id="dbPrint">מכתב — הדפסה / PDF</button><button type="button" class="btn" id="dbWord">מכתב — Word</button></div>'+
+    '<h4 style="margin:10px 0 0">סגירת החודשים שנבחרו</h4>'+
+    '<div class="dbrow"><label>תאריך תשלום<input type="date" id="dbDate" value="'+today+'"></label><label>סימוכין<input id="dbRef" placeholder="למשל: הפקדה לפקדון בבנק"></label></div>'+
+    '<div class="ddmsg" id="dbMsg" role="status"></div>'+
+    '<div class="ddbtn"><button type="button" class="btn" id="dbPaid">סמני כשולם</button><button type="button" class="btn ghost" id="dbX">סגירה</button></div></div>';
+  document.body.appendChild(d);
+  var q=function(i){return d.querySelector('#'+i);}, close=function(){ d.remove(); }, G=[];
+  var draw=function(){ G=depBankRows(rc,q('dbM').value,q('dbP').value);
+    q('dbList').innerHTML=G.length?'<table class="dep-t"><thead><tr><th></th><th>עובד</th><th>חודשים</th><th>לא שולם</th></tr></thead><tbody>'+
+      G.map(function(g,i){ return '<tr><td><input type="checkbox" data-dbi="'+i+'" checked aria-label="'+esc(g.nm)+'"></td><td><b>'+esc(g.nm)+'</b><br><span class="sub">'+esc(g.payee)+'</span></td><td>'+esc(depMon(g.from))+(g.to!==g.from?' — '+esc(depMon(g.to)):'')+'<br><span class="sub">'+g.L.length+' חודשים</span></td><td class="num"><b>'+depN(g.bal,1)+' ₪</b><br><span class="sub">במכתב: '+Math.round(g.bal).toLocaleString('he-IL')+' ₪</span></td></tr>'; }).join('')+
+      '</tbody></table>':'<p class="hint">אין חודשים פתוחים עד החודש הזה.</p>'; };
+  var sel=function(){ return G.filter(function(g,i){ var c=d.querySelector('[data-dbi="'+i+'"]'); return c&&c.checked; }); };
+  var letter=function(){ var S=sel(); if(!S.length){ q('dbMsg').textContent='לא נבחר אף עובד'; return null; } q('dbMsg').textContent='';
+    return depLetterHtml({bank:q('dbBank').value.trim(),acct:q('dbAcct').value.trim(),company:q('dbCo').value.trim(),hp:q('dbHp').value.trim(),rows:S.map(function(g){return {amt:g.bal,nm:g.nm};})}); };
+  draw(); q('dbM').onchange=draw; q('dbP').onchange=draw; q('dbX').onclick=close; d.addEventListener('click',function(ev){ if(ev.target===d)close(); });
+  q('dbPrint').onclick=function(){ var h=letter(); if(!h)return; var w=window.open('','_blank'); if(!w){ q('dbMsg').textContent='הדפדפן חסם חלון חדש — נא לאפשר חלונות קופצים'; return; } w.document.open(); w.document.write(h); w.document.close(); setTimeout(function(){ try{w.focus();w.print();}catch(_){} },300); };
+  q('dbWord').onclick=function(){ var h=letter(); if(!h)return; var b=new Blob(['﻿'+h],{type:'application/msword'}), a=document.createElement('a');
+    a.href=URL.createObjectURL(b); a.download='מכתב לבנק פקדון '+depRestLabel().replace(/['"]/g,'')+' '+depToday()+'.doc'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1000); };
+  q('dbPaid').onclick=function(){ var S=sel(), dt=q('dbDate').value, ref=q('dbRef').value.trim(); if(!S.length){ q('dbMsg').textContent='לא נבחר אף עובד'; return; }
+    if(!dt){ q('dbMsg').textContent='נא לבחור תאריך תשלום'; return; }
+    var rows=[], sum=0; S.forEach(function(g){ g.L.forEach(function(x){ rows.push({line_id:x.l.id,rest:x.l.rest,amount:x.bal,paid_on:dt,ref:ref||null,state:'paid'}); sum+=x.bal; }); });
+    if(!confirm('לסמן כשולם '+rows.length+' חודשים של '+S.length+' עובדים, סה״כ '+depN(sum,1)+' ₪, בתאריך '+fmtD(dt)+'?\n\nאפשר לבטל כל תשלום בנפרד מהטבלה.'))return;
+    var b=this; b.disabled=true; q('dbMsg').textContent='שומרת…';
+    PK.depPayBulk(rows).then(function(){ close(); renderDep(); hero(); toast('✓ '+rows.length+' חודשים סומנו כשולם'); },function(e){ b.disabled=false; q('dbMsg').textContent='לא נשמר: '+(e&&e.message||e); }); };
+}
 /* ---------- שלב 4: התראות (23.11.2026) — מחושבות מהנתונים בכל פתיחה, לא נשמרות. 7 סוגים כמו שאיילת ביקשה. ---------- */
 var DEPAL='';
 var DEP_AL={late:['תשלום שלא בוצע (עבר המועד)','crit'],soon:['תשלום שמתקרב למועד האחרון','warn'],partial:['תשלום חלקי','warn'],diff:['הפרש בין הנדרש לששולם','warn'],
@@ -3479,7 +3537,7 @@ function renderDep2(box){
       kp('חובות מחודשים קודמים',DEPM==='all'?'—':depN(K.old,1)+' ₪',DEPM==='all'?'':(K.oldN?K.oldN+' חודשים פתוחים':'אין'),K.oldN?'bad':'')+
       kp('סה״כ לא שולם — מתחילת ההפרשה',depN(K.all-K.allPaid,1)+' ₪','מתוך '+depN(K.all,1)+' ₪',(K.all-K.allPaid)>0.005?'bad':'')+'</div>'+depAlertBox()+
     '<div class="dep-views"><button type="button" class="pill'+(DEPV==='emp'?' on':'')+'" data-depv="emp">לפי עובד</button><button type="button" class="pill'+(DEPV==='all'?' on':'')+'" data-depv="all">כל העובדים · כל החודשים</button>'+
-      '<span class="dep-exp"><button type="button" class="btn" id="depXls">אקסל</button><button type="button" class="btn" id="depPdf">PDF</button></span></div>';
+      '<span class="dep-exp"><button type="button" class="btn" id="depXls">אקסל</button><button type="button" class="btn" id="depPdf">PDF</button>'+(isOwn()&&rk!=='all'?'<button type="button" class="btn" id="depBank">מכתב לבנק · סגירת חודשים</button>':'')+'</span></div>';
   if(DEPV==='emp'){
     var G=depEmpGroups(L);
     h+='<div class="dep-tw"><table class="dep-t dep-et"><thead><tr><th>עובד</th><th>מסלול · למי</th><th>תחילת ההפרשה</th><th>חודשים</th><th>נדרש</th><th>שולם</th><th>לא שולם</th><th>מצב</th></tr></thead><tbody>'+
@@ -3517,7 +3575,7 @@ document.getElementById('depView').addEventListener('change',function(ev){ var i
   var F={depFEmp:'emp',depFSt:'st',depFFrom:'from',depFTo:'to'}; if(F[id]){ DEPFL[F[id]]=ev.target.value; renderDep(); } });
 document.getElementById('depView').addEventListener('click',function(ev){ var b=ev.target.closest('[data-depf]'); if(b){ DEPF=b.dataset.depf; renderDep(); return; }
   var rb=ev.target.closest('[data-depr]'); if(rb){ DEPR=rb.dataset.depr===PK.rc(REST)?'':rb.dataset.depr; renderDep(); return; }
-  if(ev.target.closest('#depXls')){ depXlsx(); return; } if(ev.target.closest('#depPdf')){ depPdf(); return; }
+  if(ev.target.closest('#depBank')){ depBankDlg(); return; } if(ev.target.closest('#depXls')){ depXlsx(); return; } if(ev.target.closest('#depPdf')){ depPdf(); return; }
   var vb=ev.target.closest('[data-depv]'); if(vb){ DEPV=vb.dataset.depv; renderDep(); return; }
   var sb=ev.target.closest('[data-depsort]'); if(sb){ var k=sb.dataset.depsort; DEPS=DEPS.k===k?{k:k,d:-DEPS.d}:{k:k,d:(k==='emp'||k==='due'||k==='st')?1:-1}; renderDep(); return; }
   if(ev.target.closest('[data-depfclear]')){ DEPFL={emp:'',st:'',from:'',to:''}; renderDep(); return; }
