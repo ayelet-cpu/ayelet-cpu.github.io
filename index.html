@@ -279,7 +279,7 @@ footer{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
 .dep-empl label{display:flex;gap:6px;align-items:center;font-weight:500;white-space:nowrap}
 .frn-kitbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 16px 6px}.frn-kitbar .frn-h{margin:0}
 .frn-kt td,.frn-kt th{vertical-align:middle}.frn-kt .kc{text-align:center;white-space:nowrap}.frn-kt .kvisa input{font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:7px;display:block;margin-bottom:3px}
-.kv{color:#1F7A4D;font-weight:800;text-decoration:none;font-size:15px}.kna{color:var(--muted,#6C7B8A);font-weight:600;white-space:nowrap}.kna-x{font:inherit;font-size:11.5px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:0 6px;margin-top:3px;cursor:pointer;color:var(--muted,#6C7B8A)}.frn-kt td.kd{white-space:nowrap}.kna-x.kmiss{border-color:#E3A6A6;color:#B3261E;margin-top:0}.kdoc{color:#1F7A4D;font-weight:700;text-decoration:underline;white-space:nowrap}.frn-kt .knote textarea{font:inherit;font-size:13px;width:150px;min-height:34px;padding:4px 6px;border:1px solid var(--line);border-radius:7px;resize:vertical}.kx{color:#C0392B;font-weight:800}.kxb{background:#FBE9E7;border-radius:5px;padding:0 4px}.kw{color:#8A6508;font-weight:700}
+.kv{color:#1F7A4D;font-weight:800;text-decoration:none;font-size:15px}.kna{color:var(--muted,#6C7B8A);font-weight:600;white-space:nowrap}.kna-x{font:inherit;font-size:11.5px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:0 6px;margin-top:3px;cursor:pointer;color:var(--muted,#6C7B8A)}.frn-kt td.kd{white-space:nowrap}.wrap:has(#frnView:not([hidden])){max-width:none}.frn-kt td.knote textarea{width:120px}.kna-x.kmiss{border-color:#E3A6A6;color:#B3261E;margin-top:0}.kdoc{color:#1F7A4D;font-weight:700;text-decoration:underline;white-space:nowrap}.frn-kt .knote textarea{font:inherit;font-size:13px;width:150px;min-height:34px;padding:4px 6px;border:1px solid var(--line);border-radius:7px;resize:vertical}.kx{color:#C0392B;font-weight:800}.kxb{background:#FBE9E7;border-radius:5px;padding:0 4px}.kw{color:#8A6508;font-weight:700}
 .frn-kt .kact{white-space:nowrap}.frn-fold{margin-top:10px}.frn-fold>table{margin-top:8px;width:100%}.frn-gt{margin:4px 0;line-height:1.8}.frn-gt a{color:var(--accent-ink,#1F5A41)}.frn-det>td{background:var(--surface-2);text-align:start}
 .depdlg.depbank{width:min(640px,100%)}.depbank .dbrow{display:flex;gap:10px;flex-wrap:wrap}.depbank .dbrow label{flex:1 1 180px}.depbank .dep-t{width:100%}.depbank .dbdet summary{cursor:pointer;font-weight:600;font-size:13px}.depbank .ddbtn{flex-wrap:wrap}
 @media (max-width:900px){.dkpi{grid-template-columns:repeat(2,minmax(0,1fr))}.dep-views .dep-exp{margin-inline-start:0}}
@@ -1597,7 +1597,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261126-10';
+var PK_VER='20261126-11';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
