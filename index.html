@@ -1597,7 +1597,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261126-14';
+var PK_VER='20261126-15';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -2525,6 +2525,7 @@ function frnNameHit(fname,name){ var W=String(fname||'').toUpperCase().split(/[^
 function frnDocKinds(f){ var s=String(f.dtype||'')+' '+String(f.name||''), out=[];
   if(f.dtype==='חוזה לחתימה'||f.dtype==='תלוש שכר')return out;
   if(/פוליס|ביטוח רפואי|ביטוח בריאות|ביטוח עובד זר/.test(s))return ['ins'];
+  if(/היתר מומחה|היתר אישי/.test(String(f.dtype||'')))return ['permit'];   /* 26.11.2026 — היתר אישי של מומחה בכרטיס העובד */
   if(/ניהול חשבון|בעלות חשבון|אישור חשבון|חשבון בנק|bank account/i.test(s))return ['bank'];
   if(/101/.test(s))out.push('f101');
   if(/הסכם עבודה|חוזה \/ הסכם|חוזה עבודה/.test(s))out.push('contract');
@@ -2573,6 +2574,7 @@ function frnKitCell(r,R,k){ if(!r.it&&!r.eid)return '<td class="kc sub">—</td>
   var sub='', u='';   /* 26.11.2026 איילת: «לא ברור שאפשר לפתוח את המסמך מהוי — תרשום מסמך; לכל מסמך שיש תוקף תרשום אותו» */
   if(k==='ins')u=r.it&&r.it.data&&r.it.data.ins_until;
   if(k==='visa')u=r.e?visaUntil(r.e):(r.it&&r.it.data&&r.it.data.visa_until);
+  if(!u){ var mm=String(c.name||'').match(/עד (\d{2})\.(\d{2})\.(\d{4})/g); if(mm){ var q=mm[mm.length-1].match(/(\d{2})\.(\d{2})\.(\d{4})/); u=q[3]+'-'+q[2]+'-'+q[1]; } }
   if(u){ var exp=u<new Date().toISOString().slice(0,10); sub='<br><span class="'+(exp?'kx':'sub')+'">'+(exp?'פג ':'עד ')+esc(frnD(u))+'</span>'; }
   return '<td class="kc"><a href="#" class="kdoc" data-fopenf="'+esc(c.id)+'" title="פתיחה: '+esc(c.name||'')+'">📄 מסמך</a>'+sub+(R[k].old.length?'<br><span class="sub" title="גרסאות ישנות">+'+R[k].old.length+' ישנים</span>':'')+'</td>'; }
 function frnDepTgl(r){ if(!r.dz)return ''; var n=DEPX().lines.filter(function(l){return l.zar_id===r.dz;}).length; if(!n)return '';
