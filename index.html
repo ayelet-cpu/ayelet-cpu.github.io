@@ -1593,7 +1593,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261126-2';
+var PK_VER='20261126-3';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -2520,7 +2520,7 @@ function renderFrn(){
       '<div><label>פיקדון — סכום (₪)<input type="number" step="0.01" data-fdep="'+e.id+'" value="'+esc(mk0.dep_amt==null?'':mk0.dep_amt)+'"></label>'+
         '<label>נכון לחודש<input type="month" data-fdepm="'+e.id+'" value="'+esc(mk0.dep_month||'')+'"></label></div>'+
       frnPens(e)+
-      '<div class="fdocs"><b>מסמכים ('+F.length+')</b>'+F.slice(0,6).map(function(f){ return '<a data-fopenf="'+esc(f.id)+'">'+esc(f.dtype||f.name)+'</a>'; }).join('')+(F.length>6?'<span class="sub">ועוד '+(F.length-6)+' — בכרטיס העובד</span>':'')+
+      '<div class="fdocs"><b>מסמכים ('+F.length+')</b>'+F.slice(0,6).map(function(f){ return '<a data-fopenf="'+esc(f.id)+'">'+esc(fileLbl(f))+'</a>'; }).join('')+(F.length>6?'<span class="sub">ועוד '+(F.length-6)+' — בכרטיס העובד</span>':'')+
         '<button class="tlb" type="button" data-fup="'+e.id+'">📄 העלאת מסמך</button></div>'+zarBox(e)+
     '</div>'; });
   h+='</div></section>'+zarRestBox()+'</div>';
@@ -2559,7 +2559,9 @@ function milItems(){ var rc=PK.rc(REST); return (window.PK?PK.items():[]).filter
 function itemFiles(it){ var ids=((it&&it.data)||{}).files||[]; return (window.PK?PK.files():[]).filter(function(f){return ids.indexOf(f.id)>=0||((f.meta||{}).item===it.id);}); }
 var MIL_RX=/מילואים|3010|חירום|ביטוח לאומי.*תגמול|תגמול.*מילואים/;
 function empName(id){ var e=E.filter(function(x){return x.id===id;})[0]; return e?e.name:''; }
-function fileLinks(L,attr){ return L.map(function(f){ return '<a '+attr+'="'+esc(f.id)+'" title="'+esc(f.name||'')+'">📄 '+esc(f.dtype||f.name||'מסמך')+'</a>'; }).join(' '); }
+/* 26.11.2026 איילת: «לזה קראת מסמך ולא בשם המסמך» — סוג כללי (מסמכים/מסמך) → שם הקובץ בלי הסיומת */
+function fileLbl(f){ var t=String(f.dtype||'').trim(); return (t&&!/^מסמכ(ים)?$/.test(t))?t:(String(f.name||'').replace(/\.[a-z0-9]{2,5}$/i,'')||'מסמך'); }
+function fileLinks(L,attr){ return L.map(function(f){ return '<a '+attr+'="'+esc(f.id)+'" title="'+esc(f.name||'')+'">📄 '+esc(fileLbl(f))+'</a>'; }).join(' '); }
 function renderMil(){
   var box=document.getElementById('milView'), rc=PK.rc(REST), L0=milItems(), G={}, used={};
   /* 9.11.2026 (איילת): «מה שולם לעובדים בתלושים» + «מה נכנס לבנק מביטוח לאומי — סכום כללי» */
@@ -3690,7 +3692,7 @@ function docsBox(e,bare){
         var src=f.kind==='note'?'מהערת שכר':(f.kind==='pension_form'?'טופס פרטי פנסיה':(f.source&&f.source!=='העלאה'?'מהתיקייה':'הועלה'));
         var m=(f.meta||{}), when=(/^\d{4}-\d{2}$/.test(m.month||'')?(+m.month.slice(5))+'/'+m.month.slice(0,4):m.month)||(String(f.source||'').match(/\d{2}\.\d{4}/)||[''])[0]||fmtD(String(m.date||f.created_at||'').slice(0,10));
         var tip=[f.name,fSize(f.bytes),src,f.created_by,String(f.created_at||'').slice(0,10)].filter(Boolean).join(' · ');
-        return '<li data-fid="'+esc(f.id)+'" title="'+esc(tip)+'"><span class="fn"><b>'+esc(f.dtype||f.name)+'</b>'+(when?' <em>'+esc(when)+'</em>':'')+'</span>'+
+        return '<li data-fid="'+esc(f.id)+'" title="'+esc(tip)+'"><span class="fn"><b>'+esc(fileLbl(f))+'</b>'+(when?' <em>'+esc(when)+'</em>':'')+'</span>'+
           '<button type="button" data-fopen="'+esc(f.id)+'">פתיחה</button><button type="button" data-fdl="'+esc(f.id)+'" aria-label="הורדה" title="הורדה">⬇</button>'+
           (f.source==='העלאה'?'<button type="button" class="fdel" data-fdel="'+esc(f.id)+'" title="הסרת הקובץ">✕</button>':'')+'</li>';};
       var B=L.filter(function(f){return FROM_EMP_RE.test(String(f.dtype||f.name||''));}), A=L.filter(function(f){return B.indexOf(f)<0;});
@@ -5086,7 +5088,7 @@ function nxDoXls(){
   all.forEach(function(n){ var L=window.PK?PK.byNote(n.id):[]; files[n.id]=L; if(L.length>maxD)maxD=L.length; });
   /* 1.11.2026: מסמכים לחודש שלא צמודים להערה (מחלה, מילואים, טפסים) — שורה לכל מסמך בפרק נפרד. בלי טפסי בטר צ'יינס (החשבת לוקחת בעצמה). */
   var MDN=[]; if(!NALLM&&withDocs!==null){ nMonthDocs(c.rest,c.y,c.m).forEach(function(f){ if(f.note_id||/^טפסי עובדים\//.test(String(f.source||''))) return; var e=E.filter(function(x){ return x.id===f.emp_id; })[0];
-      var pn={id:'doc:'+f.id,emp:e?e.name:((f.meta||{}).who||''),dept:e?e.dept:'',detail:(f.dtype||'מסמך')+((f.meta||{}).detail?' · '+f.meta.detail:''),status:'open',amount:'',y:c.y,m:c.m};
+      var pn={id:'doc:'+f.id,emp:e?e.name:((f.meta||{}).who||''),dept:e?e.dept:'',detail:fileLbl(f)+((f.meta||{}).detail?' · '+f.meta.detail:''),status:'open',amount:'',y:c.y,m:c.m};
       files[pn.id]=[f]; if(maxD<1)maxD=1; MDN.push(pn); all.push(pn); }); }
   if(!on.docs&&!withDocs)maxD=0;
   var tb=document.getElementById('nXlsx'), lbl=tb?tb.textContent:'';
@@ -5560,7 +5562,7 @@ function nSendText(rest,y,m,all){
     /* 2.11.2026: קובץ שצורף להערה לא עובר בהעתקה לוואטסאפ — לפחות לכתוב שיש קובץ (ושהוא באקסל) */
     byT[t].forEach(function(n){var fl=window.PK?PK.byNote(n.id).filter(function(f){return !f.deleted_at;}):[];
       lines.push('• '+(n.emp||'—')+(n.dept?' ('+n.dept+')':'')+': '+nDetailOut(n)+(n.amount?' — '+fmtAmt(n.amount):'')+(n.doc?' [מסמך: '+n.doc+']':'')+
-        (fl.length?' 📎 מצורף: '+fl.map(function(f){return f.dtype||f.name;}).join(', '):''));});
+        (fl.length?' 📎 מצורף: '+fl.map(function(f){return fileLbl(f);}).join(', '):''));});
     lines.push('');});
   var FX=nFixed(y,m,rest).filter(function(n){return !nPriv(n);});
   if(NOPT.fixed&&FX.length){lines.push('▪ הערות קבועות (כל חודש)');
@@ -5589,7 +5591,7 @@ function nSendHtml(rest,y,m,all){
 /* קבצים מצורפים להערת שכר (בענן) */
 function fSize(b){b=+b||0;return b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';}
 function fRowHtml(f,canDel){
-  return '<li data-fid="'+esc(f.id)+'"><span class="fn"><b>'+esc(f.dtype||f.name)+'</b>'+
+  return '<li data-fid="'+esc(f.id)+'"><span class="fn"><b>'+esc(fileLbl(f))+'</b>'+
     '<em>'+esc(f.name)+' · '+fSize(f.bytes)+(f.created_by?' · '+esc(f.created_by):'')+(f.created_at?' · '+esc(String(f.created_at).slice(0,10)):'')+'</em></span>'+
     '<button type="button" data-fopen="'+esc(f.id)+'">פתיחה</button><button type="button" data-fdl="'+esc(f.id)+'">הורדה</button>'+
     (canDel?'<button type="button" class="fdel" data-fdel="'+esc(f.id)+'" title="הסרת הקובץ">✕</button>':'')+'</li>';
@@ -5666,7 +5668,7 @@ function nDocsHtml(rest,y,m){
   var isBC=function(f){ return /^טפסי עובדים\//.test(String(f.source||'')); }, BC=D0.filter(isBC), D=D0.filter(function(f){ return !isBC(f); });
   if(M.length) h+='<details class="ndocbox miss" open><summary>⚠️ חסר מסמך — '+M.length+' הערות שמדברות על מסמך ואין להן מסמך</summary><div class="ndlist">'+
     M.map(function(n){ return '<div class="ndrow"><b>'+esc(n.emp||'')+'</b><span class="ntopic">'+esc(n.topic||'')+'</span><span class="sub">'+esc(n.detail||'')+'</span><span style="flex:1"></span><button type="button" class="btn" data-ndup="'+esc(n.id)+'">📄 העלאה</button><button type="button" class="btn ghost" data-nedit="'+esc(n.id)+'" title="עריכת ההערה">✏️ עריכה</button><button class="ibtn del" data-del="'+esc(n.id)+'" type="button" title="מחיקת ההערה">🗑</button></div>'; }).join('')+'</div></details>';
-  var byT={}; D.forEach(function(f){ var t=f.dtype||'מסמך'; (byT[t]=byT[t]||[]).push(f); });
+  var byT={}; D.forEach(function(f){ var t=fileLbl(f); (byT[t]=byT[t]||[]).push(f); });
   h+='<details class="ndocbox"><summary>📎 מסמכים ל'+esc(nlabel(y,m))+' — '+D.length+'</summary><div class="ndlist">'+
     (D.length?Object.keys(byT).sort().map(function(t){ return '<div class="ndgrp">'+esc(t)+' ('+byT[t].length+')</div>'+byT[t].map(function(f){ var e=E.filter(function(x){ return x.id===f.emp_id; })[0], nn=f.note_id&&NOTES[f.note_id];
         return '<div class="ndrow"><b>'+esc(e?e.name:((f.meta||{}).who||'— בלי עובד'))+'</b><a href="#" data-fopen="'+esc(f.id)+'">📄 '+esc(f.name||'קובץ')+'</a>'+((f.meta||{}).detail?'<span class="sub">'+esc(f.meta.detail)+'</span>':'')+'<span style="flex:1"></span>'+(nn?'<span class="aytag ok">בהערה: '+esc(nn.topic||'')+'</span>':'<span class="aytag">בלי הערה</span>')+'</div>'; }).join(''); }).join('')
