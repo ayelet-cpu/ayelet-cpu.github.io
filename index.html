@@ -1589,7 +1589,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261125-4';
+var PK_VER='20261126-1';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -3459,13 +3459,13 @@ function depReport(key){ var L=depLines(), today=depToday(), sure=L.filter(funct
 function depRepSub(){ return esc(depRestLabel())+' · הופק '+new Date().toLocaleDateString('he-IL'); }
 function depExportData(){ var L=depLines(), rows=[], head, widths, title;
   if(DEPV==='emp'){ title='מעקב הפרשות לפי עובד'; head=['חודש','ברוטו','בסיס','%','נדרש','שולם','יתרה','מועד אחרון','מצב','הערה']; widths=[14,11,11,7,12,12,12,12,24,34];
-    depEmpGroups(DEPFL.pay?L.filter(function(l){return depPayee(l)===DEPFL.pay;}):L).forEach(function(g){ var t={req:0,paid:0}; g.L.forEach(function(l){ if(l.state==='ok'){ var c=depCalc(l); t.req+=c.req||0; t.paid+=c.paid; } });
+    depEmpGroups(L.filter(depFOk)).forEach(function(g){ var t={req:0,paid:0}; g.L.forEach(function(l){ if(l.state==='ok'){ var c=depCalc(l); t.req+=c.req||0; t.paid+=c.paid; } });
       var rl=depRule(g.L[0].rule_id); rows.push({group:g.nm+' · '+(rl?rl.label:'')+' · נדרש '+depN(t.req,1)+' · שולם '+depN(t.paid,1)+' · לא שולם '+depN(t.req-t.paid,1)+' ₪'});
       g.L.slice().sort(function(a,b){return a.month.localeCompare(b.month);}).forEach(function(l){ var c=depCalc(l); rows.push([depMon(l.month),l.gross==null?'':+l.gross,l.base==null?'':+l.base,l.rate?Math.round(l.rate*1000)/10+'%':'',c.req==null?'':c.req,c.paid,c.bal==null?'':c.bal,l.due?fmtD(l.due):'',c.st,l.note||'']); }); }); }
   else { title='מעקב הפרשות — כל העובדים · כל החודשים'; head=['עובד','חודש','בסיס','נדרש','שולם','יתרה','מועד אחרון','מצב','הערה']; widths=[24,14,11,12,12,12,12,24,34];
     var T={req:0,paid:0,bal:0}; depAllRows(L).forEach(function(r){ var l=r.l, c=r.c; if(l.state==='ok'){T.req+=c.req||0;T.paid+=c.paid;T.bal+=c.bal||0;} rows.push([r.nm,depMon(l.month),l.base==null?'':+l.base,c.req==null?'':c.req,c.paid,c.bal==null?'':c.bal,l.due?fmtD(l.due):'',c.st+(l.state==='check'?' (לא נספר)':''),l.note||'']); });
     rows.push({total:true,text:'סה״כ (מסלול ודאי): נדרש '+depN(T.req,1)+' · שולם '+depN(T.paid,1)+' · לא שולם '+depN(T.bal,1)+' ₪'}); }
-  var f=[]; if(DEPV==='emp'&&DEPFL.pay)f.push(DEPFL.pay); if(DEPV==='all'){ if(DEPFL.emp){ var g0=depEmpGroups(L).filter(function(g){return g.z===DEPFL.emp;})[0]; if(g0)f.push(g0.nm); } if(DEPFL.st)f.push(DEPFL.st==='unpaid'?'לא שולם':DEP_ST[DEPFL.st]); if(DEPFL.pay)f.push(DEPFL.pay); if(DEPFL.from||DEPFL.to)f.push((DEPFL.from?depMon(DEPFL.from):'')+' – '+(DEPFL.to?depMon(DEPFL.to):'')); }
+  var f=[]; if(DEPFL.trk)f.push(DEPFL.trk); if(DEPV==='emp'&&DEPFL.pay)f.push(depPayLbl(DEPFL.pay)); if(DEPV==='all'){ if(DEPFL.emp){ var g0=depEmpGroups(L).filter(function(g){return g.z===DEPFL.emp;})[0]; if(g0)f.push(g0.nm); } if(DEPFL.st)f.push(DEPFL.st==='unpaid'?'לא שולם':DEP_ST[DEPFL.st]); if(DEPFL.pay)f.push(depPayLbl(DEPFL.pay)); if(DEPFL.from||DEPFL.to)f.push((DEPFL.from?depMon(DEPFL.from):'')+' – '+(DEPFL.to?depMon(DEPFL.to):'')); }
   return {title:title,head:head,widths:widths,rows:rows,filt:f.join(' · ')}; }
 function depXlsx(){ var D=depExportData(), b;
   try{ b=nXlsxBlob([{name:'מעקב הפרשות',title:D.title+' — '+depRestLabel(),sub:(D.filt?D.filt+' · ':'')+'הופק '+new Date().toLocaleDateString('he-IL'),head:D.head,widths:D.widths,zebra:true,rows:D.rows}]); }catch(e){ alert('שגיאה ביצירת קובץ האקסל: '+e.message); return; }
@@ -3483,7 +3483,13 @@ function depPdf(){ var D=depExportData(), num=function(v){ return typeof v==='nu
 /* 23.11.2026 ערב (איילת: «אין מידע אחורה, אין פירוט — ללחוץ על עובד ולראות את כל הפירוט מתחילת חודש ההפרשה… וגם טבלה עם הכל עם סינון ומיון»):
    שתי תצוגות — «לפי עובד» (שורה לעובד, לחיצה = כל החודשים) ו«כל העובדים · כל החודשים» (טבלה אחת, מיון בלחיצה על כותרת, סינון).
    בחירת החודש משפיעה רק על הקוביות. אקסל / PDF = בדיוק מה שמוצג. */
-var DEPV='emp', DEPOE={}, DEPS={k:'month',d:-1}, DEPFL={emp:'',st:'',from:'',to:'',pay:''};   /* pay = «למי» (פיקדון במזרחי / הפקדה לבנק) — איילת 25.11.2026 */
+var DEPV='emp', DEPOE={}, DEPS={k:'month',d:-1}, DEPFL={emp:'',st:'',from:'',to:'',pay:'',trk:''};   /* pay = «למי» (פיקדון במזרחי / הפקדה לבנק) — איילת 25.11.2026 */
+/* 26.11.2026 איילת: «אין פה סינון — מסתננים לטפחות, הפקדה בבנק, וגם אפשרות לבחור את המומחים לחוד» — סינון «למי מפקידים» ו«סוג עובד», תמיד מוצג; משפיע גם על הקוביות ועל אקסל/PDF */
+function depTrkG(l){ var t=l.track||l.rule_id||''; return t==='expert'?'מומחים':t==='tefahot'?'מסתננים':t==='sri'?'סרילנקים':(t==='foreign125'||t==='foreign125m1')?'עובדים זרים · 12.5%':'לבדוק מעמד'; }
+function depPayLbl(p){ return p==='פיקדון במזרחי'?'פיקדון במזרחי טפחות (מסתננים)':p==='הפקדה לבנק'?'הפקדה בבנק על שם העובד':p; }
+function depFOk(l){ return (!DEPFL.pay||depPayee(l)===DEPFL.pay)&&(!DEPFL.trk||depTrkG(l)===DEPFL.trk); }
+function depTrkSel(L,opt){ var P={}; L.forEach(function(l){ P[depTrkG(l)]=1; }); var O=['מומחים','מסתננים','סרילנקים','עובדים זרים · 12.5%','לבדוק מעמד'].filter(function(k){return P[k]||DEPFL.trk===k;});
+  return '<label>סוג עובד <select id="depFTrk">'+opt('','הכול',DEPFL.trk)+O.map(function(k){return opt(k,k,DEPFL.trk);}).join('')+'</select></label>'; }
 var DEP_ST={open:'פתוח',late:'באיחור',paid:'שולם',norcpt:'שולם · חסרה אסמכתה',zero:'אין הפרשה בחודש',check:'להמחשה / לבדוק',missing:'חסר נתון'};
 function depStKey(l,c){ c=c||depCalc(l); if(l.state==='missing'||c.req==null)return 'missing'; if(l.state==='check')return 'check'; if(c.req===0)return 'zero';
   if(c.bal<=0.005)return c.conf?'paid':'norcpt'; return c.late?'late':'open'; }
@@ -3509,10 +3515,10 @@ function depMonthTable(X,o){ o=o||{}; X=X.slice().sort(function(a,b){return Stri
 function depEmpGroups(L){ var G={}, ord=[]; L.forEach(function(l){ if(!G[l.zar_id]){G[l.zar_id]=[];ord.push(l.zar_id);} G[l.zar_id].push(l); });
   return ord.map(function(z){ return {z:z,L:G[z],nm:depEmpName(G[z][0])}; }).sort(function(a,b){return String(a.nm).localeCompare(String(b.nm));}); }
 /* הטבלה המלאה — שורות אחרי סינון ומיון */
-function depPaySel(L,opt){ var P={}; L.forEach(function(l){ P[depPayee(l)]=1; }); var K=Object.keys(P).sort(); if(K.length<2&&!DEPFL.pay)return '';
-  return '<label>למי <select id="depFPay">'+opt('','הכול',DEPFL.pay)+K.map(function(k){return opt(k,k,DEPFL.pay);}).join('')+'</select></label>'; }
+function depPaySel(L,opt){ var P={'פיקדון במזרחי':1,'הפקדה לבנק':1}; L.forEach(function(l){ P[depPayee(l)]=1; }); var K=Object.keys(P).sort();
+  return '<label>למי מפקידים <select id="depFPay">'+opt('','הכול',DEPFL.pay)+K.map(function(k){return opt(k,depPayLbl(k),DEPFL.pay);}).join('')+'</select></label>'+depTrkSel(L,opt); }
 function depAllRows(L){ var R=L.map(function(l){ var c=depCalc(l); return {l:l,c:c,nm:depEmpName(l),st:depStKey(l,c)}; });
-  R=R.filter(function(r){ return (!DEPFL.pay||depPayee(r.l)===DEPFL.pay)&&(!DEPFL.emp||r.l.zar_id===DEPFL.emp)&&(!DEPFL.st||r.st===DEPFL.st||(DEPFL.st==='unpaid'&&(r.st==='open'||r.st==='late')))&&(!DEPFL.from||r.l.month>=DEPFL.from)&&(!DEPFL.to||r.l.month<=DEPFL.to); });
+  R=R.filter(function(r){ return depFOk(r.l)&&(!DEPFL.emp||r.l.zar_id===DEPFL.emp)&&(!DEPFL.st||r.st===DEPFL.st||(DEPFL.st==='unpaid'&&(r.st==='open'||r.st==='late')))&&(!DEPFL.from||r.l.month>=DEPFL.from)&&(!DEPFL.to||r.l.month<=DEPFL.to); });
   var k=DEPS.k, d=DEPS.d, v=function(r){ return k==='emp'?r.nm:k==='month'?r.l.month:k==='req'?(r.c.req==null?-1:r.c.req):k==='paid'?r.c.paid:k==='bal'?(r.c.bal==null?-1:r.c.bal):k==='due'?(r.l.due||''):k==='st'?r.st:k==='base'?(+r.l.base||0):r.l.month; };
   R.sort(function(a,b){ var x=v(a), y=v(b); var c=(typeof x==='number'&&typeof y==='number')?x-y:String(x).localeCompare(String(y),'he'); return c*d||String(a.nm).localeCompare(String(b.nm),'he')||String(b.l.month).localeCompare(String(a.l.month)); });
   return R; }
@@ -3522,7 +3528,7 @@ function renderDep2(box){
   var L=depLines(); if(!L.length){ box.innerHTML=''; return; }
   var rk=depRestKey(), MS=depMonths(L); if(DEPM!=='all'&&MS.indexOf(DEPM)<0)DEPM=MS[MS.length-1];
   var inM=function(l){ return DEPM==='all'||l.month===DEPM; };
-  var sure=L.filter(function(l){return l.state==='ok';}), M=sure.filter(inM);
+  var sure=L.filter(function(l){return l.state==='ok'&&depFOk(l);}), M=sure.filter(inM);
   var K={req:0,paid:0,late:0,lateN:0,old:0,oldN:0,all:0,allPaid:0};
   M.forEach(function(l){ var c=depCalc(l); K.req+=c.req||0; K.paid+=c.paid; if(c.late){K.late+=c.bal;K.lateN++;} });
   sure.forEach(function(l){ var c=depCalc(l); K.all+=c.req||0; K.allPaid+=c.paid; if(DEPM!=='all'&&l.month<DEPM&&c.bal>0.005){K.old+=c.bal;K.oldN++;} });
@@ -3541,7 +3547,7 @@ function renderDep2(box){
     '<div class="dep-views"><button type="button" class="pill'+(DEPV==='emp'?' on':'')+'" data-depv="emp">לפי עובד</button><button type="button" class="pill'+(DEPV==='all'?' on':'')+'" data-depv="all">כל העובדים · כל החודשים</button>'+
       '<span class="dep-exp"><button type="button" class="btn" id="depXls">אקסל</button><button type="button" class="btn" id="depPdf">PDF</button>'+(isOwn()&&rk!=='all'?'<button type="button" class="btn" id="depBank">מכתב לבנק · סגירת חודשים</button>':'')+'</span></div>';
   if(DEPV==='emp'){
-    var ps=depPaySel(L,opt), G=depEmpGroups(DEPFL.pay?L.filter(function(l){return depPayee(l)===DEPFL.pay;}):L);
+    var ps=depPaySel(L,opt), G=depEmpGroups(L.filter(depFOk));
     if(ps)h+='<div class="dep-fil2">'+ps+'</div>';
     h+='<div class="dep-tw"><table class="dep-t dep-et"><thead><tr><th>עובד</th><th>מסלול · למי</th><th>תחילת ההפרשה</th><th>חודשים</th><th>נדרש</th><th>שולם</th><th>לא שולם</th><th>מצב</th></tr></thead><tbody>'+
       G.map(function(g){ var t={req:0,paid:0,late:0,miss:0,ill:0}, st0=null;
@@ -3561,7 +3567,7 @@ function renderDep2(box){
       depPaySel(L,opt)+'<label>מצב <select id="depFSt">'+opt('','הכול',DEPFL.st)+opt('unpaid','לא שולם (פתוח + באיחור)',DEPFL.st)+Object.keys(DEP_ST).map(function(k){return opt(k,DEP_ST[k],DEPFL.st);}).join('')+'</select></label>'+
       '<label>מחודש <select id="depFFrom">'+opt('','—',DEPFL.from)+MS.map(function(m){return opt(m,depMon(m),DEPFL.from);}).join('')+'</select></label>'+
       '<label>עד חודש <select id="depFTo">'+opt('','—',DEPFL.to)+MS.map(function(m){return opt(m,depMon(m),DEPFL.to);}).join('')+'</select></label>'+
-      ((DEPFL.emp||DEPFL.st||DEPFL.from||DEPFL.to||DEPFL.pay)?'<button type="button" class="tlb" data-depfclear="1">ניקוי סינון</button>':'')+'<span class="sub">'+R.length+' שורות</span></div>'+
+      ((DEPFL.emp||DEPFL.st||DEPFL.from||DEPFL.to||DEPFL.pay||DEPFL.trk)?'<button type="button" class="tlb" data-depfclear="1">ניקוי סינון</button>':'')+'<span class="sub">'+R.length+' שורות</span></div>'+
       '<div class="dep-tw"><table class="dep-t depx-t"><thead><tr>'+th('emp','עובד')+th('month','חודש')+th('base','בסיס')+th('req','נדרש')+th('paid','שולם')+th('bal','יתרה')+th('due','מועד אחרון')+th('st','מצב')+'<th>הערה</th><th></th></tr></thead><tbody>'+
       R.map(function(r){ var l=r.l, c=r.c, ill=l.state!=='ok'; if(ill)T.ill+=c.req||0; else {T.req+=c.req||0;T.paid+=c.paid;T.bal+=c.bal||0;}
         return '<tr class="'+(ill?'dep-ill':'')+'"><td><b>'+esc(r.nm)+'</b></td><td>'+esc(depMon(l.month))+'</td><td class="num">'+depN(l.base)+'</td><td class="num">'+depN(c.req,1)+'</td><td class="num">'+depN(c.paid,1)+'</td><td class="num"><b>'+depN(c.bal,1)+'</b></td>'+
@@ -3575,17 +3581,17 @@ function renderDep2(box){
 document.getElementById('depView').addEventListener('toggle',function(ev){ var g=ev.target.closest&&ev.target.closest('[data-dalg]'); if(g)DEPAL=g.open?g.dataset.dalg:(DEPAL===g.dataset.dalg?'':DEPAL); },true);
 document.getElementById('depView').addEventListener('change',function(ev){ var id=ev.target.id;
   if(id==='depMon'){ DEPM=ev.target.value; renderDep(); return; }
-  var F={depFEmp:'emp',depFSt:'st',depFFrom:'from',depFTo:'to',depFPay:'pay'}; if(F[id]){ DEPFL[F[id]]=ev.target.value; renderDep(); } });
+  var F={depFEmp:'emp',depFSt:'st',depFFrom:'from',depFTo:'to',depFPay:'pay',depFTrk:'trk'}; if(F[id]){ DEPFL[F[id]]=ev.target.value; renderDep(); } });
 document.getElementById('depView').addEventListener('click',function(ev){ var b=ev.target.closest('[data-depf]'); if(b){ DEPF=b.dataset.depf; renderDep(); return; }
   var rb=ev.target.closest('[data-depr]'); if(rb){ DEPR=rb.dataset.depr===PK.rc(REST)?'':rb.dataset.depr; renderDep(); return; }
   if(ev.target.closest('#depBank')){ depBankDlg(); return; } if(ev.target.closest('#depXls')){ depXlsx(); return; } if(ev.target.closest('#depPdf')){ depPdf(); return; }
   var vb=ev.target.closest('[data-depv]'); if(vb){ DEPV=vb.dataset.depv; renderDep(); return; }
   var sb=ev.target.closest('[data-depsort]'); if(sb){ var k=sb.dataset.depsort; DEPS=DEPS.k===k?{k:k,d:-DEPS.d}:{k:k,d:(k==='emp'||k==='due'||k==='st')?1:-1}; renderDep(); return; }
-  if(ev.target.closest('[data-depfclear]')){ DEPFL={emp:'',st:'',from:'',to:'',pay:''}; renderDep(); return; }
+  if(ev.target.closest('[data-depfclear]')){ DEPFL={emp:'',st:'',from:'',to:'',pay:'',trk:''}; renderDep(); return; }
   if(!ev.target.closest('button,a,select,input')){ var er=ev.target.closest('[data-depemp]'); if(er){ DEPOE[er.dataset.depemp]=!DEPOE[er.dataset.depemp]; renderDep(); return; } }
   var t=ev.target.closest('[data-depopen],[data-depadd],[data-depatt],[data-deppaid],[data-depdel],[data-depfile],[data-depgo]'); if(!t)return;
   if(t.dataset.depopen){ DEPOPEN[t.dataset.depopen]=!DEPOPEN[t.dataset.depopen]; renderDep(); return; }
-  if(t.dataset.depgo){ DEPV='all'; DEPFL={emp:'',st:'',from:t.dataset.depgo,to:t.dataset.depgo,pay:''}; renderDep(); var tb=document.querySelector('#depView .depx-t'); if(tb)tb.scrollIntoView({behavior:'smooth',block:'start'}); return; }
+  if(t.dataset.depgo){ DEPV='all'; DEPFL={emp:'',st:'',from:t.dataset.depgo,to:t.dataset.depgo,pay:'',trk:''}; renderDep(); var tb=document.querySelector('#depView .depx-t'); if(tb)tb.scrollIntoView({behavior:'smooth',block:'start'}); return; }
   if(t.dataset.depfile){ var f=depFile(t.dataset.depfile); if(f)PK.open(f); return; }
   if(!isOwn()){ alert('רק איילת'); return; }
   if(t.dataset.depadd){ var l=depLineById(t.dataset.depadd); if(l)depPayDlg(l); return; }
