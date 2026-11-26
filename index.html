@@ -279,8 +279,8 @@ footer{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
 .dep-empl label{display:flex;gap:6px;align-items:center;font-weight:500;white-space:nowrap}
 .frn-kitbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 16px 6px}.frn-kitbar .frn-h{margin:0}
 .frn-kt td,.frn-kt th{vertical-align:middle}.frn-kt .kc{text-align:center;white-space:nowrap}.frn-kt .kvisa input{font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:7px;display:block;margin-bottom:3px}
-.kv{color:#1F7A4D;font-weight:800;text-decoration:none;font-size:15px}.kx{color:#C0392B;font-weight:800}.kxb{background:#FBE9E7;border-radius:5px;padding:0 4px}.kw{color:#8A6508;font-weight:700}
-.frn-kt .kact{white-space:nowrap}.frn-det>td{background:var(--surface-2);text-align:start}
+.kv{color:#1F7A4D;font-weight:800;text-decoration:none;font-size:15px}.kna{color:var(--muted,#6C7B8A);font-weight:600;white-space:nowrap}.kna-x{font:inherit;font-size:11.5px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:0 6px;margin-top:3px;cursor:pointer;color:var(--muted,#6C7B8A)}.kdoc{color:#1F7A4D;font-weight:700;text-decoration:underline;white-space:nowrap}.frn-kt .knote textarea{font:inherit;font-size:13px;width:150px;min-height:34px;padding:4px 6px;border:1px solid var(--line);border-radius:7px;resize:vertical}.kx{color:#C0392B;font-weight:800}.kxb{background:#FBE9E7;border-radius:5px;padding:0 4px}.kw{color:#8A6508;font-weight:700}
+.frn-kt .kact{white-space:nowrap}.frn-fold{margin-top:10px}.frn-fold>table{margin-top:8px;width:100%}.frn-gt{margin:4px 0;line-height:1.8}.frn-gt a{color:var(--accent-ink,#1F5A41)}.frn-det>td{background:var(--surface-2);text-align:start}
 .depdlg.depbank{width:min(640px,100%)}.depbank .dbrow{display:flex;gap:10px;flex-wrap:wrap}.depbank .dbrow label{flex:1 1 180px}.depbank .dep-t{width:100%}.depbank .dbdet summary{cursor:pointer;font-weight:600;font-size:13px}.depbank .ddbtn{flex-wrap:wrap}
 @media (max-width:900px){.dkpi{grid-template-columns:repeat(2,minmax(0,1fr))}.dep-views .dep-exp{margin-inline-start:0}}
 .dep-t{border-collapse:collapse;width:100%;font-size:13.5px}
@@ -1597,7 +1597,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261126-5';
+var PK_VER='20261126-9';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -2428,7 +2428,7 @@ function zarBoxIt(it){ if(!it)return ''; var d=it.data||{}, M=d.months||{}, ks=O
   var F=itemFiles(it); if(F.length)h+='<div>'+fileLinks(F,'data-fopenf')+'</div>';
   if(d.src)h+='<div class="sub">מקור: '+esc(d.src)+'</div>';
   return h+'</div>'; }
-function zarRestBox(){ var rc=PK.rc(REST), L=(window.PK?PK.items():[]).filter(function(x){return x.kind==='zar'&&x.rest===rc&&!x.deleted&&!x.eid;}); if(!L.length)return '';
+function zarRestBox(){ var rc=PK.rc(REST), L=(window.PK?PK.items():[]).filter(function(x){return x.kind==='zar'&&x.rest===rc&&!x.deleted&&!x.eid&&!(x.data&&x.data.dep&&x.data.status!=='עזב');});   /* 26.11.2026: כרטיס עם פיקדון — שורה בקיט המסמכים */ if(!L.length)return '';
   var h='<section class="psec"><header><h2>פיקדון ועובדים זרים שלא בפנקס — '+esc(REST)+'</h2></header><div class="plist">';
   L.forEach(function(it){ var d=it.data||{};
     if(d.deposits){ h+='<div class="frow"><div><b>הפקדות לפיקדון</b>'+(d.rate?'<br><span class="sub">שיעורים: פיצויים '+esc(d.rate.pitz)+'% · גמל '+esc(d.rate.gemel)+'%</span>':'')+'</div><div>'+
@@ -2508,51 +2508,81 @@ function depBox(){
     '<div class="dep-stop">⛔ עוד לא להפקיד. מועד ההפרשה: מומחים — רק אחרי חצי שנה · מסתננים — מיד · סרילנקים — מיד.</div>'+
     '<p class="sub dep-help">לחיצה על עובד פותחת את כל הפרטים לטופס ואת כל החודשים. «לבדוק מעמד» — הסכום להמחשה בלבד (12.5% מהבסיס) עד שיתברר המסלול. בסיס להפרשה = שכר יסוד + שעות שבת 100%.</p>'+rows+'</section>'; }
 /* ---------- תיק עובדים זרים לביקורת (26.11.2026, איילת: «טבלה עם כל העובדים, שורה לכל עובד, וי או תאריך, מה חסר בצורה מינימליסטית;
-   ללחוץ ולהוריד/להציג/להדפיס את כל המסמכים העדכניים, עם אפשרות לראות את מה שכבר לא עדכני ולסמן מה להוריד — שיהיה מול העיניים בביקורת») ----------
-   המסמכים מתיק העובד (pinkas_files), לפי סוג + שם הקובץ. העדכני = האחרון שהועלה; הישנים — רק ב«גם ישנים». הפיקדון — ממעקב ההפרשות (pinkas_dep_*). */
-var FRN_KIT=[{k:'contract',t:'הסכם חתום'},{k:'ins',t:'ביטוח בריאות'},{k:'f101',t:'101'},{k:'pass',t:'דרכון'},{k:'visa',t:'אשרה'}];
+   ללחוץ ולהוריד/להציג/להדפיס את כל המסמכים העדכניים, עם אפשרות לראות את מה שכבר לא עדכני ולסמן מה להוריד — שיהיה מול העיניים בביקורת»;
+   «צריך גם ומאוד חשוב להוסיף לקיט — אישור ניהול חשבון בנק») ----------
+   שורה לכל עובד זר פעיל מהפנקס + כל כרטיס זר בלי עובד בפנקס (למשל הסרי-לנקים שעוד לא בתלוש). המסמכים מתיק העובד / מהכרטיס (data.files, meta.item),
+   לפי סוג + שם הקובץ; העדכני = האחרון שהועלה, הישנים — רק ב«גם ישנים». הפיקדון — ממעקב ההפרשות (pinkas_dep_*). */
+var FRN_KIT=[{k:'contract',t:'הסכם חתום'},{k:'ins',t:'ביטוח בריאות'},{k:'f101',t:'101'},{k:'bank',t:'אישור חשבון בנק'},{k:'pass',t:'דרכון'},{k:'visa',t:'אשרה'},{k:'permit',t:'היתר'}];
+/* 26.11.2026 איילת: «שורה מתקפלת — עובדים שעזבו · שורה מתקפלת — מסמכים כלליים · ההיתרים — לקיט לפי עובד».
+   מסמכים כלליים = קבצי כרטיסים בלי עובד ובלי פיקדון (ההיתר של החברה) + קבצי «היתר» בלי עובד. מסמך היתר ששם העובד כתוב בשם הקובץ (למשל «תלושים LI») — בעמודת «היתר» של העובד. */
+function frnGenItems(){ var rc=window.PK?PK.rc(REST):''; return (window.PK?PK.items():[]).filter(function(x){ return x.kind==='zar'&&x.rest===rc&&!x.deleted&&!x.eid&&!(x.data&&x.data.dep); }); }
+function frnGenFiles(){ var rc=window.PK?PK.rc(REST):'', seen={}, out=[]; frnGenItems().forEach(function(it){ itemFiles(it).forEach(function(f){ if(!seen[f.id]){seen[f.id]=1;out.push(f);} }); });
+  (window.PK?PK.files():[]).forEach(function(f){ if(!seen[f.id]&&f.rest===rc&&!f.emp_id&&!f.note_id&&/היתר/.test(String(f.dtype||''))&&!(f.meta&&f.meta.item&&/^zar-.*sri|^zar-chakoli-|^zar-asa-\d/.test(f.meta.item))){ seen[f.id]=1; out.push(f); } });
+  return out.sort(function(a,b){ return String(a.dtype||'').localeCompare(String(b.dtype||''),'he')||String(a.name||'').localeCompare(String(b.name||''),'he'); }); }
+function frnNameHit(fname,name){ var W=String(fname||'').toUpperCase().split(/[^A-Z]+/).filter(function(w){return w.length>=2;}), N=String(name||'').toUpperCase().split(/[^A-Z]+/).filter(function(w){return w.length>=2;});
+  return N.some(function(n){ return W.indexOf(n)>=0; }); }
+
 function frnDocKinds(f){ var s=String(f.dtype||'')+' '+String(f.name||''), out=[];
   if(f.dtype==='חוזה לחתימה'||f.dtype==='תלוש שכר')return out;
   if(/פוליס|ביטוח רפואי|ביטוח בריאות|ביטוח עובד זר/.test(s))return ['ins'];
+  if(/ניהול חשבון|בעלות חשבון|אישור חשבון|חשבון בנק|bank account/i.test(s))return ['bank'];
   if(/101/.test(s))out.push('f101');
   if(/הסכם עבודה|חוזה \/ הסכם|חוזה עבודה/.test(s))out.push('contract');
   if(/אשר|ויזה|visa|רישיון שהייה|רישיון ישיבה|רישיון עבודה/i.test(s))out.push('visa');
   if(/דרכון|passport/i.test(s)&&out.indexOf('visa')<0)out.push('pass');
   return out; }
-function frnDocs(e){ var F=(window.PK?PK.byEmp(e.id):[]).slice().sort(function(a,b){ return String(b.created_at||'').localeCompare(String(a.created_at||'')); }), R={};
+/* 26.11.2026 איילת: «המלל מיותר — שהכל יירשם בשורה עצמה; לא מעניין אותי מי אמר מה» — בלי «פרטים»; מהכרטיס רק דרכון ותאריך לידה */
+function frnIdLine(r){ var d=(r.it&&r.it.data)||{}, dp=d.dep||{}, ps=d.passport||dp.passport||'', b=d.birth||dp.birth||''; return (ps?'<br>דרכון '+esc(ps):'')+(b?' · לידה '+esc(b):''); }
+function frnKNote(r){ return (r.it&&r.it.data&&r.it.data.kit_note)||(r.eid&&(MARKS[r.eid]||{}).kit_note)||''; }
+function frnRows(A){ var rc=window.PK?PK.rc(REST):'', R=A.map(function(e){ return {key:String(e.id),eid:e.id,e:e,name:e.name,sub:(e.dept||'')+(e.start?' · מ-'+fmtD(e.start):''),it:zarItem(e.id)}; });
+  (window.PK?PK.items():[]).filter(function(x){ return x.kind==='zar'&&x.rest===rc&&!x.deleted&&!x.eid&&x.data&&x.data.dep&&x.data.status!=='עזב'; }).forEach(function(it){ var dp=it.data.dep||{};
+    R.push({key:'z:'+it.id,eid:null,e:null,name:it.emp||it.data.name_en||'',sub:(dp.country||'')+(dp.start?' · מ-'+dp.start:'')+' · עוד לא בפנקס/בתלוש',it:it}); });
+  return R; }
+function frnDocs(r){ var F=(r.eid?(window.PK?PK.byEmp(r.eid):[]):[]).concat(r.it?itemFiles(r.it):[]), seen={}, R={};
+  F=F.filter(function(f){ if(seen[f.id])return false; seen[f.id]=1; return true; }).sort(function(a,b){ return String(b.created_at||'').localeCompare(String(a.created_at||'')); });
   FRN_KIT.forEach(function(x){ R[x.k]={cur:null,old:[]}; });
   F.forEach(function(f){ frnDocKinds(f).forEach(function(k){ if(!R[k].cur)R[k].cur=f; else R[k].old.push(f); }); });
+  frnGenFiles().filter(function(f){ return /היתר/.test(String(f.dtype||''))&&frnNameHit(f.name,r.name); }).forEach(function(f){ if(!R.permit.cur)R.permit.cur=f; else R.permit.old.push(f); });
   return R; }
 function frnD(v){ if(!v)return ''; var p=String(v).slice(0,10).split('-'); return p.length===3?p[2]+'.'+p[1]+'.'+p[0].slice(2):v; }
-function frnDepCell(e){ var it=zarItem(e.id); if(!it)return '<span class="kx">—</span>';
-  var z=it.id, t=depZarSum(z), L=DEPX().lines.filter(function(l){return l.zar_id===z;}); if(!L.length)return '<span class="sub">אין נתונים</span>';
-  var pay=depPayee(L[0]), who=pay==='פיקדון במזרחי'?'טפחות':(pay==='הפקדה לבנק'?'בנק':pay), last='';
+function frnDepCell(it){ if(!it)return '<span class="kx">—</span>';
+  var z=it.id, L=DEPX().lines.filter(function(l){return l.zar_id===z;});
+  if(!L.length){ var tk=DEPX().track.filter(function(t){return t.zar_id===z;})[0], rl=tk&&depRule(tk.track);
+    return rl?'<span class="sub">'+esc(depPayLbl(rl.payee||''))+'<br>'+esc(rl.track==='sri'?'אפשר להפקיד מ-1.1.2027 — לשמור בחיסכון':'עוד אין תלוש')+'</span>':'<span class="sub">אין נתונים</span>'; }
+  var t=depZarSum(z), pay=depPayee(L[0]), who=pay==='פיקדון במזרחי'?'טפחות':(pay==='הפקדה לבנק'?'בנק':pay), last='';
   DEPX().pay.forEach(function(p){ if((p.state==='paid'||p.state==='confirmed')&&L.some(function(l){return l.id===p.line_id;})&&p.paid_on>last)last=p.paid_on; });
   if(t.need==='check')return '<span class="kw">לבדוק מעמד</span>';
-  if(t.need==='notyet'){ var rl=depRule(L[0].rule_id); return '<span class="sub">'+esc(who)+' · טרם עברו '+((rl&&rl.start_month||7)-1)+' חודשים · מ'+esc(depMon(depStartMonth(L)))+'</span>'; }
+  if(t.need==='notyet'){ var rl2=depRule(L[0].rule_id); return '<span class="sub">'+esc(who)+' · טרם עברו '+((rl2&&rl2.start_month||7)-1)+' חודשים · מ'+esc(depMon(depStartMonth(L)))+'</span>'; }
   return '<span class="sub">'+esc(who)+'</span> '+(t.paid>0.005?'<span class="kv">✓ '+depN(t.paid)+' ₪</span>'+(last?' <span class="sub">'+esc(frnD(last))+'</span>':''):'<span class="kx">✗ לא הופקד</span>')+
     (t.bal>0.005?'<br><span class="kx'+(t.late?' kxb':'')+'">חסר '+depN(t.bal)+' ₪</span>':'<br><span class="kv">אין חוסר</span>'); }
-function frnKitCell(e,R,k){ var c=R[k].cur;
-  if(!c)return '<td class="kc"><span class="kx" title="חסר">✗</span></td>';
-  var sub='';
-  if(k==='ins'){ var it=zarItem(e.id), u=it&&it.data&&it.data.ins_until; if(u){ var exp=u<new Date().toISOString().slice(0,10); sub='<br><span class="'+(exp?'kx':'sub')+'">'+(exp?'פג ':'עד ')+esc(frnD(u))+'</span>'; } }
-  return '<td class="kc"><a href="#" class="kv" data-fopenf="'+esc(c.id)+'" title="'+esc(c.name||'')+'">✓</a>'+sub+(R[k].old.length?'<br><span class="sub" title="גרסאות ישנות">+'+R[k].old.length+' ישנים</span>':'')+'</td>'; }
-function frnKitTable(A){
+/* 26.11.2026 איילת: «אם לא צריך מסמך מסוים — לרשום אין צורך». היתר — רק למומחים (לשאר אוטומטית); לכל מסמך אחר — לחיצה «אין צורך» (נשמר בכרטיס, kit_na) */
+function frnTrack(r){ var it=r.it; if(!it)return ''; var t=DEPX().track.filter(function(x){return x.zar_id===it.id;})[0]; return (t&&t.track)||((it.data||{}).dep||{}).track||''; }
+function frnNaMan(r){ return (r.it&&r.it.data&&r.it.data.kit_na)||(r.eid&&(MARKS[r.eid]||{}).kit_na)||{}; }
+function frnNa(r,k){ if(frnNaMan(r)[k])return 'man'; if(k==='permit'&&frnTrack(r)!=='expert')return 'auto'; return ''; }
+function frnKitCell(r,R,k){ var c=R[k].cur, na=c?'':frnNa(r,k);
+  if(na)return '<td class="kc"><span class="kna">אין צורך</span>'+(na==='man'&&isOwn()?'<br><button type="button" class="kna-x" data-fkna="'+esc(r.key)+'|'+k+'" title="לבטל «אין צורך»">↩</button>':'')+'</td>';
+  if(!c)return '<td class="kc"><span class="kx" title="חסר">✗ חסר</span>'+(isOwn()?'<br><button type="button" class="kna-x" data-fkna="'+esc(r.key)+'|'+k+'">אין צורך</button>':'')+'</td>';
+  var sub='', u='';   /* 26.11.2026 איילת: «לא ברור שאפשר לפתוח את המסמך מהוי — תרשום מסמך; לכל מסמך שיש תוקף תרשום אותו» */
+  if(k==='ins')u=r.it&&r.it.data&&r.it.data.ins_until;
+  if(k==='visa')u=r.e?visaUntil(r.e):(r.it&&r.it.data&&r.it.data.visa_until);
+  if(u){ var exp=u<new Date().toISOString().slice(0,10); sub='<br><span class="'+(exp?'kx':'sub')+'">'+(exp?'פג ':'עד ')+esc(frnD(u))+'</span>'; }
+  return '<td class="kc"><a href="#" class="kdoc" data-fopenf="'+esc(c.id)+'" title="פתיחה: '+esc(c.name||'')+'">📄 מסמך</a>'+sub+(R[k].old.length?'<br><span class="sub" title="גרסאות ישנות">+'+R[k].old.length+' ישנים</span>':'')+'</td>'; }
+function frnKitTable(A){ var RS=frnRows(A), NC=5+FRN_KIT.length;
   var h='<div class="frn-kitbar"><h3 class="frn-h">קיט מסמכים — העובדים</h3><button type="button" class="btn" id="frnKitBtn">📁 כל המסמכים לביקורת — פתיחה / הדפסה / הורדה</button></div>'+
-    '<div class="dep-tw"><table class="dep-t frn-kt"><thead><tr><th>עובד</th><th>תוקף אשרה</th><th>פיקדון</th>'+FRN_KIT.map(function(x){return '<th class="kc">'+esc(x.t)+'</th>';}).join('')+'<th></th></tr></thead><tbody>';
-  if(!A.length)h+='<tr><td colspan="9" class="hint">אין עובדים זרים פעילים ב'+esc(REST)+'.</td></tr>';
-  A.forEach(function(e){ var mk0=MARKS[e.id]||{}, d=visaDays(e), R=frnDocs(e), miss=FRN_KIT.filter(function(x){return !R[x.k].cur;}).length, op=!!FRN_OPEN[e.id];
-    h+='<tr data-fid="'+e.id+'" class="'+(d!==null&&d<0?'dep-lrow':'')+'"><td><b>'+esc(e.name)+'</b><br><span class="sub">'+esc(e.dept||'')+(e.start?' · מ-'+esc(fmtD(e.start)):'')+'</span></td>'+
-      '<td class="kvisa"><input type="date" data-fvisa="'+e.id+'" value="'+esc(mk0.visa_until||visaUntil(e)||'')+'" aria-label="תוקף האשרה — '+esc(e.name)+'">'+visaPill(d)+'</td>'+
-      '<td>'+frnDepCell(e)+'</td>'+FRN_KIT.map(function(x){ return frnKitCell(e,R,x.k); }).join('')+
-      '<td class="kact"><button class="tlb" type="button" data-fup="'+e.id+'" title="העלאת מסמך">📄 העלאה</button><button class="tlb" type="button" data-fdet="'+e.id+'" aria-expanded="'+op+'">'+(op?'פרטים ▴':'פרטים ▾')+'</button></td></tr>'+
-      '<tr class="frn-det" data-fid="'+e.id+'"'+(op?'':' hidden')+'><td colspan="9">'+zarBox(e)+frnPens(e)+'</td></tr>'; });
-  return h+'</tbody></table></div><p class="sub dep-help">✓ = יש מסמך (לחיצה פותחת את העדכני) · ✗ = חסר · «פרטים» — כל המידע על העובד מהכרטיס.</p>'; }
+    '<div class="dep-tw"><table class="dep-t frn-kt"><thead><tr><th>עובד</th><th>תוקף אשרה</th><th>פיקדון</th>'+FRN_KIT.map(function(x){return '<th class="kc">'+esc(x.t)+'</th>';}).join('')+'<th>הערה</th><th></th></tr></thead><tbody>';
+  if(!RS.length)h+='<tr><td colspan="'+NC+'" class="hint">אין עובדים זרים פעילים ב'+esc(REST)+'.</td></tr>';
+  RS.forEach(function(r){ var e=r.e, R=frnDocs(r), op=!!FRN_OPEN[r.key], d=e?visaDays(e):null, vu=e?((MARKS[e.id]||{}).visa_until||visaUntil(e)||''):((r.it&&r.it.data&&r.it.data.visa_until)||'');
+    h+='<tr data-fid="'+esc(r.key)+'" class="'+(d!==null&&d<0?'dep-lrow':'')+'"><td><b>'+esc(r.name)+'</b><br><span class="sub">'+esc(r.sub)+frnIdLine(r)+'</span></td>'+
+      '<td class="kvisa">'+(e?'<input type="date" data-fvisa="'+e.id+'" value="'+esc(vu)+'" aria-label="תוקף האשרה — '+esc(r.name)+'">'+visaPill(d):(vu?esc(frnD(vu)):'<span class="kx">✗</span>'))+'</td>'+
+      '<td>'+frnDepCell(r.it)+'</td>'+FRN_KIT.map(function(x){ return frnKitCell(r,R,x.k); }).join('')+
+      '<td class="knote"><textarea rows="2" data-fknote="'+esc(r.key)+'" placeholder="הערה…" aria-label="הערה — '+esc(r.name)+'">'+esc(frnKNote(r))+'</textarea></td>'+
+      '<td class="kact">'+(e?'<button class="tlb" type="button" data-fup="'+e.id+'" title="העלאת מסמך">📄 העלאה</button>':'')+'</td></tr>'; });
+  return h+'</tbody></table></div><p class="sub dep-help">«📄 מסמך» — לחיצה פותחת את המסמך העדכני · ✗ = חסר («אין צורך» — כשלא נדרש; היתר — רק למומחים) · הערה — נשמרת מיד.</p>'; }
 function frnKitOpen(A){ var list=[], old=FRN_KITOLD;
-  A.forEach(function(e){ var R=frnDocs(e), seen={};
-    FRN_KIT.forEach(function(x){ var r=R[x.k];
-      if(r.cur&&!seen[r.cur.id]){ seen[r.cur.id]=1; list.push({f:r.cur,n:{id:'k'+e.id,emp:e.name,topic:x.t,y:0,m:0},cur:true}); }
-      if(old)r.old.forEach(function(f){ if(!seen[f.id]){ seen[f.id]=1; list.push({f:f,n:{id:'k'+e.id,emp:e.name,topic:x.t+' — ישן',y:0,m:0},cur:false}); } }); }); });
+  frnRows(A).forEach(function(r){ var R=frnDocs(r), seen={};
+    FRN_KIT.forEach(function(x){ var d=R[x.k];
+      if(d.cur&&!seen[d.cur.id]){ seen[d.cur.id]=1; list.push({f:d.cur,n:{id:'k'+r.key,emp:r.name,topic:x.t,y:0,m:0},cur:true}); }
+      if(old)d.old.forEach(function(f){ if(!seen[f.id]){ seen[f.id]=1; list.push({f:f,n:{id:'k'+r.key,emp:r.name,topic:x.t+' — ישן',y:0,m:0},cur:false}); } }); }); });
   NFCTX={rest:REST,y:0,m:0,list:list,base:'מסמכי עובדים זרים '+REST+' '+new Date().toLocaleDateString('he-IL').replace(/\./g,'-')};
   var d=nfDlgEl(), last=null, h='<label class="nfrow" style="background:none"><input type="checkbox" id="frnKitOld"'+(old?' checked':'')+'> <span class="fn">להציג גם מסמכים ישנים (לא עדכניים)</span></label>';
   list.forEach(function(it,i){ if(it.n.id!==last){ last=it.n.id; h+='<div class="nfgrp">'+esc(it.n.emp)+'</div>'; }
@@ -2562,6 +2592,22 @@ function frnKitOpen(A){ var list=[], old=FRN_KITOLD;
   document.getElementById('nfList').innerHTML=h+(list.length?'':'<p>אין מסמכים</p>'); nfCount(); rpShow(d);
   var ck=document.getElementById('frnKitOld'); if(ck)ck.onchange=function(){ FRN_KITOLD=ck.checked; frnKitOpen(A); }; }
 var FRN_OPEN={}, FRN_KITOLD=false, FRN_A=[];
+function frnLeftFold(){ var rc=window.PK?PK.rc(REST):'', L=[];
+  V().filter(function(e){ return e.foreign&&!e.ext&&(e.status==='עזב'||e.status==='לא פעיל'); }).forEach(function(e){ L.push({name:e.name,sub:(e.dept||'')+' · '+e.status,it:zarItem(e.id),F:window.PK?PK.byEmp(e.id):[]}); });
+  (window.PK?PK.items():[]).filter(function(x){ return x.kind==='zar'&&x.rest===rc&&!x.deleted&&x.data&&x.data.status==='עזב'&&!L.some(function(l){return l.it===x;}); }).forEach(function(it){ L.push({name:it.emp||'',sub:'עזב',it:it,F:itemFiles(it).concat(it.eid&&window.PK?PK.byEmp(it.eid):[])}); });
+  if(!L.length)return '';
+  return '<details class="frnrules frn-fold"><summary><b>עובדים שעזבו</b> <span class="sub">('+L.length+' · לחיצה פותחת)</span></summary><table class="dep-t"><tbody>'+L.map(function(l){ var n=l.it&&l.it.data&&l.it.data.note||'';
+    return '<tr><td><b>'+esc(l.name)+'</b><br><span class="sub">'+esc(l.sub)+'</span></td><td class="sub">'+esc(n.length>160?n.slice(0,160)+'…':n)+'</td><td>'+fileLinks(l.F,'data-fopenf')+'</td></tr>'; }).join('')+'</tbody></table></details>'; }
+function frnGenFold(){ var G=frnGenFiles(), I=frnGenItems(); if(!G.length&&!I.length)return ''; var byT={}, open=I.some(function(it){return it.data&&it.data.deposits;});
+  G.forEach(function(f){ var t=String(f.dtype||'מסמך').replace(/\s*—\s*היתר.*$/,''); (byT[t]=byT[t]||[]).push(f); });
+  return '<details class="frnrules frn-fold"'+(open?' open':'')+'><summary><b>מסמכים כלליים</b> <span class="sub">(היתר החברה, ערבות, טפסי 102 ועוד · '+G.length+' קבצים · לחיצה פותחת)</span></summary>'+
+    I.map(function(it){ var dd=it.data||{}; if(dd.deposits)return '<p style="margin:6px 0"><b>הפקדות לפיקדון</b>'+(dd.rate?' <span class="sub">(פיצויים '+esc(dd.rate.pitz)+'% · גמל '+esc(dd.rate.gemel)+'%)</span>':'')+'<br>'+dd.deposits.map(function(x){ return esc(fmtD(x.date))+' — '+Number(x.amount).toLocaleString('he-IL')+' ₪'+(x.note?' ('+esc(x.note)+')':''); }).join('<br>')+'</p>'; var n=it.data&&it.data.note||''; return '<p style="margin:6px 0"><b>'+esc(it.emp||'')+'</b><br><span class="sub">'+esc(n)+'</span></p>'; }).join('')+
+    (G.length?'<button type="button" class="btn" id="frnGenBtn" style="margin:4px 0 8px">📁 כל המסמכים הכלליים — פתיחה / הדפסה / הורדה</button>':'')+
+    Object.keys(byT).sort().map(function(t){ return '<div class="frn-gt"><b>'+esc(t)+'</b> ('+byT[t].length+'): '+byT[t].map(function(f){ return '<a href="#" data-fopenf="'+esc(f.id)+'">'+esc(String(f.name||'').replace(/\.[a-z0-9]{2,5}$/i,''))+'</a>'; }).join(' · ')+'</div>'; }).join('')+'</details>'; }
+function frnGenOpen(){ var G=frnGenFiles(); NFCTX={rest:REST,y:0,m:0,list:G.map(function(f){ return {f:f,n:{id:'g',emp:'מסמכים כלליים',topic:String(f.dtype||''),y:0,m:0}}; }),base:'מסמכים כלליים — עובדים זרים '+REST};
+  var d=nfDlgEl(), hd=d.querySelector('.rphead h2'); if(hd)hd.textContent='📁 מסמכים כלליים — '+REST;
+  document.getElementById('nfList').innerHTML=NFCTX.list.map(function(it,i){ return '<label class="nfrow"><input type="checkbox" data-i="'+i+'" checked><span class="fn"><b>'+esc(it.n.topic)+'</b> · '+esc(it.f.name||'קובץ')+' <em>'+fSize(it.f.bytes)+'</em></span><button type="button" data-fopen="'+esc(it.f.id)+'">פתיחה</button><button type="button" data-fdl="'+esc(it.f.id)+'">הורדה</button></label>'; }).join('');
+  nfCount(); rpShow(d); }
 function renderFrn(){
   /* כל עובד זר שלא סומן «עזב»/«לא פעיל» — גם מי שעוד אין לו תלוש או נוכחות (התאילנדים שהגיעו ב-30.8) */
   var box=document.getElementById('frnView'), A=V().filter(frnOn);
@@ -2571,7 +2617,7 @@ function renderFrn(){
   if(urgent.length)h+='<div class="frnalert" role="alert"><b>⚠️ אשרה שנגמרת השבוע:</b> '+urgent.map(function(e){ var d=visaDays(e); return esc(e.name)+' ('+(d<0?'פגה':d===0?'היום':'עוד '+d+' ימים')+')'; }).join(' · ')+'</div>';
   h+='<section class="psec"><header><span class="pcnt">'+A.length+'</span><h2>עובדים זרים — '+esc(REST)+'</h2>'+
      '<p class="pnote">תוקף האשרה והפיקדון מוזנים כאן ונשמרים מיד. הפנסיה של עובד זר מופקדת בפיקדון בבנק — לא קרן פנסיה. הערות השכר ומי שעזב — משותפים לכל העובדים.</p></header>'+FRN_RULES+empInfoBox()+'<div id="depSlot"></div>'+frnKitTable(A);
-  h+='</section>'+zarRestBox()+'</div>'; FRN_A=A;
+  h+=frnLeftFold()+frnGenFold()+'</section></div>'; FRN_A=A;
   var DV=document.getElementById('depView'); if(DV&&DV.parentNode===box)document.body.appendChild(DV);
   box.innerHTML=h;
   var slot=box.querySelector('#depSlot'); if(DV&&slot){ slot.appendChild(DV); DV.hidden=false; renderDep(); }
@@ -2580,6 +2626,9 @@ function renderFrn(){
   FRN_SHOWN=true;
 }
 document.getElementById('frnView').addEventListener('change',function(ev){
+  var kn=ev.target.closest&&ev.target.closest('[data-fknote]'); if(kn){ var r=frnRows(FRN_A||[]).filter(function(x){return x.key===kn.dataset.fknote;})[0]; if(!r)return; var v=kn.value.trim();
+    if(r.it){ r.it.data=r.it.data||{}; if(v)r.it.data.kit_note=v; else delete r.it.data.kit_note; PK.saveItem(r.it).then(function(){ toast('✓ ההערה נשמרה'); },function(e){ alert('לא נשמר: '+(e&&e.message||e)); }); }
+    else if(r.eid){ var m=mk(r.eid); if(v)m.kit_note=v; else delete m.kit_note; touch(r.eid); save(); toast('✓ ההערה נשמרה'); } return; }
   var t=ev.target, id=+(t.dataset.fvisa||t.dataset.fdep||t.dataset.fdepm||0); if(!id)return;
   var m=mk(id);
   if(t.dataset.fvisa){ m.visa_until=t.value||''; if(!m.visa_until)delete m.visa_until; stamp(m,'visa'); }
@@ -2597,7 +2646,12 @@ document.getElementById('frnView').addEventListener('click',function(ev){
       var el=document.querySelector('[data-deppay^="'+openId+'|"],[data-depunpay^="'+openId+'|"]'); if(el){ var dt=el.closest('details'); if(dt)dt.open=true; } },function(e){ alert('לא נשמר: '+e.message); });
     return; }
   var kb=ev.target.closest('#frnKitBtn'); if(kb){ frnKitOpen(FRN_A||[]); return; }
-  var dt=ev.target.closest('[data-fdet]'); if(dt){ var id0=+dt.dataset.fdet; FRN_OPEN[id0]=!FRN_OPEN[id0]; var r=document.querySelector('#frnView tr.frn-det[data-fid="'+id0+'"]'); if(r)r.hidden=!FRN_OPEN[id0]; dt.textContent=FRN_OPEN[id0]?'פרטים ▴':'פרטים ▾'; dt.setAttribute('aria-expanded',FRN_OPEN[id0]); return; }
+  var na=ev.target.closest('[data-fkna]'); if(na){ var pr=na.dataset.fkna.split('|'), r=frnRows(FRN_A||[]).filter(function(x){return x.key===pr[0];})[0]; if(!r)return; var k=pr[1];
+    var done=function(){ FRN_SHOWN=true; render(); toast('✓ נשמר'); };
+    if(r.it){ var d=r.it.data=r.it.data||{}; d.kit_na=d.kit_na||{}; if(d.kit_na[k])delete d.kit_na[k]; else d.kit_na[k]=true; PK.saveItem(r.it).then(done,function(e){ alert('לא נשמר: '+(e&&e.message||e)); }); }
+    else if(r.eid){ var m=mk(r.eid); m.kit_na=m.kit_na||{}; if(m.kit_na[k])delete m.kit_na[k]; else m.kit_na[k]=true; touch(r.eid); save(); done(); } return; }
+  if(ev.target.closest('#frnGenBtn')){ frnGenOpen(); return; }
+  var dt=ev.target.closest('[data-fdet]'); if(dt){ var id0=dt.dataset.fdet; FRN_OPEN[id0]=!FRN_OPEN[id0]; var r=[].slice.call(document.querySelectorAll('#frnView tr.frn-det')).filter(function(x){return x.dataset.fid===id0;})[0]; if(r)r.hidden=!FRN_OPEN[id0]; dt.textContent=FRN_OPEN[id0]?'פרטים ▴':'פרטים ▾'; dt.setAttribute('aria-expanded',FRN_OPEN[id0]); return; }
   var a=ev.target.closest('[data-fopenf]'); if(a){ ev.preventDefault(); var f=(window.PK?PK.files():[]).filter(function(x){return x.id===a.dataset.fopenf;})[0]; if(f)PK.open(f); return; }
   var u=ev.target.closest('button[data-fup]'); if(u){ var e=E.filter(function(x){return x.id===+u.dataset.fup;})[0]; if(!e)return;
     nDocOpen(e.orig_rest||e.rest,NDEF.y,NDEF.m,{emp:e.name,type:'אשרת עבודה',after:function(){ FRN_SHOWN=true; render(); }}); return; }
