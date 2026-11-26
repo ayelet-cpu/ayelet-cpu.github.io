@@ -599,7 +599,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:po
 .rpseg button+button{border-inline-start:1px solid var(--line,#d6dae0)}
 .rpseg button.on{background:var(--ink,#1b1f24);color:#fff}
 .nflist{max-height:52vh;overflow:auto;border:1px solid var(--line,#e3e7ec);border-radius:9px;padding:4px}
-.frn-pick{padding:4px 8px 10px;border-bottom:1px solid var(--line,#E2E6EA);margin-bottom:6px}.frn-pick>div{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}.frn-pick .rplbl{min-width:92px}.frn-pick .pill .sub{font-weight:400}.nfgrp{font-size:12px;font-weight:700;color:#4a525c;padding:8px 8px 3px}
+.frn-pick{padding:4px 8px 10px;border-bottom:1px solid var(--line,#E2E6EA);margin-bottom:6px}.frn-pick{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.frn-pick .frn-kdd{align-self:center}.frn-pick .dep-empl label{white-space:nowrap}.nfgrp{font-size:12px;font-weight:700;color:#4a525c;padding:8px 8px 3px}
 .nfrow{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;font-size:13px;cursor:pointer}
 .nfrow:hover{background:var(--soft,#f3f5f7)}
 .nfrow .fn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nfrow em{font-style:normal;color:#8a929b;font-size:11.5px}
@@ -1597,7 +1597,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261126-13';
+var PK_VER='20261126-14';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -2595,28 +2595,41 @@ function frnKitOpen(A){ var list=[], old=FRN_KITOLD;
       if(d.cur&&!seen[d.cur.id]){ seen[d.cur.id]=1; list.push({f:d.cur,n:{id:'k'+r.key,emp:r.name,topic:x.t,y:0,m:0},cur:true,k:x.k}); }
       if(old)d.old.forEach(function(f){ if(!seen[f.id]){ seen[f.id]=1; list.push({f:f,n:{id:'k'+r.key,emp:r.name,topic:x.t+' — ישן',y:0,m:0},cur:false,k:x.k}); } }); }); });
   NFCTX={rest:REST,y:0,m:0,list:list,base:'מסמכי עובדים זרים '+REST+' '+new Date().toLocaleDateString('he-IL').replace(/\./g,'-')};
-  /* 26.11.2026 איילת: «כפתור לשם עובד — נפתחים כל המסמכים של אותו עובד · כפתור לסוג מסמך — נפתחים כל המסמכים מאותו סוג של כל העובדים» */
-  var W=[], T=[]; list.forEach(function(it){ if(W.indexOf(it.n.id)<0)W.push(it.n.id); }); FRN_KIT.forEach(function(x){ if(list.some(function(it){return it.k===x.k;}))T.push(x); });
+  /* 26.11.2026 איילת: «כפתור לשם עובד — כל המסמכים שלו · כפתור לסוג מסמך — אותו מסמך של כל העובדים» → «לשונית נפתחת, לא ככה · ואפשרות לכולם או לבחור את מי».
+     שתי רשימות נפתחות עם סימון (ריק = כולם); הרשימה למטה מציגה ומסמנת רק את מה שנבחר; «פתיחה» = PDF אחד בלשונית חדשה. */
+  var W=[], T=[]; list.forEach(function(it){ if(!W.some(function(w){return w.id===it.n.id;}))W.push({id:it.n.id,nm:it.n.emp}); }); FRN_KIT.forEach(function(x){ if(list.some(function(it){return it.k===x.k;}))T.push(x); });
   var cnt=function(f){ return list.filter(f).length; };
-  var d=nfDlgEl(), last=null, h=(list.length?'<div class="frn-pick"><div><span class="rplbl">לפי עובד</span>'+W.map(function(id){ var nm=list.filter(function(it){return it.n.id===id;})[0].n.emp; return '<button type="button" class="pill" data-fkw="'+esc(id)+'" title="כל המסמכים של '+esc(nm)+' — PDF אחד">'+esc(nm)+' <span class="sub">'+cnt(function(it){return it.n.id===id;})+'</span></button>'; }).join('')+'</div>'+
-    '<div><span class="rplbl">לפי סוג מסמך</span>'+T.map(function(x){ return '<button type="button" class="pill" data-fkt="'+x.k+'" title="'+esc(x.t)+' של כל העובדים — PDF אחד">'+esc(x.t)+' <span class="sub">'+cnt(function(it){return it.k===x.k;})+'</span></button>'; }).join('')+'</div>'+
-    '<p class="sub">לחיצה פותחת את כל המסמכים שלו כ-PDF אחד, ומסמנת אותם ברשימה (אפשר אחר כך להוריד).</p></div>':'')+
+  var dd=function(kind,lbl,O){ var S=FRN_KSEL[kind], n=O.filter(function(o){return S[o.id];}).length;
+    return '<details class="dep-emps frn-kdd" data-fkdd="'+kind+'"'+(FRN_KDDOPEN===kind?' open':'')+'><summary>'+lbl+': <b>'+(n?n+' נבחרו':'כולם')+'</b> ▾</summary><div class="dep-empl">'+
+      '<label><input type="checkbox" data-fkall="'+kind+'"'+(n?'':' checked')+'> <b>כולם</b></label>'+
+      O.map(function(o){ return '<label><input type="checkbox" data-fksel="'+kind+'|'+esc(o.id)+'"'+(S[o.id]?' checked':'')+'> '+esc(o.t)+' <span class="sub">('+o.c+')</span></label>'; }).join('')+'</div></details>'; };
+  var d=nfDlgEl(), last=null, h=(list.length?'<div class="frn-pick">'+
+    dd('w','עובדים',W.map(function(w){ return {id:w.id,t:w.nm,c:cnt(function(it){return it.n.id===w.id;})}; }))+
+    dd('t','סוג מסמך',T.map(function(x){ return {id:x.k,t:x.t,c:cnt(function(it){return it.k===x.k;})}; }))+
+    '<button type="button" class="btn primary" id="frnKOpen" title="המסמכים שמסומנים ברשימה — PDF אחד בלשונית חדשה">📄 פתיחה</button></div>':'')+
     '<label class="nfrow" style="background:none"><input type="checkbox" id="frnKitOld"'+(old?' checked':'')+'> <span class="fn">להציג גם מסמכים ישנים (לא עדכניים)</span></label>';
   list.forEach(function(it,i){ if(it.n.id!==last){ last=it.n.id; h+='<div class="nfgrp">'+esc(it.n.emp)+'</div>'; }
-    h+='<label class="nfrow"'+(it.cur?'':' style="opacity:.7"')+'><input type="checkbox" data-i="'+i+'"'+(it.cur?' checked':'')+'><span class="fn"><b>'+esc(it.n.topic)+'</b> · '+esc(it.f.name||'קובץ')+' <em>'+fSize(it.f.bytes)+'</em></span>'+
+    h+='<label class="nfrow" data-fkrow="'+i+'"'+(it.cur?'':' style="opacity:.7"')+'><input type="checkbox" data-i="'+i+'"'+(it.cur?' checked':'')+'><span class="fn"><b>'+esc(it.n.topic)+'</b> · '+esc(it.f.name||'קובץ')+' <em>'+fSize(it.f.bytes)+'</em></span>'+
       '<button type="button" data-fopen="'+esc(it.f.id)+'">פתיחה</button><button type="button" data-fdl="'+esc(it.f.id)+'">הורדה</button></label>'; });
   var hd=d.querySelector('.rphead h2'); if(hd)hd.textContent='📁 מסמכי העובדים הזרים — '+REST;
   document.getElementById('nfList').innerHTML=h+(list.length?'':'<p>אין מסמכים</p>'); nfCount(); rpShow(d);
   var ck=document.getElementById('frnKitOld'); if(ck)ck.onchange=function(){ FRN_KITOLD=ck.checked; frnKitOpen(A); };
-  document.getElementById('nfList').onclick=function(ev){ var b=ev.target.closest('[data-fkw],[data-fkt]'); if(!b)return; ev.preventDefault();
-    var w=b.dataset.fkw, k=b.dataset.fkt, on=function(it){ return w?it.n.id===w:it.k===k; };
-    [].slice.call(document.querySelectorAll('#nfList input[data-i]')).forEach(function(x){ x.checked=on(NFCTX.list[+x.dataset.i]); }); nfCount();
-    [].slice.call(document.querySelectorAll('#nfList [data-fkw],#nfList [data-fkt]')).forEach(function(x){ x.classList.toggle('on',x===b); });
-    var L=NFCTX.list.filter(on); if(!L.length)return;
+  frnKApply();
+  var nl=document.getElementById('nfList');
+  nl.onchange=function(ev){ var t=ev.target, a=t.dataset&&t.dataset.fkall, sl=t.dataset&&t.dataset.fksel;
+    if(a){ FRN_KSEL[a]={}; FRN_KDDOPEN=a; frnKitOpen(A); return; }
+    if(sl){ var pr=sl.split('|'); FRN_KSEL[pr[0]][pr[1]]=t.checked; if(!t.checked)delete FRN_KSEL[pr[0]][pr[1]]; FRN_KDDOPEN=pr[0]; frnKitOpen(A); } };
+  nl.ontoggle=null; [].slice.call(nl.querySelectorAll('[data-fkdd]')).forEach(function(x){ x.addEventListener('toggle',function(){ if(x.open)FRN_KDDOPEN=x.dataset.fkdd; else if(FRN_KDDOPEN===x.dataset.fkdd)FRN_KDDOPEN=''; }); });
+  var ob=document.getElementById('frnKOpen'); if(ob)ob.onclick=function(){ var L=nfSel(); if(!L.length){ alert('לא נבחר אף מסמך'); return; }
     if(L.length===1){ PK.open(L[0].f); return; }
     var win=window.open('','_blank'); if(win)try{ win.document.write('<p dir="rtl" style="font:16px sans-serif;padding:24px">מכינה את המסמכים…</p>'); }catch(_){}
-    nFilesDownload(NFCTX.rest,0,0,'pdf',b,L,win); }; }
-var FRN_OPEN={}, FRN_KITOLD=false, FRN_A=[];
+    nFilesDownload(NFCTX.rest,0,0,'pdf',ob,L,win); }; }
+function frnKApply(){ var W=FRN_KSEL.w, T=FRN_KSEL.t, aw=!Object.keys(W).length, at=!Object.keys(T).length;
+  [].slice.call(document.querySelectorAll('#nfList [data-fkrow]')).forEach(function(r){ var it=NFCTX.list[+r.dataset.fkrow], on=(aw||W[it.n.id])&&(at||T[it.k]), cb=r.querySelector('input');
+    r.hidden=!on; if(!on)cb.checked=false; else if(!(aw&&at))cb.checked=it.cur||FRN_KITOLD; });
+  [].slice.call(document.querySelectorAll('#nfList .nfgrp')).forEach(function(g){ var n=g.nextElementSibling, any=false; while(n&&!n.classList.contains('nfgrp')){ if(n.dataset&&n.dataset.fkrow&&!n.hidden)any=true; n=n.nextElementSibling; } g.hidden=!any; });
+  nfCount(); }
+var FRN_OPEN={}, FRN_KITOLD=false, FRN_A=[], FRN_KSEL={w:{},t:{}}, FRN_KDDOPEN='';
 /* 26.11.2026 איילת: «2 הטבלאות בטבלה אחת ולא עמוסה שמכילה הכול, עם אפשרות להציג את המסמכים לחוד ואת הפיקדונות לחוד וגם הכול ביחד».
    הכול = שורה לעובד: פרטים + פיקדון (סיכום, «חודשים ▾» פותח את כל החודשים) + מסמכים · מסמכים = בלי עמודת הפיקדון · פיקדונות = מעקב ההפרשות המלא (קוביות, סינון, מכתב לבנק). */
 var FRNV=(function(){ try{ return localStorage.getItem('pk_frnv')||'all'; }catch(_){ return 'all'; } })(), FRN_DEPX={};
