@@ -273,6 +273,10 @@ footer{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
 .depdlg h3{margin:0;font-size:17px}.depdlg label{display:flex;flex-direction:column;gap:3px;font-size:13px;font-weight:600;color:var(--sub)}
 .depdlg input,.depdlg select{font:inherit;font-size:15px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
 .depdlg .ddmsg{color:#A93226;font-weight:700;min-height:1.2em}.depdlg .ddbtn{display:flex;gap:8px}
+.dep-lrow>td{background:#FBE9E7}.dep-lrow>td:first-child{box-shadow:inset -4px 0 0 #A93226}
+.dep-emps{position:relative;align-self:flex-end}.dep-emps summary{cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--surface);font-size:14px;list-style:none}
+.dep-empl{position:absolute;z-index:30;top:100%;inset-inline-start:0;margin-top:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;box-shadow:0 10px 30px rgba(0,0,0,.15);display:flex;flex-direction:column;gap:4px;min-width:220px;max-height:320px;overflow:auto}
+.dep-empl label{display:flex;gap:6px;align-items:center;font-weight:500;white-space:nowrap}
 .depdlg.depbank{width:min(640px,100%)}.depbank .dbrow{display:flex;gap:10px;flex-wrap:wrap}.depbank .dbrow label{flex:1 1 180px}.depbank .dep-t{width:100%}.depbank .dbdet summary{cursor:pointer;font-weight:600;font-size:13px}.depbank .ddbtn{flex-wrap:wrap}
 @media (max-width:900px){.dkpi{grid-template-columns:repeat(2,minmax(0,1fr))}.dep-views .dep-exp{margin-inline-start:0}}
 .dep-t{border-collapse:collapse;width:100%;font-size:13.5px}
@@ -1589,7 +1593,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261126-1';
+var PK_VER='20261126-2';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -3483,11 +3487,24 @@ function depPdf(){ var D=depExportData(), num=function(v){ return typeof v==='nu
 /* 23.11.2026 ערב (איילת: «אין מידע אחורה, אין פירוט — ללחוץ על עובד ולראות את כל הפירוט מתחילת חודש ההפרשה… וגם טבלה עם הכל עם סינון ומיון»):
    שתי תצוגות — «לפי עובד» (שורה לעובד, לחיצה = כל החודשים) ו«כל העובדים · כל החודשים» (טבלה אחת, מיון בלחיצה על כותרת, סינון).
    בחירת החודש משפיעה רק על הקוביות. אקסל / PDF = בדיוק מה שמוצג. */
-var DEPV='emp', DEPOE={}, DEPS={k:'month',d:-1}, DEPFL={emp:'',st:'',from:'',to:'',pay:'',trk:''};   /* pay = «למי» (פיקדון במזרחי / הפקדה לבנק) — איילת 25.11.2026 */
+var DEPV='emp', DEPOE={}, DEPS={k:'month',d:-1}, DEPFL={emp:'',st:'',from:'',to:'',pay:'',trk:'',need:'',emps:{}}, DEPEMPOPEN=false;   /* need/emps — איילת 26.11.2026 · pay = «למי» (פיקדון במזרחי / הפקדה לבנק) — איילת 25.11.2026 */
 /* 26.11.2026 איילת: «אין פה סינון — מסתננים לטפחות, הפקדה בבנק, וגם אפשרות לבחור את המומחים לחוד» — סינון «למי מפקידים» ו«סוג עובד», תמיד מוצג; משפיע גם על הקוביות ועל אקסל/PDF */
 function depTrkG(l){ var t=l.track||l.rule_id||''; return t==='expert'?'מומחים':t==='tefahot'?'מסתננים':t==='sri'?'סרילנקים':(t==='foreign125'||t==='foreign125m1')?'עובדים זרים · 12.5%':'לבדוק מעמד'; }
 function depPayLbl(p){ return p==='פיקדון במזרחי'?'פיקדון במזרחי טפחות (מסתננים)':p==='הפקדה לבנק'?'הפקדה בבנק על שם העובד':p; }
-function depFOk(l){ return (!DEPFL.pay||depPayee(l)===DEPFL.pay)&&(!DEPFL.trk||depTrkG(l)===DEPFL.trk); }
+/* 26.11.2026 איילת: «לסנן לפי עובדים שצריך להפקיד עבורם וכאלה שלא · לבחור עובד או עובדים ספציפיים · במקום "עוד אין הפרשה" — "טרם עברו 6 חודשים — מומחה" · בתחילת ההפרשה — חודש ההתחלה · מי שעבר זמנו — באדום» */
+function depZarSum(z){ var X=DEPX().lines.filter(function(l){return l.zar_id===z;}), t={req:0,paid:0,late:0,check:false,first:''};
+  X.forEach(function(l){ if(!t.first||l.month<t.first)t.first=l.month; if(l.state==='check'){t.check=true;return;} if(l.state!=='ok')return; var c=depCalc(l); t.req+=c.req||0; t.paid+=c.paid; if(c.late)t.late++; });
+  t.bal=t.req-t.paid; t.need=t.check?'check':(t.req<=0.005?'notyet':(t.bal>0.005?'due':'paid')); return t; }
+function depStartMonth(L){ var X=L.slice().sort(function(a,b){return a.month.localeCompare(b.month);}), r=X.filter(function(l){return (l.required||0)>0;})[0];
+  if(r)return r.month; var rl=depRule(X[0]&&X[0].rule_id); return X[0]?(rl&&rl.start_month>1?depMAdd(X[0].month,rl.start_month-1):X[0].month):''; }
+var DEP_NEED={due:'צריך להפקיד (יש יתרה)',paid:'הופקד הכול',notyet:'עוד לא צריך (טרם עבר הזמן)',check:'לבדוק מעמד'};
+function depFOk(l){ var E=Object.keys(DEPFL.emps||{}).filter(function(k){return DEPFL.emps[k];});
+  return (!DEPFL.pay||depPayee(l)===DEPFL.pay)&&(!DEPFL.trk||depTrkG(l)===DEPFL.trk)&&(!E.length||E.indexOf(l.zar_id)>=0)&&(!DEPFL.need||depZarSum(l.zar_id).need===DEPFL.need); }
+function depNeedSel(opt){ return '<label>צריך להפקיד? <select id="depFNeed">'+opt('','הכול',DEPFL.need)+Object.keys(DEP_NEED).map(function(k){return opt(k,DEP_NEED[k],DEPFL.need);}).join('')+'</select></label>'; }
+function depEmpsSel(L){ var G=depEmpGroups(L), sel=G.filter(function(g){return DEPFL.emps&&DEPFL.emps[g.z];});
+  return '<details class="dep-emps"'+(DEPEMPOPEN?' open':'')+'><summary>עובדים: '+(sel.length?sel.length+' נבחרו':'כולם')+' ▾</summary><div class="dep-empl">'+
+    G.map(function(g){ return '<label><input type="checkbox" data-depemps="'+esc(g.z)+'"'+(DEPFL.emps&&DEPFL.emps[g.z]?' checked':'')+'> '+esc(g.nm)+'</label>'; }).join('')+
+    (sel.length?'<button type="button" class="tlb" data-depempsclr="1">כולם</button>':'')+'</div></details>'; }
 function depTrkSel(L,opt){ var P={}; L.forEach(function(l){ P[depTrkG(l)]=1; }); var O=['מומחים','מסתננים','סרילנקים','עובדים זרים · 12.5%','לבדוק מעמד'].filter(function(k){return P[k]||DEPFL.trk===k;});
   return '<label>סוג עובד <select id="depFTrk">'+opt('','הכול',DEPFL.trk)+O.map(function(k){return opt(k,k,DEPFL.trk);}).join('')+'</select></label>'; }
 var DEP_ST={open:'פתוח',late:'באיחור',paid:'שולם',norcpt:'שולם · חסרה אסמכתה',zero:'אין הפרשה בחודש',check:'להמחשה / לבדוק',missing:'חסר נתון'};
@@ -3516,7 +3533,7 @@ function depEmpGroups(L){ var G={}, ord=[]; L.forEach(function(l){ if(!G[l.zar_i
   return ord.map(function(z){ return {z:z,L:G[z],nm:depEmpName(G[z][0])}; }).sort(function(a,b){return String(a.nm).localeCompare(String(b.nm));}); }
 /* הטבלה המלאה — שורות אחרי סינון ומיון */
 function depPaySel(L,opt){ var P={'פיקדון במזרחי':1,'הפקדה לבנק':1}; L.forEach(function(l){ P[depPayee(l)]=1; }); var K=Object.keys(P).sort();
-  return '<label>למי מפקידים <select id="depFPay">'+opt('','הכול',DEPFL.pay)+K.map(function(k){return opt(k,depPayLbl(k),DEPFL.pay);}).join('')+'</select></label>'+depTrkSel(L,opt); }
+  return '<label>למי מפקידים <select id="depFPay">'+opt('','הכול',DEPFL.pay)+K.map(function(k){return opt(k,depPayLbl(k),DEPFL.pay);}).join('')+'</select></label>'+depTrkSel(L,opt)+depNeedSel(opt)+depEmpsSel(L); }
 function depAllRows(L){ var R=L.map(function(l){ var c=depCalc(l); return {l:l,c:c,nm:depEmpName(l),st:depStKey(l,c)}; });
   R=R.filter(function(r){ return depFOk(r.l)&&(!DEPFL.emp||r.l.zar_id===DEPFL.emp)&&(!DEPFL.st||r.st===DEPFL.st||(DEPFL.st==='unpaid'&&(r.st==='open'||r.st==='late')))&&(!DEPFL.from||r.l.month>=DEPFL.from)&&(!DEPFL.to||r.l.month<=DEPFL.to); });
   var k=DEPS.k, d=DEPS.d, v=function(r){ return k==='emp'?r.nm:k==='month'?r.l.month:k==='req'?(r.c.req==null?-1:r.c.req):k==='paid'?r.c.paid:k==='bal'?(r.c.bal==null?-1:r.c.bal):k==='due'?(r.l.due||''):k==='st'?r.st:k==='base'?(+r.l.base||0):r.l.month; };
@@ -3552,10 +3569,10 @@ function renderDep2(box){
     h+='<div class="dep-tw"><table class="dep-t dep-et"><thead><tr><th>עובד</th><th>מסלול · למי</th><th>תחילת ההפרשה</th><th>חודשים</th><th>נדרש</th><th>שולם</th><th>לא שולם</th><th>מצב</th></tr></thead><tbody>'+
       G.map(function(g){ var t={req:0,paid:0,late:0,miss:0,ill:0}, st0=null;
         g.L.forEach(function(l){ var c=depCalc(l); if(l.state==='ok'){t.req+=c.req||0;t.paid+=c.paid; if(c.late)t.late++; if(st0===null&&(c.req||0)>0)st0=l.month;} else if(l.state==='check')t.ill+=c.req||0; if(l.state==='missing')t.miss++; });
-        if(st0===null){ var s1=g.L.slice().sort(function(a,b){return a.month.localeCompare(b.month);}).filter(function(l){return (l.required||0)>0;})[0]; st0=s1?s1.month:''; }
+        if(st0===null)st0=depStartMonth(g.L);
         var l0=g.L[0], rl=depRule(l0.rule_id), open=!!DEPOE[g.z], bal=t.req-t.paid;
-        var stp=t.miss?'<span class="vpill bad">חסר נתון ב-'+t.miss+'</span>':(l0.state==='check'||l0.state==='regular'?'<span class="vpill soon">להמחשה — לבדוק מעמד</span>':(t.late?'<span class="vpill bad">'+t.late+' חודשים באיחור</span>':(bal>0.005?'<span class="vpill info">פתוח</span>':(t.req>0.005?'<span class="vpill ok">שולם</span>':'<span class="vpill none">עוד אין הפרשה'+(rl&&rl.start_month>1?' — מ'+esc(depMon(depMAdd(g.L.slice().sort(function(a,b){return a.month.localeCompare(b.month);})[0].month,rl.start_month-1))):'')+'</span>'))));
-        var row='<tr class="dep-erow'+(open?' on':'')+'" data-depemp="'+esc(g.z)+'"><td><span class="dep-car">'+(open?'▾':'◂')+'</span> <b>'+esc(g.nm)+'</b>'+(l0.eid==null?' <span class="vpill soon">לא מקושר לכרטיס</span>':'')+'</td>'+
+        var stp=t.miss?'<span class="vpill bad">חסר נתון ב-'+t.miss+'</span>':(l0.state==='check'||l0.state==='regular'?'<span class="vpill soon">להמחשה — לבדוק מעמד</span>':(t.late?'<span class="vpill bad">'+t.late+' חודשים באיחור</span>':(bal>0.005?'<span class="vpill info">פתוח</span>':(t.req>0.005?'<span class="vpill ok">שולם</span>':'<span class="vpill none">'+(rl&&rl.start_month>1?'טרם עברו '+(rl.start_month-1)+' חודשים'+(depTrkG(l0)==='מומחים'?' — מומחה':''):'עוד אין הפרשה')+'</span>'))));
+        var row='<tr class="dep-erow'+(open?' on':'')+(t.late?' dep-lrow':'')+'" data-depemp="'+esc(g.z)+'"><td><span class="dep-car">'+(open?'▾':'◂')+'</span> <b>'+esc(g.nm)+'</b>'+(l0.eid==null?' <span class="vpill soon">לא מקושר לכרטיס</span>':'')+'</td>'+
           '<td>'+esc(rl?rl.label:(l0.track||''))+'<br><span class="sub">'+esc(depPayee(l0))+'</span></td><td>'+(st0?esc(depMon(st0)):'—')+'</td><td class="num">'+g.L.length+'</td>'+
           '<td class="num">'+(l0.state==='check'?'<i>'+depN(t.ill,1)+'</i>':depN(t.req,1))+'</td><td class="num">'+depN(t.paid,1)+'</td><td class="num"><b>'+(l0.state==='check'?'—':depN(bal,1))+'</b></td><td>'+stp+'</td></tr>';
         return row+(open?'<tr class="dep-edet"><td colspan="8">'+depMonthTable(g.L,{acts:true}).html+'</td></tr>':''); }).join('')+'</tbody></table></div>'+
@@ -3567,10 +3584,10 @@ function renderDep2(box){
       depPaySel(L,opt)+'<label>מצב <select id="depFSt">'+opt('','הכול',DEPFL.st)+opt('unpaid','לא שולם (פתוח + באיחור)',DEPFL.st)+Object.keys(DEP_ST).map(function(k){return opt(k,DEP_ST[k],DEPFL.st);}).join('')+'</select></label>'+
       '<label>מחודש <select id="depFFrom">'+opt('','—',DEPFL.from)+MS.map(function(m){return opt(m,depMon(m),DEPFL.from);}).join('')+'</select></label>'+
       '<label>עד חודש <select id="depFTo">'+opt('','—',DEPFL.to)+MS.map(function(m){return opt(m,depMon(m),DEPFL.to);}).join('')+'</select></label>'+
-      ((DEPFL.emp||DEPFL.st||DEPFL.from||DEPFL.to||DEPFL.pay||DEPFL.trk)?'<button type="button" class="tlb" data-depfclear="1">ניקוי סינון</button>':'')+'<span class="sub">'+R.length+' שורות</span></div>'+
+      ((DEPFL.emp||DEPFL.st||DEPFL.from||DEPFL.to||DEPFL.pay||DEPFL.trk||DEPFL.need||Object.keys(DEPFL.emps||{}).some(function(k){return DEPFL.emps[k];}))?'<button type="button" class="tlb" data-depfclear="1">ניקוי סינון</button>':'')+'<span class="sub">'+R.length+' שורות</span></div>'+
       '<div class="dep-tw"><table class="dep-t depx-t"><thead><tr>'+th('emp','עובד')+th('month','חודש')+th('base','בסיס')+th('req','נדרש')+th('paid','שולם')+th('bal','יתרה')+th('due','מועד אחרון')+th('st','מצב')+'<th>הערה</th><th></th></tr></thead><tbody>'+
       R.map(function(r){ var l=r.l, c=r.c, ill=l.state!=='ok'; if(ill)T.ill+=c.req||0; else {T.req+=c.req||0;T.paid+=c.paid;T.bal+=c.bal||0;}
-        return '<tr class="'+(ill?'dep-ill':'')+'"><td><b>'+esc(r.nm)+'</b></td><td>'+esc(depMon(l.month))+'</td><td class="num">'+depN(l.base)+'</td><td class="num">'+depN(c.req,1)+'</td><td class="num">'+depN(c.paid,1)+'</td><td class="num"><b>'+depN(c.bal,1)+'</b></td>'+
+        return '<tr class="'+(ill?'dep-ill':'')+(c.late?' dep-lrow':'')+'"><td><b>'+esc(r.nm)+'</b></td><td>'+esc(depMon(l.month))+'</td><td class="num">'+depN(l.base)+'</td><td class="num">'+depN(c.req,1)+'</td><td class="num">'+depN(c.paid,1)+'</td><td class="num"><b>'+depN(c.bal,1)+'</b></td>'+
           '<td>'+(l.due?esc(fmtD(l.due)):'—')+'</td><td><span class="vpill '+c.cl+'">'+esc(c.st)+'</span>'+depPayInfo(c)+'</td><td class="dep-note">'+esc(l.note||'')+'</td><td class="dep-act">'+depActs(l,c)+'</td></tr>'+(DEPOPEN[l.id]&&c.n?depPayRows(l,c,10):''); }).join('')+
       '</tbody><tfoot><tr><td colspan="3">סה״כ לפי הסינון'+(T.ill?' — מסלול ודאי':'')+'</td><td class="num">'+depN(T.req,1)+'</td><td class="num">'+depN(T.paid,1)+'</td><td class="num"><b>'+depN(T.bal,1)+'</b></td><td colspan="4">'+(T.bal>0.005?'<b>לא שולם: '+depN(T.bal,1)+' ₪</b>':'הכול שולם')+'</td></tr>'+
       (T.ill?'<tr class="ill"><td colspan="3">להמחשה (לא נספר)</td><td class="num">'+depN(T.ill,1)+'</td><td colspan="6"></td></tr>':'')+'</tfoot></table></div>'+
@@ -3578,20 +3595,22 @@ function renderDep2(box){
   }
   box.innerHTML=h+'</section>';
 }
-document.getElementById('depView').addEventListener('toggle',function(ev){ var g=ev.target.closest&&ev.target.closest('[data-dalg]'); if(g)DEPAL=g.open?g.dataset.dalg:(DEPAL===g.dataset.dalg?'':DEPAL); },true);
+document.getElementById('depView').addEventListener('toggle',function(ev){ if(ev.target.classList&&ev.target.classList.contains('dep-emps'))DEPEMPOPEN=ev.target.open; var g=ev.target.closest&&ev.target.closest('[data-dalg]'); if(g)DEPAL=g.open?g.dataset.dalg:(DEPAL===g.dataset.dalg?'':DEPAL); },true);
 document.getElementById('depView').addEventListener('change',function(ev){ var id=ev.target.id;
   if(id==='depMon'){ DEPM=ev.target.value; renderDep(); return; }
-  var F={depFEmp:'emp',depFSt:'st',depFFrom:'from',depFTo:'to',depFPay:'pay',depFTrk:'trk'}; if(F[id]){ DEPFL[F[id]]=ev.target.value; renderDep(); } });
+  var cb=ev.target.closest('[data-depemps]'); if(cb){ DEPFL.emps=DEPFL.emps||{}; DEPFL.emps[cb.dataset.depemps]=cb.checked; DEPEMPOPEN=true; renderDep(); return; }
+  var F={depFEmp:'emp',depFSt:'st',depFFrom:'from',depFTo:'to',depFPay:'pay',depFTrk:'trk',depFNeed:'need'}; if(F[id]){ DEPFL[F[id]]=ev.target.value; renderDep(); } });
 document.getElementById('depView').addEventListener('click',function(ev){ var b=ev.target.closest('[data-depf]'); if(b){ DEPF=b.dataset.depf; renderDep(); return; }
   var rb=ev.target.closest('[data-depr]'); if(rb){ DEPR=rb.dataset.depr===PK.rc(REST)?'':rb.dataset.depr; renderDep(); return; }
   if(ev.target.closest('#depBank')){ depBankDlg(); return; } if(ev.target.closest('#depXls')){ depXlsx(); return; } if(ev.target.closest('#depPdf')){ depPdf(); return; }
   var vb=ev.target.closest('[data-depv]'); if(vb){ DEPV=vb.dataset.depv; renderDep(); return; }
   var sb=ev.target.closest('[data-depsort]'); if(sb){ var k=sb.dataset.depsort; DEPS=DEPS.k===k?{k:k,d:-DEPS.d}:{k:k,d:(k==='emp'||k==='due'||k==='st')?1:-1}; renderDep(); return; }
-  if(ev.target.closest('[data-depfclear]')){ DEPFL={emp:'',st:'',from:'',to:'',pay:'',trk:''}; renderDep(); return; }
+  if(ev.target.closest('[data-depempsclr]')){ DEPFL.emps={}; DEPEMPOPEN=false; renderDep(); return; }
+  if(ev.target.closest('[data-depfclear]')){ DEPFL={emp:'',st:'',from:'',to:'',pay:'',trk:'',need:'',emps:{}}; renderDep(); return; }
   if(!ev.target.closest('button,a,select,input')){ var er=ev.target.closest('[data-depemp]'); if(er){ DEPOE[er.dataset.depemp]=!DEPOE[er.dataset.depemp]; renderDep(); return; } }
   var t=ev.target.closest('[data-depopen],[data-depadd],[data-depatt],[data-deppaid],[data-depdel],[data-depfile],[data-depgo]'); if(!t)return;
   if(t.dataset.depopen){ DEPOPEN[t.dataset.depopen]=!DEPOPEN[t.dataset.depopen]; renderDep(); return; }
-  if(t.dataset.depgo){ DEPV='all'; DEPFL={emp:'',st:'',from:t.dataset.depgo,to:t.dataset.depgo,pay:'',trk:''}; renderDep(); var tb=document.querySelector('#depView .depx-t'); if(tb)tb.scrollIntoView({behavior:'smooth',block:'start'}); return; }
+  if(t.dataset.depgo){ DEPV='all'; DEPFL={emp:'',st:'',from:t.dataset.depgo,to:t.dataset.depgo,pay:'',trk:'',need:'',emps:{}}; renderDep(); var tb=document.querySelector('#depView .depx-t'); if(tb)tb.scrollIntoView({behavior:'smooth',block:'start'}); return; }
   if(t.dataset.depfile){ var f=depFile(t.dataset.depfile); if(f)PK.open(f); return; }
   if(!isOwn()){ alert('רק איילת'); return; }
   if(t.dataset.depadd){ var l=depLineById(t.dataset.depadd); if(l)depPayDlg(l); return; }
