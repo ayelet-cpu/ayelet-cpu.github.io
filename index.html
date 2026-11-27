@@ -1597,7 +1597,7 @@ button.ps.on{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
 
 <script>
 /* 14.11.2026 (איילת: «לא עלה»): הדפדפן שומר את הדף עד 10 דקות. בכל פתיחה בודקים אם יש גרסה חדשה יותר בשרת — ואם כן, טוענים אותה מיד. */
-var PK_VER='20261127-1';
+var PK_VER='20261127-2';
 (function(){ try{ fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){
   var m=t.match(/var PK_VER='([^']+)'/); if(m&&m[1]!==PK_VER&&location.search.indexOf('v='+m[1])<0){ location.replace(location.pathname+'?v='+m[1]+location.hash); } }).catch(function(){}); }catch(_){} })();
 (function(){
@@ -2474,7 +2474,7 @@ var FRN_RULES='<details class="frnrules"><summary><b>נהלים — פיקדון
    months:{'YYYY-MM':{g ברוטו, b בסיס להפרשה, p אחוז, a סכום הפרשה, t מס הכנסה, h שעות, n הערה, paid תאריך תשלום, paid_by}}}.
    מסלולים: tefahot = מסתנן (טפחות 16% מהחודש הראשון) · expert = מומחה (מהחודש ה-7, 12.5% מהשכר הממוצע במשק) · sri = סרילנקי (מיד) · check = לבדוק מעמד.
    «סמן שולם» — רק איילת, לחודש אחד בכל פעם (לא משתנה לבד). */
-var DEP_TRACK={tefahot:['מסתנן · טפחות 16% מיד','ok'],expert:['מומחה · מהחודש ה-7','info'],sri:['סרילנקי · מיד','ok'],regular:['עובד זר רגיל · לבדוק אשרה','warn'],check:['לבדוק מעמד','warn']};
+var DEP_TRACK={tefahot:['מסתנן · טפחות 16% מיד','ok'],expert:['מומחה · מהחודש ה-7','info'],sri:['סרי לנקה · מיד','ok'],regular:['עובד זר רגיל · לבדוק אשרה','warn'],check:['לבדוק מעמד','warn']};
 function depItems(){ var rc=PK.rc(REST); return (window.PK?PK.items():[]).filter(function(x){ return x.kind==='zar'&&x.rest===rc&&!x.deleted&&x.data&&x.data.dep; }); }
 function depN(n,dec){ if(n===null||n===undefined||n==='')return '—'; return Number(n).toLocaleString('he-IL',{minimumFractionDigits:dec?2:0,maximumFractionDigits:dec?2:0}); }
 function depMon(k){ var p=String(k).split('-'), H=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']; return p.length===2?H[+p[1]-1]+' '+p[0]:k; }
@@ -2505,7 +2505,7 @@ function depBox(){
       (d.src?'<div class="sub">מקור: '+esc(d.src)+'</div>':'')+'</div></details>'; }).join('');
   return '<section class="dep"><div class="dep-hd"><h3>הפרשות ופיקדון — '+esc(REST)+'</h3>'+
     '<div class="dep-tot"><span>להפרשה (מסלול ודאי) <b>'+depN(T.a,1)+' ₪</b></span><span>שולם <b>'+depN(T.paid,1)+' ₪</b></span><span>יתרה <b>'+depN(T.a-T.paid,1)+' ₪</b></span></div></div>'+
-    '<div class="dep-stop">⛔ עוד לא להפקיד. מועד ההפרשה: מומחים — רק אחרי חצי שנה · מסתננים — מיד · סרילנקים — מיד.</div>'+
+    '<div class="dep-stop">⛔ עוד לא להפקיד. מועד ההפרשה: מומחים — רק אחרי חצי שנה · מסתננים — מיד · סרי לנקה — מיד.</div>'+
     '<p class="sub dep-help">לחיצה על עובד פותחת את כל הפרטים לטופס ואת כל החודשים. «לבדוק מעמד» — הסכום להמחשה בלבד (12.5% מהבסיס) עד שיתברר המסלול. בסיס להפרשה = שכר יסוד + שעות שבת 100%.</p>'+rows+'</section>'; }
 /* ---------- תיק עובדים זרים לביקורת (26.11.2026, איילת: «טבלה עם כל העובדים, שורה לכל עובד, וי או תאריך, מה חסר בצורה מינימליסטית;
    ללחוץ ולהוריד/להציג/להדפיס את כל המסמכים העדכניים, עם אפשרות לראות את מה שכבר לא עדכני ולסמן מה להוריד — שיהיה מול העיניים בביקורת»;
@@ -2566,7 +2566,7 @@ function frnDepCell(it){ if(!it)return '<span class="kx">—</span>';
 /* 26.11.2026 איילת: «אם לא צריך מסמך מסוים — לרשום אין צורך». היתר — רק למומחים (לשאר אוטומטית); לכל מסמך אחר — לחיצה «אין צורך» (נשמר בכרטיס, kit_na) */
 function frnTrack(r){ var z=(r.it&&r.it.id)||r.dz; if(!z)return ''; var t=DEPX().track.filter(function(x){return x.zar_id===z;})[0]; if(t&&t.track)return t.track;
   if(r.it)return ((r.it.data||{}).dep||{}).track||''; var l=DEPX().lines.filter(function(x){return x.zar_id===z;})[0]; return (l&&(l.track||l.rule_id))||''; }
-function frnKind(r){ var t=frnTrack(r); return t==='expert'?'מומחה':t==='tefahot'?'מסתנן':t?'עובד זר':''; }
+function frnKind(r){ var t=frnTrack(r); return t==='expert'?'מומחה':t==='tefahot'?'מסתנן':t==='sri'?'סרי לנקה':t?'עובד זר':''; }
 function frnNaMan(r){ return (r.it&&r.it.data&&r.it.data.kit_na)||(r.eid&&(MARKS[r.eid]||{}).kit_na)||{}; }
 function frnNa(r,k){ if(frnNaMan(r)[k])return 'man'; if(k==='permit'&&frnTrack(r)!=='expert')return 'auto'; return ''; }
 function frnKitCell(r,R,k){ if(!r.it&&!r.eid)return '<td class="kc sub">—</td>'; var c=R[k].cur, na=c?'':frnNa(r,k);
@@ -3657,7 +3657,7 @@ function depPdf(){ var D=depExportData(), num=function(v){ return typeof v==='nu
    בחירת החודש משפיעה רק על הקוביות. אקסל / PDF = בדיוק מה שמוצג. */
 var DEPV='emp', DEPOE={}, DEPS={k:'month',d:-1}, DEPFL={emp:'',st:'',from:'',to:'',pay:'',trk:'',need:'',emps:{}}, DEPEMPOPEN=false;   /* need/emps — איילת 26.11.2026 · pay = «למי» (פיקדון במזרחי / הפקדה לבנק) — איילת 25.11.2026 */
 /* 26.11.2026 איילת: «אין פה סינון — מסתננים לטפחות, הפקדה בבנק, וגם אפשרות לבחור את המומחים לחוד» — סינון «למי מפקידים» ו«סוג עובד», תמיד מוצג; משפיע גם על הקוביות ועל אקסל/PDF */
-function depTrkG(l){ var t=l.track||l.rule_id||''; return t==='expert'?'מומחים':t==='tefahot'?'מסתננים':t==='sri'?'סרילנקים':(t==='foreign125'||t==='foreign125m1')?'עובדים זרים · 12.5%':'לבדוק מעמד'; }
+function depTrkG(l){ var t=l.track||l.rule_id||''; return t==='expert'?'מומחים':t==='tefahot'?'מסתננים':t==='sri'?'סרי לנקה':(t==='foreign125'||t==='foreign125m1')?'עובדים זרים · 12.5%':'לבדוק מעמד'; }
 function depPayLbl(p){ return p==='פיקדון במזרחי'?'פיקדון במזרחי טפחות (מסתננים)':p==='הפקדה לבנק'?'הפקדה בבנק על שם העובד':p; }
 /* 26.11.2026 איילת: «לסנן לפי עובדים שצריך להפקיד עבורם וכאלה שלא · לבחור עובד או עובדים ספציפיים · במקום "עוד אין הפרשה" — "טרם עברו 6 חודשים — מומחה" · בתחילת ההפרשה — חודש ההתחלה · מי שעבר זמנו — באדום» */
 function depZarSum(z){ var X=DEPX().lines.filter(function(l){return l.zar_id===z;}), t={req:0,paid:0,late:0,check:false,first:''};
@@ -3673,7 +3673,7 @@ function depEmpsSel(L){ var G=depEmpGroups(L), sel=G.filter(function(g){return D
   return '<details class="dep-emps"'+(DEPEMPOPEN?' open':'')+'><summary>עובדים: '+(sel.length?sel.length+' נבחרו':'כולם')+' ▾</summary><div class="dep-empl">'+
     G.map(function(g){ return '<label><input type="checkbox" data-depemps="'+esc(g.z)+'"'+(DEPFL.emps&&DEPFL.emps[g.z]?' checked':'')+'> '+esc(g.nm)+'</label>'; }).join('')+
     (sel.length?'<button type="button" class="tlb" data-depempsclr="1">כולם</button>':'')+'</div></details>'; }
-function depTrkSel(L,opt){ var P={}; L.forEach(function(l){ P[depTrkG(l)]=1; }); var O=['מומחים','מסתננים','סרילנקים','עובדים זרים · 12.5%','לבדוק מעמד'].filter(function(k){return P[k]||DEPFL.trk===k;});
+function depTrkSel(L,opt){ var P={}; L.forEach(function(l){ P[depTrkG(l)]=1; }); var rk0=depRestKey(); DEPX().track.forEach(function(t){ if(!t.valid_to&&(rk0==='all'||t.rest===rk0))P[depTrkG({track:t.track})]=1; }); var O=['מומחים','מסתננים','סרי לנקה','עובדים זרים · 12.5%','לבדוק מעמד'].filter(function(k){return P[k]||DEPFL.trk===k;});
   return '<label>סוג עובד <select id="depFTrk">'+opt('','הכול',DEPFL.trk)+O.map(function(k){return opt(k,k,DEPFL.trk);}).join('')+'</select></label>'; }
 var DEP_ST={open:'פתוח',late:'באיחור',paid:'שולם',norcpt:'שולם · חסרה אסמכתה',zero:'אין הפרשה בחודש',check:'להמחשה / לבדוק',missing:'חסר נתון'};
 function depStKey(l,c){ c=c||depCalc(l); if(l.state==='missing'||c.req==null)return 'missing'; if(l.state==='check')return 'check'; if(c.req===0)return 'zero';
@@ -3697,6 +3697,14 @@ function depMonthTable(X,o){ o=o||{}; X=X.slice().sort(function(a,b){return Stri
   h+='</tbody><tfoot><tr><td colspan="4">סה״כ'+(T.ill?' — מסלול ודאי':'')+'</td><td class="num">'+depN(T.req,1)+'</td><td class="num">'+depN(T.paid,1)+'</td><td class="num"><b>'+depN(T.bal,1)+'</b></td><td colspan="'+(cols-7)+'">'+(T.bal>0.005?'<b>לא שולם: '+depN(T.bal,1)+' ₪</b>':'הכול שולם')+'</td></tr>'+
     (T.ill?'<tr class="ill"><td colspan="4">להמחשה (לא נספר)</td><td class="num">'+depN(T.ill,1)+'</td><td colspan="'+(cols-5)+'"></td></tr>':'')+'</tfoot></table></div>';
   return {html:h,T:T}; }
+/* 27.11.2026 איילת: «למה אין בצ'אקולי את העובדים החדשים?» — מי שיש לו מסלול הפרשה ועוד אין לו תלוש (הסרי-לנקים שהגיעו 18.11) מופיע עם תחילת ההפרשה, בלי סכומים */
+function depNoSlipRows(L){ var rk=depRestKey(), has={}; DEPX().lines.forEach(function(l){ has[l.zar_id]=1; });
+  if(Object.keys(DEPFL.emps||{}).some(function(k){return DEPFL.emps[k];})||(DEPFL.need&&DEPFL.need!=='notyet'))return '';
+  var T=DEPX().track.filter(function(t){ return t.zar_id&&!has[t.zar_id]&&(rk==='all'||t.rest===rk)&&!t.valid_to; }), seen={};
+  return T.filter(function(t){ if(seen[t.zar_id])return false; seen[t.zar_id]=1; var x={track:t.track,rule_id:t.track}, rl=depRule(t.track); return (!DEPFL.trk||depTrkG(x)===DEPFL.trk)&&(!DEPFL.pay||((rl&&rl.payee)||'')===DEPFL.pay); })
+    .sort(function(a,b){ return String(a.emp).localeCompare(String(b.emp)); }).map(function(t){ var rl=depRule(t.track), m=String(t.valid_from||'').slice(0,7);
+      return '<tr class="dep-erow dep-noslip"><td><b>'+esc(t.emp||'')+'</b></td><td>'+esc(rl?rl.label:t.track)+'<br><span class="sub">'+esc((rl&&rl.payee)||'')+'</span></td><td>'+(m?esc(depMon(m)):'—')+'</td><td class="num">0</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>'+
+        '<td><span class="vpill none">עוד אין תלוש'+(t.track==='sri'?' · להפקיד מ-1.1.2027':'')+'</span></td></tr>'; }).join(''); }
 function depEmpGroups(L){ var G={}, ord=[]; L.forEach(function(l){ if(!G[l.zar_id]){G[l.zar_id]=[];ord.push(l.zar_id);} G[l.zar_id].push(l); });
   return ord.map(function(z){ return {z:z,L:G[z],nm:depEmpName(G[z][0])}; }).sort(function(a,b){return String(a.nm).localeCompare(String(b.nm));}); }
 /* הטבלה המלאה — שורות אחרי סינון ומיון */
@@ -3720,7 +3728,7 @@ function renderDep2(box){
   var kp=function(t,v,sub,cl){ return '<div class="dk'+(cl?' '+cl:'')+'"><span class="dkt">'+t+'</span><b>'+v+'</b>'+(sub?'<span class="sub">'+sub+'</span>':'')+'</div>'; };
   var opt=function(v,t,cur){ return '<option value="'+esc(v)+'"'+(cur===v?' selected':'')+'>'+esc(t)+'</option>'; };
   var dep=(window.PK?PK.items():[]).filter(function(x){return x.kind==='zar'&&x.rest===rk&&!x.deleted&&x.data&&Array.isArray(x.data.deposits)&&x.data.deposits.length;});
-  var banner=(rk==='asa'||rk==='chakoli')?'<div class="dep-stop">⛔ עוד לא להפקיד. מועד ההפרשה: מומחים — רק אחרי חצי שנה · מסתננים — מיד · סרילנקים — מיד.</div>':'';
+  var banner=(rk==='asa'||rk==='chakoli')?'<div class="dep-stop">⛔ עוד לא להפקיד. מועד ההפרשה: מומחים — רק אחרי חצי שנה · מסתננים — מיד · סרי לנקה — מיד.</div>':'';
   dep.forEach(function(it){ it.data.deposits.forEach(function(x){ banner+='<div class="dep-info">בבקרת השכר רשומה הפקדה מרוכזת: '+esc(fmtD(x.date))+' — '+depN(x.amount,1)+' ₪ (בבנק — «הפקדה לפקדון» לכל עובד; נרשם כתשלום על החודשים עד 9.2026, 23.11)</div>'; }); });
   var h='<section class="psec depx"><header><h2>מעקב הפרשות — '+esc(depRestLabel())+'</h2>'+
     '<label class="depm">סיכום לחודש <select id="depMon">'+opt('all','כל החודשים',DEPM)+MS.slice().reverse().map(function(m){return opt(m,depMon(m),DEPM);}).join('')+'</select></label></header>'+banner+
@@ -3743,7 +3751,7 @@ function renderDep2(box){
         var row='<tr class="dep-erow'+(open?' on':'')+(t.late?' dep-lrow':'')+'" data-depemp="'+esc(g.z)+'"><td><span class="dep-car">'+(open?'▾':'◂')+'</span> <b>'+esc(g.nm)+'</b>'+(l0.eid==null?' <span class="vpill soon">לא מקושר לכרטיס</span>':'')+'</td>'+
           '<td>'+esc(rl?rl.label:(l0.track||''))+'<br><span class="sub">'+esc(depPayee(l0))+'</span></td><td>'+(st0?esc(depMon(st0)):'—')+'</td><td class="num">'+g.L.length+'</td>'+
           '<td class="num">'+(l0.state==='check'?'<i>'+depN(t.ill,1)+'</i>':depN(t.req,1))+'</td><td class="num">'+depN(t.paid,1)+'</td><td class="num"><b>'+(l0.state==='check'?'—':depN(bal,1))+'</b></td><td>'+stp+'</td></tr>';
-        return row+(open?'<tr class="dep-edet"><td colspan="8">'+depMonthTable(g.L,{acts:true}).html+'</td></tr>':''); }).join('')+'</tbody></table></div>'+
+        return row+(open?'<tr class="dep-edet"><td colspan="8">'+depMonthTable(g.L,{acts:true}).html+'</td></tr>':''); }).join('')+depNoSlipRows(L)+'</tbody></table></div>'+
       '<p class="sub dep-help">לחיצה על עובד פותחת את כל החודשים שלו מתחילת ההפרשה. «להמחשה» — המסלול עוד לא ברור, הסכום לא נספר.</p>';
   } else {
     var R=depAllRows(L), G2=depEmpGroups(L), T={req:0,paid:0,bal:0,ill:0};
